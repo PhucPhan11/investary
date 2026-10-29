@@ -6,11 +6,12 @@ Investary is a **modular monolith**: a single Spring Boot application whose code
 business capability, plus an Angular single-page app. See [ADR 0001](adr/0001-modular-monolith.md).
 
 ```
-Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC──▶ PostgreSQL (metadata + derived data)
+Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC──▶ PostgreSQL + pgvector (metadata, derived data, chunks/vectors)
                                        │      │
                                        │      └─filesystem──▶ document store (original PDFs)
                                        │                      email store    (original EML files)
-                                       └─HTTPS (allowlisted, background jobs)──▶ brokerage websites
+                                       ├─HTTPS (allowlisted, background jobs)──▶ brokerage websites
+                                       └─HTTP (Spring AI, configurable)──▶ AI provider (default: local Ollama)
 ```
 
 ## Backend modules
@@ -20,17 +21,24 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
 | `document` | Phase 1 | Store, list, download and delete research PDFs (the document library) |
 | `email` | Phase 2 | Import EML files, parse MIME, normalize and sanitize content, keep originals |
 | `research` | Phase 2 | Link classification, secure report downloads and jobs, research items, message↔document provenance |
+| `knowledge` | Phase 3 | Text extraction, chunking, embeddings, index jobs, hybrid search, RAG assistant with validated citations |
 | `common` | Phase 1 | Error handling (RFC 9457), file store, transaction helpers, CORS, shared web types |
-| `ai`, `portfolio` | planned | LLM/RAG features; holdings and decision journal |
+| `portfolio` | planned | Holdings and decision journal |
 
 Planned modules intentionally have **no placeholder code** yet.
 
 ### Dependency direction
 
 ```
-email ──▶ research ──▶ document ──▶ common
-  └────────────────────────▲
+knowledge ──▶ email ──▶ research ──▶ document ──▶ common
+               └────────────────────────▲
 ```
+
+- `knowledge` reads sources only through `DocumentService` and `EmailQueryService` (plus the Phase 2
+  `ContentAnalyzer`). Nothing imports `knowledge`: new sources are discovered by the index worker
+  (`trackMissing`), and deletions are handled by `ON DELETE CASCADE` from `document` / `source_messages`.
+- Its SQL read models (`trackMissing`, status counts, the sender join in search) read the `document` and
+  `source_messages` tables directly; it never writes them.
 
 - `email` hands parsed content to `research` (`ResearchIngestionService`, using research's own input
   types) and stores PDF attachments through `document`.
@@ -64,6 +72,7 @@ Rules:
 | Research PDFs | file in the document store | `document` row (checksum, size, metadata) |
 | Emails | original `.eml` in the email store | `source_messages` content columns, `source_links`, `research_items`, attachment metadata |
 | Provenance | `message_documents` (which email produced which document, and how) | — |
+| Knowledge base | — | `knowledge_sources`, `knowledge_chunks` (text, vectors); rebuildable with `POST /knowledge/reindex {"scope":"ALL"}` |
 
 See [ADR 0003](adr/0003-preserve-original-eml.md).
 
@@ -104,6 +113,19 @@ DownloadJobWorker (poll, SKIP LOCKED claim, lease) ─▶ DownloadJobProcessor �
 Failures are classified as `BLOCKED` / `PERMANENT` (fail now) or `TRANSIENT` (retry with backoff).
 See [ADR 0004](adr/0004-report-download-policy.md).
 
+## Knowledge base and assistant (Phase 3)
+
+```
+KnowledgeIndexWorker ─ trackMissing (auto-index/backfill) ─ claim (SKIP LOCKED + token)
+  └─ KnowledgeIndexProcessor: SourceLoader → PdfTextExtractor | EmailTextExtractor → TextChunker
+       → EmbeddingService (reuse by hash, batches, dims check) → KnowledgeChunkStore.replace (one tx)
+POST /research/ask ─ HybridSearchService (pgvector + full text + tickers, RRF, per-brokerage)
+  └─ PromptBuilder (S1..Sn, untrusted <source>) → ChatModel → CitationValidator → citations from chunks
+```
+
+Details, evaluation and limitations: [phase-3-implementation.md](phase-3-implementation.md),
+[ADR 0005](adr/0005-spring-ai-models-own-vector-schema.md), [ADR 0006](adr/0006-citation-integrity.md).
+
 ## Database
 
 Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`. Tests use the same
@@ -119,6 +141,8 @@ checks that a Phase 1 database upgrades without data loss.
 | `message_documents` | Many-to-many provenance between messages and documents (`ATTACHMENT`, `LINKED_REPORT`) |
 | `research_items` | Deterministic research items: type, ticker, original text, `structured_data` jsonb, method, location |
 | `download_jobs` | Queue: status, attempts, next attempt, claim token, lease, last error |
+| `knowledge_sources` | One per document/email: index status and reason, index version, content hash, job lease fields (V3) |
+| `knowledge_chunks` | Chunk text, page range or section, metadata snapshot, tickers, `vector` embedding, model, `tsvector` (V3) |
 
 ## Frontend
 
@@ -127,7 +151,7 @@ src/app/
   core/       API services (documents, emails), models, error mapping
   shared/     alert, empty state, pager, status badge, pipes
   layout/     application shell
-  features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail)
+  features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
 ```
 
 - Standalone components with signals; no state library and no UI component library.
@@ -141,8 +165,11 @@ src/app/
   environment, strict download policy.
 - `application-dev.yml`: activated by `./mvnw spring-boot:run`. Imports `infrastructure/.env`, allows
   the Angular origin, enables plain-text debug logs.
-- `src/test/resources/application.properties`: test storage under the temp dir; the download worker is
-  off unless a test enables it.
+- `src/test/resources/application.properties`: test storage under the temp dir; download and knowledge
+  workers are off unless a test enables them; AI providers are `none` (tests use fake models via
+  `fake-ai.properties` + `FakeAiConfiguration`).
+- AI: `spring.ai.model.embedding/chat` = `INVESTARY_AI_*_PROVIDER` (default `none`: the app starts, AI
+  endpoints answer `503 AI_NOT_CONFIGURED`); settings under `investary.knowledge.*`.
 
 ## Security posture
 
@@ -155,3 +182,7 @@ src/app/
 - **External URLs** are untrusted: https only, allowlisted domains, per-hop redirect checks, DNS-level
   SSRF and rebinding protection, size and time limits, and content validation. Downloads only happen
   when the user asks for them.
+- **Source text sent to an LLM** is untrusted: instructions live only in the system message, sources are
+  delimited and neutralised, and citations/figures are validated against stored chunks. Logs contain ids
+  and counts, never document text, prompts or API keys. With a remote provider, retrieved excerpts leave
+  the machine; the default (Ollama) keeps them local.

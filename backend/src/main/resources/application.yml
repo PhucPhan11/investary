@@ -21,6 +21,29 @@ spring:
     web:
       pageable:
         max-page-size: 100
+  # AI models (Phase 3). "none" disables a model; the application still starts and reports the missing capability.
+  ai:
+    model:
+      embedding: ${INVESTARY_AI_EMBEDDING_PROVIDER:none}
+      chat: ${INVESTARY_AI_CHAT_PROVIDER:none}
+    retry:
+      # Indexing jobs retry with their own backoff; keep provider-level retries short.
+      max-attempts: 2
+    ollama:
+      base-url: ${INVESTARY_OLLAMA_BASE_URL:http://localhost:11434}
+      timeout: ${INVESTARY_AI_TIMEOUT:120s}
+      init:
+        pull-model-strategy: never
+      embedding:
+        model: ${INVESTARY_EMBEDDING_MODEL:bge-m3}
+        options:
+          model: ${INVESTARY_EMBEDDING_MODEL:bge-m3}
+      chat:
+        model: ${INVESTARY_CHAT_MODEL:qwen3:8b}
+        options:
+          model: ${INVESTARY_CHAT_MODEL:qwen3:8b}
+          temperature: 0.1
+          num-ctx: 16384
 
 server:
   tomcat:
@@ -71,6 +94,44 @@ investary:
       concurrency: 2
       poll-interval: 2s
       lease: 5m
+
+  # Research knowledge base and assistant (Phase 3)
+  knowledge:
+    auto-index: ${INVESTARY_KNOWLEDGE_AUTO_INDEX:true}
+    embedding:
+      # Describes the vectors the configured model produces; part of the index version.
+      provider: ${INVESTARY_AI_EMBEDDING_PROVIDER:none}
+      model: ${INVESTARY_EMBEDDING_MODEL:bge-m3}
+      dimensions: ${INVESTARY_EMBEDDING_DIMENSIONS:1024}
+      batch-size: 16
+      max-retries: 2
+      retry-backoff: 2s
+    chunking:
+      target-tokens: 800
+      max-tokens: 900
+      overlap-tokens: 100
+    email:
+      bilingual-mode: PRIMARY_ONLY
+    pdf:
+      min-chars-per-page: 20
+      max-empty-page-ratio: 0.8
+    worker:
+      enabled: ${INVESTARY_KNOWLEDGE_WORKER_ENABLED:true}
+      concurrency: 1
+      poll-interval: 3s
+      reconcile-interval: 30s
+      lease: 15m
+      max-attempts: 3
+      retry-backoff: 1m
+    search:
+      default-results: 8
+      max-results: 20
+      min-similarity: 0.35
+      max-chunks-per-source: 3
+    assistant:
+      model-label: ${INVESTARY_AI_CHAT_PROVIDER:none}:${INVESTARY_CHAT_MODEL:qwen3:8b}
+      max-context-chars: 12000
+      timeout: ${INVESTARY_AI_TIMEOUT:120s}
 
 management:
   endpoints:

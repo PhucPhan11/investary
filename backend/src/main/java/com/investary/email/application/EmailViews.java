@@ -65,4 +65,12 @@ public final class EmailViews {
 
     public record Sender(String address, String name, long messages) {
     }
+
+    /**
+     * Stored, already parsed content of an email for internal consumers such as the knowledge base.
+     * Not returned by the email API.
+     */
+    public record EmailContent(UUID id, String subject, String senderName, String senderAddress, Instant sentAt,
+                               String brokerage, ParsingStatus parsingStatus, String htmlContent, String normalizedText) {
+    }
 }

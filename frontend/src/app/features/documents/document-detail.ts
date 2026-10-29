@@ -9,12 +9,13 @@ import { errorMessage } from '../../core/api/error-message';
 import { ResearchDocument } from '../../core/models/document.model';
 import { EmailSummary } from '../../core/models/email.model';
 import { Alert } from '../../shared/components/alert';
+import { IndexStatus } from '../../shared/components/index-status';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
 import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
 
 @Component({
   selector: 'app-document-detail',
-  imports: [DatePipe, RouterLink, Alert, FileSizePipe, ReportTypeLabelPipe],
+  imports: [DatePipe, RouterLink, Alert, IndexStatus, FileSizePipe, ReportTypeLabelPipe],
   template: `
     <a routerLink="/documents" class="link back-link">← Document library</a>
     @if (error(); as message) {
@@ -38,6 +39,8 @@ import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
           <a class="btn btn--primary btn--small" [href]="downloadUrl(d.id)" download>Download PDF</a>
         </div>
       </section>
+
+      <app-index-status sourceType="DOCUMENT" [sourceId]="d.id" />
 
       <section class="card">
         <div class="card__header">

@@ -45,6 +45,19 @@ Older examples on the web will not compile here. Use:
 - PDF bytes for tests: `com.investary.document.TestPdfs`.
 - `ArchitectureTest` enforces module boundaries. Fix the dependency; never weaken the test.
 
+## Knowledge base / AI (Phase 3)
+
+- Spring AI 2.0: `org.springframework.ai.embedding.EmbeddingModel`, `org.springframework.ai.chat.model.ChatModel`,
+  `org.springframework.ai.retry.NonTransientAiException`. Inject models via `ObjectProvider` (they may be absent).
+- Vectors are written as text with `cast(:param as vector)` (`PgVectors`); no pgvector JDBC type.
+- Container tests use `com.investary.TestDatabase.container()` (pgvector image), **not** `postgres:*`.
+- Knowledge tests: `@Import(FakeAiConfiguration.class)` + `@TestPropertySource(locations = "classpath:fake-ai.properties")`;
+  run indexing synchronously with `KnowledgeTestSupport.indexAll(queue, processor)`; data from
+  `SyntheticResearchCorpus` and `TestResearchPdfs`.
+- Classes with two constructors (a test seam) need `@Autowired` on the injection constructor.
+- Java text blocks strip trailing spaces: never end a text block with `where ` and concatenate a condition
+  (see `docs/failures/0007-text-block-sql-trailing-space.md`).
+
 ## Validation gotcha
 
 `@ModelAttribute` records stop at the first binding failure. An invalid enum means the other field

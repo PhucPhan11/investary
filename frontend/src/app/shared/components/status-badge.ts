@@ -13,6 +13,11 @@ const BADGES: Record<string, { label: string; tone: Tone }> = {
   // Parsing status
   PARSED: { label: 'Parsed', tone: 'success' },
   PARTIAL: { label: 'Partially parsed', tone: 'warning' },
+  // Knowledge base index status
+  NOT_INDEXED: { label: 'Not indexed', tone: 'neutral' },
+  PENDING: { label: 'Queued', tone: 'info' },
+  PROCESSING: { label: 'Indexing…', tone: 'warning' },
+  INDEXED: { label: 'Indexed', tone: 'success' },
   // Link category
   RESEARCH_REPORT: { label: 'Research report', tone: 'info' },
   STOCK_RESEARCH: { label: 'Stock research', tone: 'info' },

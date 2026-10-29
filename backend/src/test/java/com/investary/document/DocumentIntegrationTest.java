@@ -30,6 +30,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import com.investary.TestDatabase;
 import com.investary.document.persistence.DocumentRepository;
 
 /**
@@ -43,7 +44,7 @@ class DocumentIntegrationTest {
 
     @Container
     @ServiceConnection
-    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17.6-alpine");
+    static final PostgreSQLContainer POSTGRES = TestDatabase.container();
 
     static final Path STORAGE_ROOT = createStorageRoot();
 

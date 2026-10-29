@@ -27,5 +27,10 @@ export const routes: Routes = [
     title: 'Email · Investary',
     loadComponent: () => import('./features/emails/email-detail').then((m) => m.EmailDetail),
   },
+  {
+    path: 'assistant',
+    title: 'Research assistant · Investary',
+    loadComponent: () => import('./features/assistant/research-assistant').then((m) => m.ResearchAssistant),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];
