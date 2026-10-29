@@ -17,6 +17,9 @@ export function errorMessage(error: unknown, fallback = 'Something went wrong. P
   if (problem?.code === 'DUPLICATE_DOCUMENT') {
     return 'This document has already been uploaded.';
   }
+  if (problem?.code === 'DUPLICATE_EMAIL') {
+    return 'This email has already been imported.';
+  }
   if (problem?.errors) {
     return Object.entries(problem.errors)
       .map(([field, message]) => `${field}: ${message}`)

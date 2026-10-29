@@ -18,35 +18,23 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import com.investary.document.application.DocumentNotFoundException;
-import com.investary.document.application.DuplicateDocumentException;
-import com.investary.document.application.InvalidDocumentException;
-import com.investary.document.storage.StorageException;
+import com.investary.common.storage.StorageException;
 
 /**
- * Maps all errors to RFC 9457 problem details. Framework errors (missing part, type mismatch,
- * upload too large, ...) are handled by {@link ResponseEntityExceptionHandler}.
+ * Maps all errors to RFC 9457 problem details. Feature modules signal expected failures with
+ * {@link ApiException}; framework errors (missing part, type mismatch, upload too large, ...) are
+ * handled by {@link ResponseEntityExceptionHandler}.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(DocumentNotFoundException.class)
-    ProblemDetail handleNotFound(DocumentNotFoundException ex) {
-        return problem(HttpStatus.NOT_FOUND, "Document not found", ex.getMessage(), ErrorCode.DOCUMENT_NOT_FOUND);
-    }
-
-    @ExceptionHandler(DuplicateDocumentException.class)
-    ProblemDetail handleDuplicate(DuplicateDocumentException ex) {
-        ProblemDetail problem = problem(HttpStatus.CONFLICT, "Duplicate document", ex.getMessage(), ErrorCode.DUPLICATE_DOCUMENT);
-        problem.setProperty("existingDocumentId", ex.getExistingDocumentId());
+    @ExceptionHandler(ApiException.class)
+    ProblemDetail handleApiException(ApiException ex) {
+        ProblemDetail problem = problem(ex.getStatus(), ex.getTitle(), ex.getMessage(), ex.getCode());
+        ex.getProperties().forEach(problem::setProperty);
         return problem;
-    }
-
-    @ExceptionHandler(InvalidDocumentException.class)
-    ProblemDetail handleInvalidDocument(InvalidDocumentException ex) {
-        return problem(HttpStatus.BAD_REQUEST, "Invalid document", ex.getMessage(), ErrorCode.INVALID_DOCUMENT);
     }
 
     @ExceptionHandler(PropertyReferenceException.class)
@@ -57,9 +45,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(StorageException.class)
     ProblemDetail handleStorage(StorageException ex) {
-        log.error("Document storage failure", ex);
+        log.error("Storage failure", ex);
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Storage error",
-                "The document content could not be processed", ErrorCode.STORAGE_ERROR);
+                "The stored content could not be processed", ErrorCode.STORAGE_ERROR);
     }
 
     @ExceptionHandler(Exception.class)

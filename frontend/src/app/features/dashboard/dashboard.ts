@@ -3,6 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { DocumentApiService } from '../../core/api/document-api.service';
+import { EmailApiService } from '../../core/api/email-api.service';
 import { errorMessage } from '../../core/api/error-message';
 import { Page, ResearchDocument } from '../../core/models/document.model';
 import { Alert } from '../../shared/components/alert';
@@ -19,7 +20,9 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 })
 export class Dashboard implements OnInit {
   private readonly api = inject(DocumentApiService);
+  private readonly emails = inject(EmailApiService);
 
+  protected readonly emailCount = signal<number | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly page = signal<Page<ResearchDocument> | null>(null);
@@ -37,7 +40,11 @@ export class Dashboard implements OnInit {
   });
 
   ngOnInit(): void {
-    // The 100 most recent documents are enough for the Phase 1 overview figures.
+    this.emails.list({ size: 1 }).subscribe({
+      next: (page) => this.emailCount.set(page.totalElements),
+      error: () => this.emailCount.set(null),
+    });
+    // The 100 most recent documents are enough for the overview figures.
     this.api.list(0, 100).subscribe({
       next: (page) => {
         this.page.set(page);

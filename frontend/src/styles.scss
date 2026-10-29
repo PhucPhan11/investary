@@ -591,9 +591,262 @@ h3 {
   margin-top: 1rem;
 }
 
+// ---- Phase 2: email research ---------------------------------------------
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--neutral {
+    background: var(--gray-50);
+    color: var(--navy-700);
+    border: 1px solid var(--gray-200);
+  }
+
+  &--info {
+    background: var(--navy-100);
+    color: var(--navy-700);
+  }
+
+  &--success {
+    background: var(--green-50);
+    color: var(--green-700);
+  }
+
+  &--warning {
+    background: #fff4e0;
+    color: #8a5a00;
+  }
+
+  &--danger {
+    background: var(--red-50);
+    color: var(--red-600);
+  }
+
+  &--muted {
+    background: transparent;
+    color: var(--gray-500);
+    border: 1px dashed var(--gray-200);
+  }
+}
+
+.tag--plain {
+  background: transparent;
+  border: 1px solid var(--gray-200);
+  color: var(--gray-500);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.link-plain {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--green-700);
+    text-decoration: underline;
+  }
+}
+
+.back-link {
+  align-self: flex-start;
+  font-size: 0.9rem;
+}
+
+.small {
+  font-size: 0.82rem;
+}
+
+.mono {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  word-break: break-all;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card--link {
+  text-decoration: none;
+  color: inherit;
+
+  &:hover {
+    border-color: var(--green-600);
+  }
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+
+  &__main {
+    flex: 1 1 420px;
+    min-width: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .page-title {
+    font-size: 1.35rem;
+    overflow-wrap: anywhere;
+  }
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem 1.25rem;
+  margin: 0.9rem 0 0.4rem;
+
+  dt {
+    color: var(--gray-500);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  dd {
+    margin: 0.1rem 0 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.link-section {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--gray-500);
+  font-size: 0.78rem;
+}
+
+.link-error {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--red-600);
+  font-size: 0.8rem;
+}
+
+.domain {
+  font-size: 0.85rem;
+  color: var(--navy-500);
+  word-break: break-all;
+}
+
+.toggle-links {
+  margin-top: 0.75rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 0.2rem;
+
+  &__tab {
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    padding: 0.3rem 0.75rem;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    cursor: pointer;
+
+    &--active {
+      background: var(--navy-900);
+      color: #fff;
+    }
+  }
+}
+
+.email-text {
+  margin: 0;
+  max-height: 560px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.email-frame {
+  width: 100%;
+  height: 640px;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+
+  &--recommendation {
+    border-left: 4px solid var(--navy-700);
+    background: var(--navy-100);
+  }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__recommendation {
+    margin: 0.5rem 0 0;
+  }
+
+  &__disclaimer {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    color: var(--gray-500);
+    font-style: italic;
+  }
+
+  &__content {
+    margin: 0.5rem 0 0.25rem;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+  }
+}
+
 // ---- Responsive -----------------------------------------------------------
 
 @media (max-width: 720px) {
+  .email-frame {
+    height: 480px;
+  }
+
   .topbar {
     gap: 1rem;
   }

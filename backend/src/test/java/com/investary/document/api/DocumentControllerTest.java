@@ -41,7 +41,7 @@ import com.investary.document.application.InvalidDocumentException;
 import com.investary.document.application.UploadDocumentCommand;
 import com.investary.document.domain.Document;
 import com.investary.document.domain.ReportType;
-import com.investary.document.storage.StorageException;
+import com.investary.common.storage.StorageException;
 
 @WebMvcTest(DocumentController.class)
 class DocumentControllerTest {

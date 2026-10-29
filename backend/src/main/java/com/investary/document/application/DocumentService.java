@@ -8,26 +8,28 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
+import com.investary.common.storage.StorageException;
+import com.investary.common.tx.AfterCommit;
 import com.investary.document.domain.Document;
 import com.investary.document.persistence.DocumentRepository;
 import com.investary.document.storage.DocumentStorage;
-import com.investary.document.storage.StorageException;
 
 /**
  * Document use cases. Consistency rule: metadata must never point at missing content.
@@ -43,11 +45,13 @@ public class DocumentService {
 
     private final DocumentRepository repository;
     private final DocumentStorage storage;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
-    public DocumentService(DocumentRepository repository, DocumentStorage storage, Clock clock) {
+    public DocumentService(DocumentRepository repository, DocumentStorage storage, ApplicationEventPublisher events, Clock clock) {
         this.repository = repository;
         this.storage = storage;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -104,21 +108,18 @@ public class DocumentService {
         return new DocumentDownload(document, storage.load(document.getStorageKey()));
     }
 
+    @Transactional(readOnly = true)
+    public List<Document> findAll(Collection<UUID> ids) {
+        return repository.findAllById(ids);
+    }
+
     @Transactional
     public void delete(UUID id) {
         Document document = get(id);
+        events.publishEvent(new DocumentDeletedEvent(id));
         repository.delete(document);
         String storageKey = document.getStorageKey();
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    deleteStoredContent(id, storageKey);
-                }
-            });
-        } else {
-            deleteStoredContent(id, storageKey);
-        }
+        AfterCommit.run(() -> deleteStoredContent(id, storageKey));
         log.info("Document deleted documentId={}", id);
     }
 

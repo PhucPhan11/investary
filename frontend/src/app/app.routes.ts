@@ -12,5 +12,20 @@ export const routes: Routes = [
     title: 'Document library · Investary',
     loadComponent: () => import('./features/documents/document-library').then((m) => m.DocumentLibrary),
   },
+  {
+    path: 'documents/:id',
+    title: 'Document · Investary',
+    loadComponent: () => import('./features/documents/document-detail').then((m) => m.DocumentDetail),
+  },
+  {
+    path: 'emails',
+    title: 'Email research · Investary',
+    loadComponent: () => import('./features/emails/email-inbox').then((m) => m.EmailInbox),
+  },
+  {
+    path: 'emails/:id',
+    title: 'Email · Investary',
+    loadComponent: () => import('./features/emails/email-detail').then((m) => m.EmailDetail),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];
