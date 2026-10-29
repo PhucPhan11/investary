@@ -1,0 +1,89 @@
+<section class="page-header">
+  <div>
+    <h1 class="page-title">Document library</h1>
+    <p class="page-subtitle">Brokerage research reports stored in your local Investary library.</p>
+  </div>
+</section>
+
+<app-upload-panel (uploaded)="onUploaded($event)" />
+
+@if (success(); as message) {
+  <app-alert kind="success" [dismissible]="true" (dismissed)="success.set(null)">{{ message }}</app-alert>
+}
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Documents</h2>
+    @if (page(); as p) {
+      <span class="muted">{{ p.totalElements }} total</span>
+    }
+  </div>
+
+  @if (loading() && !page()) {
+    <p class="muted">Loading documents…</p>
+  } @else if (page()?.totalElements === 0) {
+    <app-empty-state title="Your library is empty">Upload your first PDF research report above.</app-empty-state>
+  } @else if (page(); as p) {
+    <div class="table-wrap" [class.table-wrap--loading]="loading()">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">File name</th>
+            <th scope="col">Brokerage</th>
+            <th scope="col">Report type</th>
+            <th scope="col">Uploaded</th>
+            <th scope="col" class="num">Size</th>
+            <th scope="col" class="actions-col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (doc of p.content; track doc.id) {
+            <tr>
+              <td data-label="File name">
+                <span class="filename">{{ doc.originalFilename }}</span>
+                @if (doc.ticker) {
+                  <span class="tag">{{ doc.ticker }}</span>
+                }
+              </td>
+              <td data-label="Brokerage">{{ doc.brokerageCompany || '—' }}</td>
+              <td data-label="Report type">{{ doc.reportType | reportTypeLabel }}</td>
+              <td data-label="Uploaded">{{ doc.uploadedAt | date: 'medium' }}</td>
+              <td data-label="Size" class="num">{{ doc.fileSize | fileSize }}</td>
+              <td class="actions-col">
+                <a class="btn btn--small btn--ghost" [href]="api.downloadUrl(doc.id)" download>Download</a>
+                <button
+                  type="button"
+                  class="btn btn--small btn--danger"
+                  [disabled]="deletingId() === doc.id"
+                  (click)="remove(doc)"
+                >
+                  {{ deletingId() === doc.id ? 'Deleting…' : 'Delete' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (p.totalPages > 1) {
+      <nav class="pager" aria-label="Pagination">
+        <button type="button" class="btn btn--small btn--ghost" [disabled]="p.page === 0 || loading()" (click)="load(p.page - 1)">
+          ← Previous
+        </button>
+        <span class="muted">Page {{ p.page + 1 }} of {{ p.totalPages }}</span>
+        <button
+          type="button"
+          class="btn btn--small btn--ghost"
+          [disabled]="p.page + 1 >= p.totalPages || loading()"
+          (click)="load(p.page + 1)"
+        >
+          Next →
+        </button>
+      </nav>
+    }
+  }
+</section>

@@ -1,0 +1,63 @@
+<section class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Your investment research library at a glance.</p>
+  </div>
+  <a routerLink="/documents" class="btn btn--primary">Upload a report</a>
+</section>
+
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+<section class="stats" aria-label="Library statistics">
+  <article class="stat-card">
+    <span class="stat-card__label">Total documents</span>
+    <span class="stat-card__value" data-testid="total-documents">
+      {{ loading() ? '…' : (page()?.totalElements ?? 0) }}
+    </span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-card__label">Uploaded in the last 7 days</span>
+    <span class="stat-card__value">{{ loading() ? '…' : uploadedThisWeek() }}</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-card__label">Brokerage sources</span>
+    <span class="stat-card__value">{{ loading() ? '…' : brokerageCount() }}</span>
+  </article>
+</section>
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Recently uploaded</h2>
+    <a routerLink="/documents" class="link">View library →</a>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Loading documents…</p>
+  } @else if (recent().length === 0 && !error()) {
+    <app-empty-state title="No research reports yet">
+      Upload a brokerage PDF in the <a routerLink="/documents" class="link">document library</a> to get started.
+    </app-empty-state>
+  } @else {
+    <ul class="recent-list">
+      @for (doc of recent(); track doc.id) {
+        <li class="recent-list__item">
+          <div class="recent-list__main">
+            <span class="recent-list__name">{{ doc.originalFilename }}</span>
+            <span class="recent-list__meta">
+              {{ doc.brokerageCompany || 'Unknown brokerage' }} · {{ doc.reportType | reportTypeLabel }}
+              @if (doc.ticker) {
+                · <span class="tag">{{ doc.ticker }}</span>
+              }
+            </span>
+          </div>
+          <div class="recent-list__side">
+            <span>{{ doc.uploadedAt | date: 'mediumDate' }}</span>
+            <span class="muted">{{ doc.fileSize | fileSize }}</span>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>
