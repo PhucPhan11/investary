@@ -1,25 +1,8 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Backend (dev)" type="MavenRunConfiguration" factoryName="Maven">
     <MavenSettings>
-      <option name="myGeneralSettings">
-        <MavenGeneralSettings>
-          <!-- Use backend/mvnw (Maven 3.9.11 from Maven Central), not a locally installed Maven. -->
-          <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
-          <option name="mavenHome" value="Use Maven wrapper" />
-        </MavenGeneralSettings>
-      </option>
-      <option name="myRunnerSettings">
-        <MavenRunnerSettings>
-          <!-- JDK 21 registered in Project Structure > SDKs under this name. -->
-          <option name="jreName" value="temurin-21" />
-          <option name="skipTests" value="true" />
-          <option name="environmentProperties">
-            <map />
-          </option>
-          <option name="passParentEnv" value="true" />
-          <option name="vmOptions" value="" />
-        </MavenRunnerSettings>
-      </option>
+      <option name="myGeneralSettings" />
+      <option name="myRunnerSettings" />
       <option name="myRunnerParameters">
         <MavenRunnerParameters>
           <option name="cmdOptions" value="" />
@@ -31,9 +14,13 @@
               <option value="spring-boot:run" />
             </list>
           </option>
+          <option name="multimoduleDir" />
           <option name="pomFileName" value="pom.xml" />
           <option name="profilesMap">
             <map />
+          </option>
+          <option name="projectsCmdOptionValues">
+            <list />
           </option>
           <option name="resolveToWorkspace" value="false" />
           <option name="workingDirPath" value="$PROJECT_DIR$/backend" />
