@@ -88,6 +88,36 @@ npm start
 
 The Angular dev server proxies `/api` to `http://localhost:8080` (`frontend/proxy.conf.json`).
 
+### Running from IntelliJ IDEA
+
+Shared run configurations live in `.run/` and appear in the Run/Debug list when you open the repository
+root. They work in IntelliJ IDEA Community, because they use only Maven, Shell Script, Remote JVM
+Debug and Compound configurations.
+
+| Configuration | What it does |
+|---------------|--------------|
+| **Investary (all)** | Starts *Backend (dev)* and *Frontend (npm start)* together |
+| Postgres (docker compose) | `docker compose -f infrastructure/docker-compose.yml up -d --wait` (runs automatically before the backend) |
+| Backend (dev) | `spring-boot:run` with the `dev` profile, through the Maven wrapper |
+| Backend (debug) | Same as above, with the debug agent listening on `localhost:5005` |
+| Attach backend debugger (5005) | Remote JVM Debug; start it after *Backend (debug)* is up |
+| Frontend (npm start) | Angular dev server on http://localhost:4200 |
+| Backend tests (verify) | `mvnw verify` (needs Docker for the Testcontainers tests) |
+| Frontend tests | `npm test -- --watch=false` |
+
+One-time setup:
+1. *File → Project Structure → SDKs → + → Add JDK*: select
+   `C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot` and **name it `temurin-21`**. The Maven
+   configurations look the JDK up by this name. Optionally make it the project SDK as well; the backend
+   is built and tested with JDK 21.
+2. Create `infrastructure/.env` as described in step 1 below.
+3. Run `npm install` in `frontend/` once.
+
+If IntelliJ cannot resolve something, open the configuration and re-select it:
+- the JDK (*Runner → JRE*)
+- the Maven home (*Use Maven wrapper*)
+- for Shell Script configurations, the shell interpreter (PowerShell on Windows)
+
 ### 4. Use it
 
 - **Document library:** upload PDFs with optional brokerage, report type, ticker and publication date.

@@ -1,0 +1,46 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Backend (debug)" type="MavenRunConfiguration" factoryName="Maven">
+    <MavenSettings>
+      <option name="myGeneralSettings">
+        <MavenGeneralSettings>
+          <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+          <option name="mavenHome" value="Use Maven wrapper" />
+        </MavenGeneralSettings>
+      </option>
+      <option name="myRunnerSettings">
+        <MavenRunnerSettings>
+          <option name="jreName" value="temurin-21" />
+          <option name="skipTests" value="true" />
+          <option name="environmentProperties">
+            <map />
+          </option>
+          <option name="passParentEnv" value="true" />
+          <option name="vmOptions" value="" />
+        </MavenRunnerSettings>
+      </option>
+      <option name="myRunnerParameters">
+        <MavenRunnerParameters>
+          <!-- The app runs in a forked JVM; attach with "Attach backend debugger (5005)". -->
+          <option name="cmdOptions" value="-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005" />
+          <option name="profiles">
+            <set />
+          </option>
+          <option name="goals">
+            <list>
+              <option value="spring-boot:run" />
+            </list>
+          </option>
+          <option name="pomFileName" value="pom.xml" />
+          <option name="profilesMap">
+            <map />
+          </option>
+          <option name="resolveToWorkspace" value="false" />
+          <option name="workingDirPath" value="$PROJECT_DIR$/backend" />
+        </MavenRunnerParameters>
+      </option>
+    </MavenSettings>
+    <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Postgres (docker compose)" run_configuration_type="ShConfigurationType" />
+    </method>
+  </configuration>
+</component>
