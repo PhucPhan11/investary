@@ -104,6 +104,7 @@ Debug and Compound configurations.
 | Frontend (npm start) | Angular dev server on http://localhost:4200 |
 | Backend tests (verify) | `mvnw verify` (needs Docker for the Testcontainers tests) |
 | Frontend tests | `npm test -- --watch=false` |
+| Harness check | `node scripts/check-harness.mjs` (see "Working with AI coding agents") |
 
 One-time setup:
 1. *File → Project Structure → SDKs → + → Add JDK*: select
@@ -314,6 +315,23 @@ cd frontend && npm run build
 Import a real `.eml` through the UI. It stays in your local email store and is never committed.
 Downloads only reach allowlisted brokerage domains over HTTPS. To allow another provider, add it to
 `investary.research.brokerages` or set `INVESTARY_DOWNLOAD_EXTRA_DOMAINS`.
+
+## Working with AI coding agents
+
+The repository carries a small agent harness, so a new AI session starts with the project's rules
+instead of rediscovering them:
+
+- **`AGENTS.md`:** tool-neutral operating guide covering module boundaries, exact commands, rules for
+  changes and the "before you finish" checklist. `CLAUDE.md` imports it, and `backend/CLAUDE.md` /
+  `frontend/CLAUDE.md` add stack-specific notes.
+- **`docs/failures/`:** failure memory. Real problems from earlier phases, each with Prevention and Detection.
+- **Checks:**
+  - `ArchitectureTest` (part of `./mvnw verify`) enforces the module dependency direction.
+  - `node scripts/check-harness.mjs` blocks committed real emails/PDFs/`.env`, edits to applied Flyway
+    migrations, stale paths or npm scripts in the agent docs, and incomplete failure notes.
+  - After adding a migration, record it with `node scripts/check-harness.mjs --update-migrations`.
+
+Details: `docs/harness/adoption-report.md`.
 
 ## API
 
