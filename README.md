@@ -6,7 +6,11 @@ Personal, AI-ready investment research assistant.
   **research PDF management** (upload, list, view metadata, download, delete).
 - **Phase 2:** **email research ingestion**. Import brokerage emails (`.eml`), keep the originals,
   extract readable content and links, classify research links, download selected reports securely in
-  the background into the document library, and extract a few research items deterministically. No AI yet.
+  the background into the document library, and extract a few research items deterministically.
+- **Phase 3:** **research knowledge base and assistant**. PDFs and emails are indexed (page-aware text
+  extraction, chunking, embeddings in PostgreSQL + pgvector), searched with hybrid retrieval, and
+  questions are answered in Vietnamese by a configurable LLM (default: local Ollama) with
+  backend-validated citations. See [docs/phase-3-implementation.md](docs/phase-3-implementation.md).
 
 > ⚠️ **Local, single-user only.** There is **no authentication or authorization**. Never expose the
 > backend (port 8080) or the database to a network you do not fully control.
@@ -22,14 +26,15 @@ investary/
 │       ├── document/     PDF library: api, application, domain, persistence, storage
 │       ├── email/        EML import: api, application, domain, persistence, parsing, storage
 │       ├── research/     Links, classification, secure downloads/jobs, research items, provenance
+│       ├── knowledge/    Extraction, chunking, embeddings, index jobs, hybrid search, RAG assistant
 │       └── common/       Errors (RFC 9457), file store, tx helpers, CORS, shared web types
 ├── frontend/         Angular 22 · standalone components · signals · SCSS (no UI library)
-├── infrastructure/   docker-compose.yml (PostgreSQL 17), .env.example
-└── docs/             architecture.md, phase-2-implementation.md, ADRs
+├── infrastructure/   docker-compose.yml (PostgreSQL 17 + pgvector), .env.example
+└── docs/             architecture.md, phase-2/3-implementation.md, ADRs
 ```
 
 - **Modular monolith.** One deployable backend, organised by business capability. Dependencies point one way:
-  `email → research → document → common`. See [docs/architecture.md](docs/architecture.md).
+  `knowledge → email → research → document → common`. See [docs/architecture.md](docs/architecture.md).
 - **Sources of truth.** Original files are authoritative: PDFs in the document store, `.eml` files in
   the email store, both outside the repo. PostgreSQL holds metadata and *derived* data (parsed text,
   links, research items), which can be regenerated from the originals.
@@ -42,6 +47,7 @@ investary/
 | JDK | 21 | `JAVA_HOME` **must** point at a JDK 21. The build fails fast otherwise |
 | Docker + Compose | Docker 29 / Compose v2+ | For PostgreSQL and the Testcontainers tests |
 | Node.js / npm | Node 22.22+, 24.15+ or 26 · npm 11 | Required by Angular 22 |
+| Ollama (optional) | any recent | Only for the research assistant: `ollama pull bge-m3` and `ollama pull qwen3:8b` |
 
 Maven itself is **not** required: use the bundled wrapper (`./mvnw` / `mvnw.cmd`). It downloads
 Maven 3.9.11 from Maven Central, which also avoids a global `settings.xml` that mirrors to an
@@ -150,6 +156,13 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_DOWNLOAD_WORKER_ENABLED` | `true` | Run the background download worker |
 | `INVESTARY_CORS_ALLOWED_ORIGINS` | none (dev: `http://localhost:4200`) | Comma-separated browser origins |
 | `INVESTARY_LOG_FORMAT` | `ecs` (dev: plain text) | Structured console logging format |
+| `INVESTARY_AI_EMBEDDING_PROVIDER` / `INVESTARY_AI_CHAT_PROVIDER` | `none` | `ollama` to enable the knowledge base / assistant |
+| `INVESTARY_OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama endpoint |
+| `INVESTARY_EMBEDDING_MODEL` / `INVESTARY_EMBEDDING_DIMENSIONS` | `bge-m3` / `1024` | Embedding model and its vector size (part of the index version) |
+| `INVESTARY_CHAT_MODEL` | `qwen3:8b` | Chat model for answers |
+| `INVESTARY_AI_TIMEOUT` | `120s` | Provider request / answer timeout |
+| `INVESTARY_KNOWLEDGE_AUTO_INDEX` | `true` | Track new and existing documents/emails for indexing |
+| `INVESTARY_KNOWLEDGE_WORKER_ENABLED` | `true` | Run the background indexing worker |
 
 **Brokerages** are configured under `investary.research.brokerages` (defaults: TCBS `tcbs.com.vn`,
 SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains are used to:
@@ -274,6 +287,47 @@ Nothing is downloaded automatically. A user picks a link, and
   never deleted with an email**, because other emails may reference them.
 - **Deleting a document** removes its associations; links that pointed at it become `READY` again.
 
+## Research assistant (Phase 3)
+
+1. Install [Ollama](https://ollama.com) and pull the models: `ollama pull bge-m3` and `ollama pull qwen3:8b`.
+2. In `infrastructure/.env` set `INVESTARY_AI_EMBEDDING_PROVIDER=ollama` and `INVESTARY_AI_CHAT_PROVIDER=ollama`
+   (see `.env.example`), then restart the backend.
+3. Existing and new PDFs and emails are indexed in the background. Each document and email page shows
+   its index status with **Index now / Retry / Reindex**. Scanned PDFs show "OCR required".
+4. Open **Research assistant**, ask in Vietnamese, optionally filter by brokerage, ticker, source type or
+   dates. Click `S1`, `S2`… to see the cited passage and open the source.
+
+- Without a provider the app works as before; the assistant page explains what is missing and the
+  AI endpoints answer `503 AI_NOT_CONFIGURED`.
+- **Changing the embedding model** (or chunk settings) makes existing chunks *stale*: they are no longer
+  searched until you reindex them (see below). Unchanged text with the same model is never re-embedded.
+- Answers are grounded in your stored documents only; brokerage ratings are third-party opinions, the
+  data may be outdated, and nothing here is investment advice.
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"scope":"STALE"}' http://localhost:8080/api/v1/knowledge/reindex
+```
+
+### Upgrading an existing database to Phase 3
+
+The Compose file now uses `pgvector/pgvector:0.8.7-pg17` (Debian) instead of `postgres:17.6-alpine`. The
+data volume is reused. Because text collation can differ between Alpine and Debian, back up first and
+rebuild indexes once after switching:
+
+```bash
+docker exec investary-postgres pg_dump -U investary -d investary -Fc > investary-backup.dump
+```
+
+```bash
+docker compose -f infrastructure/docker-compose.yml up -d --wait
+```
+
+```bash
+docker exec investary-postgres psql -U investary -d investary -c "REINDEX DATABASE investary;"
+```
+
+Flyway applies `V3` on the next backend start.
+
 ## Database migrations
 
 Migrations are in `backend/src/main/resources/db/migration` as `V<n>__<description>.sql`. Flyway runs
@@ -283,6 +337,7 @@ them on startup. Never edit an applied migration; add a new one.
 |---------|--------|
 | `V1` | `document` (unique storage key and SHA-256, checks, indexes) |
 | `V2` | `source_messages`, `source_attachments`, `source_links`, `message_documents`, `research_items`, `download_jobs` |
+| `V3` | `vector` extension, `knowledge_sources`, `knowledge_chunks` |
 
 V2 is additive: it leaves `document` untouched and only adds foreign keys to it
 (`ON DELETE SET NULL` / `CASCADE` on association rows).
@@ -303,10 +358,11 @@ cd frontend && npm run build
 | Download security | `UrlPolicyTest`, `RestrictedAddressDnsResolverTest` (private ranges, mapped IPv6, DNS rebinding), `ReportDownloaderTest` (WireMock: redirects, blocked hops, loops, 404/410, 503, HTML instead of PDF, size limits, timeouts, localhost blocked) |
 | Persistence | `DownloadJobQueueTest` (concurrent claims, lease recovery, stale tokens, backoff), `FlywayUpgradeTest` (Phase 1 data survives V2), `LocalFileStoreTest` |
 | End-to-end | `EmailIngestionIntegrationTest` (import → links → background download from WireMock → library → provenance across emails → delete rules → retries → PDF attachments → search/filter) |
-| Frontend | API services, error mapping, file-size pipe, app shell, email inbox (search debounce, sender filter), email detail (retry action, download polling) |
+| Knowledge base & RAG | `PdfTextExtractorTest`, `EmailTextExtractorTest`, `TextChunkerTest`, `TickerDetectorTest`, `EmbeddingServiceTest`, `QueryAnalysisTest`, `CitationValidatorTest`, `ResearchAssistantServiceTest`, `KnowledgeControllerTest`, `ResearchControllerTest`, `KnowledgeBaseIntegrationTest`, `KnowledgeEvaluationTest` (writes `backend/target/knowledge-eval-report.md`) |
+| Frontend | API services, error mapping, file-size pipe, app shell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant |
 
 - Tests that need Docker are **skipped** (not failed) without a Docker daemon; check the surefire summary.
-- No test contacts a real website.
+- No test contacts a real website or a real AI provider (fake embedding and scripted chat models).
 - Fixtures are synthetic: `backend/src/test/resources/eml/tcbs-style-newsletter.eml` copies the
   structure of a real TCBS newsletter with invented content.
 
@@ -338,7 +394,8 @@ Details: `docs/harness/adoption-report.md`.
 Errors use RFC 9457 `application/problem+json` with a machine-readable `code`:
 `VALIDATION_FAILED`, `INVALID_DOCUMENT`, `DOCUMENT_NOT_FOUND`, `DUPLICATE_DOCUMENT`, `INVALID_EMAIL`,
 `DUPLICATE_EMAIL`, `EMAIL_NOT_FOUND`, `LINK_NOT_FOUND`, `DOWNLOAD_NOT_ALLOWED`, `PAYLOAD_TOO_LARGE`,
-`STORAGE_ERROR`, `INTERNAL_ERROR`.
+`STORAGE_ERROR`, `INTERNAL_ERROR`, `KNOWLEDGE_JOB_NOT_FOUND`, `AI_NOT_CONFIGURED` (503), `AI_PROVIDER_ERROR` (502),
+`AI_TIMEOUT` (504).
 
 ### Documents
 
@@ -370,6 +427,17 @@ Upload fields: `file` (required), `brokerageCompany` (≤200), `reportType` (`MA
 | `GET` | `/api/v1/emails/{id}/research-items` | extracted items with provenance |
 | `DELETE` | `/api/v1/emails/{id}` | `204` (see retention policy) |
 
+### Knowledge base and research assistant
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` | `/api/v1/knowledge/status` | models, index version, counts, stale/untracked sources |
+| `POST` | `/api/v1/knowledge/index/documents/{id}` · `/index/emails/{id}` | `202` job (index, retry or reindex) · `404` |
+| `GET` | `/api/v1/knowledge/documents/{id}` · `/emails/{id}` · `/jobs/{id}` | index state (`NOT_INDEXED` if untracked) |
+| `POST` | `/api/v1/knowledge/reindex` with `scope` = `ALL`, `FAILED`, `STALE` or `MISSING` | `202 {queued}` |
+| `POST` | `/api/v1/research/search` | hybrid search: `{query, ticker, brokerage, sourceType, from, to, maxResults}` |
+| `POST` | `/api/v1/research/ask` | `{question, …same filters}` → answer, `evidenceStatus`, citations, gaps, warnings |
+
 ### curl examples
 
 ```bash
@@ -387,6 +455,12 @@ curl -X POST http://localhost:8080/api/v1/emails/<id>/links/<linkId>/download
 curl http://localhost:8080/api/v1/emails/<id>/links/<linkId>        # poll status
 curl http://localhost:8080/api/v1/emails/<id>/documents
 curl -X DELETE http://localhost:8080/api/v1/emails/<id>
+
+# Research assistant
+curl http://localhost:8080/api/v1/knowledge/status
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"question":"TCBS đang khuyến nghị gì về cổ phiếu SCS?","brokerage":"TCBS"}' \
+     http://localhost:8080/api/v1/research/ask
 ```
 
 ## Known limitations
@@ -406,12 +480,16 @@ curl -X DELETE http://localhost:8080/api/v1/emails/<id>
 - Orphaned files (failed post-commit deletes, crashes) are not garbage-collected yet.
 - The safe HTML preview drops styling, so complex newsletters look plain; the text view is the
   primary reading view.
+- **Research assistant:** no OCR (scanned PDFs are skipped); tickers are 3-character codes found by a
+  heuristic; the similarity threshold is untuned; answers were only tested with fake models, not with
+  a real LLM; no streaming or conversation memory. Details in
+  [docs/phase-3-implementation.md](docs/phase-3-implementation.md#known-limitations).
 
 ## Next phases
 
-- **Phase 3 — Text extraction & search:** extract PDF text (PDFBox/Tika) in the same job framework;
-  full-text search across emails, items and reports; reprocess emails from stored originals; edit metadata.
-- **Phase 4 — AI summaries:** Spring AI `ai` module; per-report and per-email summaries citing source blocks and pages.
-- **Phase 5 — RAG:** chunking and embeddings in PostgreSQL `pgvector`; cross-document Q&A and broker comparisons.
-- **Phase 6 — Portfolio & decisions:** holdings, watchlist and a decision journal linked to research.
+- **Phase 3 — done:** knowledge base, hybrid search and RAG assistant with validated citations.
+- **Phase 4 — recommended:** live-model evaluation and tuning, OCR, cited summaries and brokerage
+  comparison views, a ticker master list, editable metadata with reindex, HNSW index (see
+  [docs/phase-3-implementation.md](docs/phase-3-implementation.md#recommended-phase-4-scope)).
+- **Phase 5 — Portfolio & decisions:** holdings, watchlist and a decision journal linked to research.
 - Later: authentication, S3-compatible storage behind the storage ports, Gmail/Drive ingestion.

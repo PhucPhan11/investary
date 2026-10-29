@@ -73,6 +73,11 @@ public final class TestEmails {
             return this;
         }
 
+        public Builder sentAt(java.time.Instant value) {
+            this.sentAt = Date.from(value);
+            return this;
+        }
+
         public Builder html(String value) {
             this.html = value;
             return this;

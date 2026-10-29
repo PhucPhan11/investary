@@ -16,6 +16,7 @@ import {
 } from '../../core/models/email.model';
 import { Alert } from '../../shared/components/alert';
 import { EmptyState } from '../../shared/components/empty-state';
+import { IndexStatus } from '../../shared/components/index-status';
 import { StatusBadge } from '../../shared/components/status-badge';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
 import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
@@ -33,7 +34,7 @@ export const ITEM_TYPE_LABELS: Record<ResearchItemType, string> = {
 
 @Component({
   selector: 'app-email-detail',
-  imports: [DatePipe, RouterLink, Alert, EmptyState, StatusBadge, FileSizePipe, ReportTypeLabelPipe],
+  imports: [DatePipe, RouterLink, Alert, EmptyState, IndexStatus, StatusBadge, FileSizePipe, ReportTypeLabelPipe],
   templateUrl: './email-detail.html',
 })
 export class EmailDetail implements OnDestroy {

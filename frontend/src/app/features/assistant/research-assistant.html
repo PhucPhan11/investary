@@ -1,0 +1,198 @@
+<header class="page-header">
+  <div>
+    <h1 class="page-title">Research assistant</h1>
+    <p class="page-subtitle">
+      Ask about your imported reports and emails. Answers cite their sources; brokerage recommendations are
+      third-party opinions, not advice.
+    </p>
+  </div>
+</header>
+
+@if (statusError(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+@if (status(); as s) {
+  @if (!s.chat.available || !s.embedding.available) {
+    <app-alert kind="info">
+      The AI provider is not configured
+      ({{ !s.embedding.available ? 'embeddings' : '' }}{{ !s.embedding.available && !s.chat.available ? ' and ' : '' }}{{ !s.chat.available ? 'chat' : '' }}).
+      Set <code>INVESTARY_AI_EMBEDDING_PROVIDER</code> and <code>INVESTARY_AI_CHAT_PROVIDER</code> as described in the README.
+    </app-alert>
+  }
+  <p class="muted small kb-summary">
+    Knowledge base: {{ s.searchableSources }} searchable source{{ s.searchableSources === 1 ? '' : 's' }}
+    ({{ s.searchableChunks }} passages)
+    @if (s.sources.PENDING + s.sources.PROCESSING > 0) { · {{ s.sources.PENDING + s.sources.PROCESSING }} waiting to be indexed }
+    @if (s.sources.FAILED > 0) { · {{ s.sources.FAILED }} failed }
+    @if (s.sources.SKIPPED > 0) { · {{ s.sources.SKIPPED }} skipped }
+    @if (s.staleSources > 0) { · {{ s.staleSources }} need reindexing }
+    @if (s.untrackedSources > 0) { · {{ s.untrackedSources }} not tracked yet }
+  </p>
+}
+
+<div class="assistant">
+  <section class="assistant__chat">
+    <form class="card assistant__form" (ngSubmit)="ask()">
+      <label class="field">
+        <span class="field__label">Question</span>
+        <textarea
+          class="input assistant__question"
+          name="question"
+          rows="3"
+          maxlength="1000"
+          placeholder="Ví dụ: Những rủi ro chính của SCS theo báo cáo gần nhất là gì?"
+          [(ngModel)]="question"
+          (keydown.control.enter)="ask()"
+        ></textarea>
+      </label>
+
+      <fieldset class="assistant__filters">
+        <legend class="field__label">Filters (optional)</legend>
+        <label class="field">
+          <span class="field__label">Brokerage</span>
+          <input class="input" name="brokerage" list="brokerage-options" [(ngModel)]="filters.brokerage" />
+          <datalist id="brokerage-options">
+            @for (b of brokerages; track b) {
+              <option [value]="b"></option>
+            }
+          </datalist>
+        </label>
+        <label class="field">
+          <span class="field__label">Ticker</span>
+          <input class="input" name="ticker" maxlength="10" [(ngModel)]="filters.ticker" />
+        </label>
+        <label class="field">
+          <span class="field__label">Source</span>
+          <select class="input" name="sourceType" [(ngModel)]="filters.sourceType">
+            <option value="">PDFs and emails</option>
+            <option value="DOCUMENT">PDF reports</option>
+            <option value="EMAIL">Emails</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field__label">From</span>
+          <input class="input" type="date" name="from" [(ngModel)]="filters.from" />
+        </label>
+        <label class="field">
+          <span class="field__label">To</span>
+          <input class="input" type="date" name="to" [(ngModel)]="filters.to" />
+        </label>
+      </fieldset>
+
+      <div class="actions">
+        <button type="submit" class="btn btn--primary" [disabled]="asking() || question.trim().length < 3">
+          {{ asking() ? 'Asking…' : 'Ask' }}
+        </button>
+        <button type="button" class="btn btn--ghost btn--small" (click)="clearFilters()">Clear filters</button>
+        <span class="muted small">Ctrl+Enter to ask · each question is answered independently</span>
+      </div>
+    </form>
+
+    @if (turns().length === 0) {
+      <div class="card">
+        <p class="muted">Try one of these:</p>
+        <ul class="assistant__examples">
+          @for (example of examples; track example) {
+            <li><button type="button" class="link-button" (click)="ask(example)">{{ example }}</button></li>
+          }
+        </ul>
+      </div>
+    }
+
+    <ol class="assistant__turns">
+      @for (turn of turns(); track turn.id) {
+        <li class="turn" [class.turn--selected]="selectedTurn()?.id === turn.id">
+          <div class="turn__question">
+            <strong>{{ turn.question }}</strong>
+            @if (hasFilters(turn.filters)) {
+              <span class="muted small">{{ describeFilters(turn.filters) }}</span>
+            }
+          </div>
+          @switch (turn.state) {
+            @case ('loading') {
+              <p class="muted" role="status">Searching sources and writing an answer…</p>
+            }
+            @case ('error') {
+              <app-alert kind="error">{{ turn.error }}</app-alert>
+            }
+            @case ('done') {
+              @if (turn.answer; as a) {
+                <div class="turn__answer">
+                  <span [class]="'badge badge--' + evidence(a.evidenceStatus).tone">{{ evidence(a.evidenceStatus).label }}</span>
+                  <p class="turn__text">
+                    @for (segment of turn.segments; track $index) {
+                      @if (segment.text !== null) {<span>{{ segment.text }}</span>} @else {
+                        @for (label of segment.labels; track label) {
+                          <button
+                            type="button"
+                            class="cite"
+                            [class.cite--active]="selectedTurn()?.id === turn.id && highlighted() === label"
+                            [attr.aria-label]="'Show source ' + label"
+                            (click)="showSource(turn, label)"
+                          >{{ label }}</button>
+                        }
+                      }
+                    }
+                  </p>
+                  @if (a.coverageGaps.length) {
+                    <p class="turn__note">No indexed evidence from: {{ a.coverageGaps.join(', ') }}.</p>
+                  }
+                  @if (a.warnings.length) {
+                    <ul class="turn__warnings">
+                      @for (warning of a.warnings; track $index) {
+                        <li>{{ warning }}</li>
+                      }
+                    </ul>
+                  }
+                  <p class="turn__disclaimer">
+                    @if (a.newestEvidenceDate) { Newest evidence: {{ a.newestEvidenceDate | date: 'mediumDate' }}. }
+                    {{ a.disclaimer }}
+                  </p>
+                </div>
+              }
+            }
+          }
+        </li>
+      }
+    </ol>
+  </section>
+
+  <aside class="assistant__sources card" aria-label="Sources">
+    <div class="card__header">
+      <h2 class="card__title">Sources</h2>
+      @if (selectedTurn(); as t) {
+        <span class="muted small">{{ t.answer?.citations?.length ?? 0 }} cited</span>
+      }
+    </div>
+    @if (selectedTurn(); as t) {
+      @if (t.answer?.citations?.length) {
+        <ol class="sources">
+          @for (c of t.answer!.citations; track c.label) {
+            <li class="source" [id]="citationAnchor(t.id, c.label)" [class.source--active]="highlighted() === c.label">
+              <div class="source__head">
+                <span class="cite cite--static">{{ c.label }}</span>
+                <span class="tag tag--plain">{{ c.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>
+                @if (c.publisher) {
+                  <span class="tag">{{ c.publisher }}</span>
+                }
+              </div>
+              <a class="source__title link" [routerLink]="sourceLink(c)">{{ c.title }}</a>
+              <p class="source__meta muted small">
+                @if (c.publishedAt) {
+                  {{ c.dateBasis === 'EMAIL_SENT' ? 'Email date' : 'Published' }} {{ c.publishedAt | date: 'mediumDate' }}
+                }
+                @if (c.location) { · {{ c.location }} }
+                @if (c.sourceType === 'EMAIL' && (c.senderName || c.senderAddress)) { · {{ c.senderName || c.senderAddress }} }
+              </p>
+              <blockquote class="source__excerpt">{{ c.excerpt }}</blockquote>
+            </li>
+          }
+        </ol>
+      } @else {
+        <p class="muted small">This answer cites no sources.</p>
+      }
+    } @else {
+      <p class="muted small">Sources supporting an answer appear here.</p>
+    }
+  </aside>
+</div>
