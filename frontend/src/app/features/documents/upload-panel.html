@@ -1,0 +1,75 @@
+<form class="card upload" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="card__header">
+    <h2 class="card__title">Upload research report</h2>
+    <span class="muted">PDF only · max {{ maxUploadBytes | fileSize }}</span>
+  </div>
+
+  <label
+    class="dropzone"
+    [class.dropzone--active]="dragging()"
+    [class.dropzone--selected]="file()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="dragging.set(false)"
+    (drop)="onDrop($event)"
+  >
+    <input
+      #fileInput
+      type="file"
+      accept="application/pdf,.pdf"
+      class="visually-hidden"
+      (change)="onFileSelected($event)"
+    />
+    @if (file(); as selected) {
+      <span class="dropzone__file">{{ selected.name }}</span>
+      <span class="muted">{{ selected.size | fileSize }}</span>
+    } @else {
+      <span class="dropzone__hint"><strong>Choose a PDF</strong> or drag it here</span>
+    }
+  </label>
+
+  <div class="form-grid">
+    <label class="field">
+      <span class="field__label">Brokerage company</span>
+      <input class="input" formControlName="brokerageCompany" placeholder="e.g. SSI Research" maxlength="200" />
+    </label>
+    <label class="field">
+      <span class="field__label">Report type</span>
+      <select class="input" formControlName="reportType">
+        <option value="">Not specified</option>
+        @for (type of reportTypes; track type.value) {
+          <option [value]="type.value">{{ type.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Ticker</span>
+      <input class="input" formControlName="ticker" placeholder="e.g. VNM" maxlength="15" />
+      @if (form.controls.ticker.invalid && form.controls.ticker.touched) {
+        <span class="field__error">Use 1–15 letters, digits, "." or "-".</span>
+      }
+    </label>
+    <label class="field">
+      <span class="field__label">Publication date</span>
+      <input class="input" type="date" formControlName="publishedOn" />
+    </label>
+  </div>
+
+  @if (error(); as message) {
+    <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+  }
+
+  @if (progress() !== null) {
+    <div class="progress" role="progressbar" [attr.aria-valuenow]="progress()" aria-valuemin="0" aria-valuemax="100">
+      <div class="progress__bar" [style.width.%]="progress()"></div>
+    </div>
+  }
+
+  <div class="actions">
+    @if (file()) {
+      <button type="button" class="btn btn--ghost" (click)="clearFile()" [disabled]="progress() !== null">Clear</button>
+    }
+    <button type="submit" class="btn btn--primary" [disabled]="!file() || progress() !== null">
+      {{ progress() !== null ? 'Uploading… ' + progress() + '%' : 'Upload' }}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,20 @@
+# Local development profile (activated automatically by `./mvnw spring-boot:run`).
+# Reads POSTGRES_* from infrastructure/.env so the database password is defined in exactly one place.
+spring:
+  config:
+    import: optional:file:../infrastructure/.env[.properties]
+  datasource:
+    url: ${INVESTARY_DB_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:investary}}
+    username: ${INVESTARY_DB_USERNAME:${POSTGRES_USER:investary}}
+    password: ${INVESTARY_DB_PASSWORD:${POSTGRES_PASSWORD}}
+
+investary:
+  cors:
+    allowed-origins: ${INVESTARY_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+
+logging:
+  structured:
+    format:
+      console: ${INVESTARY_LOG_FORMAT:}
+  level:
+    com.investary: DEBUG

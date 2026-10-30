@@ -1,0 +1,27 @@
+# --- Secrets / local env ---
+.env
+*.env.local
+!.env.example
+
+# --- Uploaded financial documents (never commit) ---
+storage/
+*.pdf
+
+# --- Backend ---
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# --- Frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+
+# --- IDE / OS ---
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.log
