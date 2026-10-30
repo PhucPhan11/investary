@@ -102,7 +102,8 @@ Debug and Compound configurations.
 
 | Configuration | What it does |
 |---------------|--------------|
-| **Investary (all)** | Starts *Backend (dev)* and *Frontend (npm start)* together |
+| **Investary (all) - dev up** | Starts *Backend (dev)* (and Postgres before it) and *Frontend (npm start)* together |
+| **Investary (all) - dev down** | `infrastructure/stop-dev.ps1`: stops the backend (java on 8080), the frontend (node on 4200) and Postgres (`docker compose stop`; data is kept) |
 | Postgres (docker compose) | `infrastructure/start-postgres.ps1` → `docker compose -f infrastructure/docker-compose.yml up -d --wait` (runs automatically before the backend) |
 | Backend (dev) | `spring-boot:run` with the `dev` profile, through the Maven wrapper |
 | Backend (debug) | Same as above, with the debug agent listening on `localhost:5005` |
