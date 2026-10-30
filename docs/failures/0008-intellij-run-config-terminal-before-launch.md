@@ -1,8 +1,8 @@
-# "Investary (all)" run configuration starts nothing
+# "Investary (all) - dev up" run configuration starts nothing
 
 ## Summary
 
-Running the compound IntelliJ configuration `Investary (all)` did nothing: no backend, no frontend,
+Running the compound IntelliJ configuration `Investary (all)` (now `Investary (all) - dev up`) did nothing: no backend, no frontend,
 no visible error.
 
 ## Root Cause
