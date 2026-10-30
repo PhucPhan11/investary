@@ -11,6 +11,11 @@ Personal, AI-ready investment research assistant.
   extraction, chunking, embeddings in PostgreSQL + pgvector), searched with hybrid retrieval, and
   questions are answered in Vietnamese by a configurable LLM (default: local Ollama) with
   backend-validated citations. See [docs/phase-3-implementation.md](docs/phase-3-implementation.md).
+- **Phase 4:** **portfolio-aware investment intelligence**. An investor profile and goals, portfolios
+  built from transactions (weighted-average cost, manual price observations, honest valuation status),
+  research matched to holdings, saved impact assessments that go stale when holdings or evidence change,
+  and a portfolio-aware assistant mode. The AI only reads portfolio data. See
+  [docs/phase-4-implementation.md](docs/phase-4-implementation.md).
 
 > ⚠️ **Local, single-user only.** There is **no authentication or authorization**. Never expose the
 > backend (port 8080) or the database to a network you do not fully control.
@@ -27,14 +32,18 @@ investary/
 │       ├── email/        EML import: api, application, domain, persistence, parsing, storage
 │       ├── research/     Links, classification, secure downloads/jobs, research items, provenance
 │       ├── knowledge/    Extraction, chunking, embeddings, index jobs, hybrid search, RAG assistant
+│       ├── investor/     Investor profile and goals
+│       ├── portfolio/    Instruments, prices, portfolios, transactions, holdings/valuation/allocation
+│       ├── intelligence/ Research matching, impact assessments, portfolio-aware assistant (read-only)
 │       └── common/       Errors (RFC 9457), file store, tx helpers, CORS, shared web types
 ├── frontend/         Angular 22 · standalone components · signals · SCSS (no UI library)
 ├── infrastructure/   docker-compose.yml (PostgreSQL 17 + pgvector), .env.example
-└── docs/             architecture.md, phase-2/3-implementation.md, ADRs
+└── docs/             architecture.md, phase-2/3/4-implementation.md, ADRs
 ```
 
 - **Modular monolith.** One deployable backend, organised by business capability. Dependencies point one way:
-  `knowledge → email → research → document → common`. See [docs/architecture.md](docs/architecture.md).
+  `knowledge → email → research → document → common`; `investor` and `portfolio` depend only on `common`,
+  and `intelligence` sits on top of `knowledge`, `portfolio` and `investor`. See [docs/architecture.md](docs/architecture.md).
 - **Sources of truth.** Original files are authoritative: PDFs in the document store, `.eml` files in
   the email store, both outside the repo. PostgreSQL holds metadata and *derived* data (parsed text,
   links, research items), which can be regenerated from the originals.
@@ -165,6 +174,9 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_AI_TIMEOUT` | `120s` | Provider request / answer timeout |
 | `INVESTARY_KNOWLEDGE_AUTO_INDEX` | `true` | Track new and existing documents/emails for indexing |
 | `INVESTARY_KNOWLEDGE_WORKER_ENABLED` | `true` | Run the background indexing worker |
+| `INVESTARY_PRICE_STALE_AFTER_DAYS` | `7` | A manual price older than this marks the holding's valuation stale |
+| `INVESTARY_RESEARCH_FRESH_DAYS` | `90` | Matched research older than this (by publication date) is flagged outdated |
+| `INVESTARY_CONCENTRATION_THRESHOLD_PCT` | `30` | Cost-basis weight above which the analysis reports a concentration (reference only) |
 
 **Brokerages** are configured under `investary.research.brokerages` (defaults: TCBS `tcbs.com.vn`,
 SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains are used to:
@@ -310,6 +322,27 @@ Nothing is downloaded automatically. A user picks a link, and
 curl -X POST -H "Content-Type: application/json" -d '{"scope":"STALE"}' http://localhost:8080/api/v1/knowledge/reindex
 ```
 
+## Portfolios and portfolio intelligence (Phase 4)
+
+1. **Profile** (optional): risk tolerance, horizon, preferred instrument types, restrictions, goals.
+2. **Portfolios → New portfolio**, then add transactions. Use **Opening position** for holdings bought
+   before you started tracking (quantity and cost per unit). Create instruments inline; add other names
+   (e.g. "Vinamilk") so research mentioning the company by name is matched.
+3. **Add price** on a holding to record a price or NAV you read somewhere, with its source and date.
+   Without prices only cost-basis figures are shown; market value and unrealized P&L appear only when
+   every holding is priced, and prices older than 7 days are flagged.
+4. **Research insights** on the portfolio page: *Find relevant research* (direct research, passing
+   mentions, market context) and *Run impact assessment* (deterministic; with an AI model also a
+   validated, cited interpretation). Saved assessments show **Stale** after holdings or evidence change.
+5. **Research assistant → Portfolio-aware:** choose the portfolio; the answer separates portfolio data,
+   cited research and the assistant's remarks.
+
+- Transactions are replayed in date order on every change; an edit or delete that would make a sell
+  exceed the holding on its date is rejected and nothing changes.
+- Weighted-average cost includes fees and taxes. Corporate actions (splits, bonus shares, dividends)
+  are not modelled: enter adjustments manually. One currency per portfolio, no FX.
+- Nothing here is investment advice or a trading signal; the AI cannot change your data.
+
 ### Upgrading an existing database to Phase 3
 
 The Compose file now uses `pgvector/pgvector:0.8.7-pg17` (Debian) instead of `postgres:17.6-alpine`. The
@@ -340,6 +373,8 @@ them on startup. Never edit an applied migration; add a new one.
 | `V1` | `document` (unique storage key and SHA-256, checks, indexes) |
 | `V2` | `source_messages`, `source_attachments`, `source_links`, `message_documents`, `research_items`, `download_jobs` |
 | `V3` | `vector` extension, `knowledge_sources`, `knowledge_chunks` |
+| `V4` | `investor_profile`, `investor_goals`, `instruments`, `portfolios`, `portfolio_transactions`, `instrument_prices` |
+| `V5` | `impact_assessments`, `impact_assessment_items` |
 
 V2 is additive: it leaves `document` untouched and only adds foreign keys to it
 (`ON DELETE SET NULL` / `CASCADE` on association rows).
@@ -397,7 +432,9 @@ Errors use RFC 9457 `application/problem+json` with a machine-readable `code`:
 `VALIDATION_FAILED`, `INVALID_DOCUMENT`, `DOCUMENT_NOT_FOUND`, `DUPLICATE_DOCUMENT`, `INVALID_EMAIL`,
 `DUPLICATE_EMAIL`, `EMAIL_NOT_FOUND`, `LINK_NOT_FOUND`, `DOWNLOAD_NOT_ALLOWED`, `PAYLOAD_TOO_LARGE`,
 `STORAGE_ERROR`, `INTERNAL_ERROR`, `KNOWLEDGE_JOB_NOT_FOUND`, `AI_NOT_CONFIGURED` (503), `AI_PROVIDER_ERROR` (502),
-`AI_TIMEOUT` (504).
+`AI_TIMEOUT` (504), `GOAL_NOT_FOUND`, `INSTRUMENT_NOT_FOUND`, `DUPLICATE_INSTRUMENT` (409), `INSTRUMENT_IN_USE` (409),
+`PRICE_NOT_FOUND`, `DUPLICATE_PRICE` (409), `PORTFOLIO_NOT_FOUND`, `DUPLICATE_PORTFOLIO` (409), `TRANSACTION_NOT_FOUND`,
+`INSUFFICIENT_HOLDINGS` (422), `CURRENCY_MISMATCH` (422), `PORTFOLIO_REQUIRED` (422), `ASSESSMENT_NOT_FOUND`.
 
 ### Documents
 
@@ -440,6 +477,23 @@ Upload fields: `file` (required), `brokerageCompany` (≤200), `reportType` (`MA
 | `POST` | `/api/v1/research/search` | hybrid search: `{query, ticker, brokerage, sourceType, from, to, maxResults}` |
 | `POST` | `/api/v1/research/ask` | `{question, …same filters}` → answer, `evidenceStatus`, citations, gaps, warnings |
 
+### Investor, portfolios and intelligence (Phase 4)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET`/`PUT` | `/api/v1/investor/profile` | self-declared profile (`configured: false` until saved) |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/investor/goals[/{id}]` | goals |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/instruments[/{id}]` | instruments (`?q=` search) |
+| `GET`/`POST`/`DELETE` | `/api/v1/instruments/{id}/prices[/{priceId}]` | manual price observations `{price, asOf, source, note}` |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/portfolios[/{id}]` | portfolios |
+| `GET` | `/api/v1/portfolios/{id}/summary` · `/holdings` · `/allocation` | computed from transactions and prices |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/portfolios/{id}/transactions[/{transactionId}]` | `BUY`/`SELL`/`OPENING_POSITION`, revalidated by full replay |
+| `POST` | `/api/v1/intelligence/portfolios/{id}/analyze` | deterministic analysis and research coverage |
+| `POST` | `/api/v1/intelligence/portfolios/{id}/relevant-research` | `{brokerage, from, to}` → matched evidence |
+| `POST`/`GET` | `/api/v1/intelligence/portfolios/{id}/impact-assessments` | create / list (with stale flags) |
+| `GET`/`DELETE` | `/api/v1/intelligence/impact-assessments/{id}` | saved assessment |
+| `POST` | `/api/v1/intelligence/ask` | `{question, portfolioId}` → facts, cited answer, warnings |
+
 ### curl examples
 
 ```bash
@@ -463,6 +517,16 @@ curl http://localhost:8080/api/v1/knowledge/status
 curl -X POST -H "Content-Type: application/json" \
      -d '{"question":"TCBS đang khuyến nghị gì về cổ phiếu SCS?","brokerage":"TCBS"}' \
      http://localhost:8080/api/v1/research/ask
+
+# Portfolios (Phase 4)
+curl -X POST -H "Content-Type: application/json" -d '{"name":"Dài hạn"}' http://localhost:8080/api/v1/portfolios
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"symbol":"FPT","name":"FPT","instrumentType":"STOCK","exchange":"HOSE"}' http://localhost:8080/api/v1/instruments
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"instrumentId":"<instrumentId>","type":"OPENING_POSITION","tradeDate":"2026-01-02","quantity":100,"price":95000}' \
+     http://localhost:8080/api/v1/portfolios/<id>/transactions
+curl http://localhost:8080/api/v1/portfolios/<id>/summary
+curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-assessments
 ```
 
 ## Known limitations
@@ -486,12 +550,15 @@ curl -X POST -H "Content-Type: application/json" \
   heuristic; the similarity threshold is untuned; answers were only tested with fake models, not with
   a real LLM; no streaming or conversation memory. Details in
   [docs/phase-3-implementation.md](docs/phase-3-implementation.md#known-limitations).
+- **Portfolios:** no corporate actions, cash, FX, lots or tax reports; prices are manual; instruments have
+  no master data; AI interpretations are constrained and cited but only tested with a scripted model.
+  Details in [docs/phase-4-implementation.md](docs/phase-4-implementation.md#known-limitations).
 
 ## Next phases
 
 - **Phase 3 — done:** knowledge base, hybrid search and RAG assistant with validated citations.
-- **Phase 4 — recommended:** live-model evaluation and tuning, OCR, cited summaries and brokerage
-  comparison views, a ticker master list, editable metadata with reindex, HNSW index (see
-  [docs/phase-3-implementation.md](docs/phase-3-implementation.md#recommended-phase-4-scope)).
-- **Phase 5 — Portfolio & decisions:** holdings, watchlist and a decision journal linked to research.
+- **Phase 4 — done:** investor profile and goals, transaction-based portfolios, research matching,
+  impact assessments and the portfolio-aware assistant.
+- **Phase 5 — recommended:** live-model evaluation and tuning, OCR, an instrument/ticker master list,
+  corporate actions and cash, a watchlist and a decision journal linked to assessments, HNSW index.
 - Later: authentication, S3-compatible storage behind the storage ports, Gmail/Drive ingestion.

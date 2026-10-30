@@ -32,7 +32,13 @@ class ArchitectureTest {
             "document", Set.of(),
             "research", Set.of("document"),
             "email", Set.of("research", "document"),
-            "knowledge", Set.of("email", "research", "document"));
+            "knowledge", Set.of("email", "research", "document"),
+            "investor", Set.of(),
+            "portfolio", Set.of(),
+            "intelligence", Set.of("knowledge", "portfolio", "investor", "research"));
+
+    /** The only investor/portfolio services intelligence may use: read-only queries, so AI output can never change data. */
+    private static final Pattern READ_ONLY_SERVICE = Pattern.compile("^[A-Za-z]*QueryService$");
 
     /** Packages that are internal to their module. */
     private static final Set<String> INTERNAL_LAYERS = Set.of("api", "persistence", "storage");
@@ -87,6 +93,25 @@ class ArchitectureTest {
         assertThat(violations)
                 .as("Use the other module's application services instead of its api/persistence/storage packages.")
                 .isEmpty();
+    }
+
+    @Test
+    void intelligenceUsesOnlyReadOnlyPortfolioAndInvestorServices() throws IOException {
+        Pattern imported = Pattern.compile("^import\\s+com\\.investary\\.(portfolio|investor)\\.application\\.([A-Za-z]+)", Pattern.MULTILINE);
+        List<String> violations = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(MAIN_SOURCES.resolve("intelligence"))) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                Matcher matcher = imported.matcher(Files.readString(file));
+                while (matcher.find()) {
+                    String type = matcher.group(2);
+                    if (type.endsWith("Service") && !READ_ONLY_SERVICE.matcher(type).matches()
+                            || type.endsWith("Command") || type.endsWith("Commands")) {
+                        violations.add(file.getFileName() + " imports " + matcher.group(1) + "." + type);
+                    }
+                }
+            }
+        }
+        assertThat(violations).as("intelligence must only read portfolio/investor data (use *QueryService)").isEmpty();
     }
 
     @Test

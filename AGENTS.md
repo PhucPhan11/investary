@@ -11,6 +11,8 @@ A personal, local, single-user investment research assistant. It has three parts
   linked reports, and deterministic research items.
 - **Phase 3:** a research knowledge base (PDF/email text extraction, chunks, pgvector embeddings,
   hybrid search) and a RAG assistant with backend-validated citations (`docs/phase-3-implementation.md`).
+- **Phase 4:** investor profile and goals, transaction-based portfolios with manual prices, research
+  matching, impact assessments and a portfolio-aware assistant (`docs/phase-4-implementation.md`).
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
@@ -23,6 +25,8 @@ A personal, local, single-user investment research assistant. It has three parts
 
 ```
 knowledge ──▶ email ──▶ research ──▶ document ──▶ common
+intelligence ──▶ knowledge, portfolio, investor, research (Keywords only)
+portfolio ──▶ common          investor ──▶ common
 ```
 
 | Module | Owns |
@@ -31,11 +35,16 @@ knowledge ──▶ email ──▶ research ──▶ document ──▶ common
 | `com.investary.email` | EML import, parsing, sanitizing, original files |
 | `com.investary.research` | Links, classification, downloads/jobs, research items, `message_documents` provenance |
 | `com.investary.knowledge` | Extraction, chunking, embeddings, `knowledge_sources` jobs, hybrid search, RAG assistant, citations |
+| `com.investary.investor` | Investor profile and goals |
+| `com.investary.portfolio` | Instruments, prices, portfolios, transactions; holdings/valuation/allocation computed on read |
+| `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant |
 | `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS |
 
 - `common` imports no feature module. `document` imports neither `email` nor `research`. `research`
   never imports `email`.
 - Cross-module calls go to `application` services, never to another module's `persistence`, `storage` or `api`.
+- `intelligence` may only use `*QueryService` classes from `portfolio` and `investor`: AI output must never
+  change portfolio, transaction or profile data.
 - `document` reacts to nothing; it publishes `DocumentDeletedEvent`, which `research` listens to.
 - Inside a module, use the layers `api / application / domain / persistence / storage` (`email` also has `parsing`).
 
@@ -95,6 +104,13 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
     different models or dimensions.
   - Tests must not call a real AI provider: use `FakeAiConfiguration` + `classpath:fake-ai.properties`.
   - Never present a brokerage rating as Investary's recommendation.
+- **Portfolios:**
+  - Holdings are computed from transactions by `HoldingCalculator` (weighted-average cost, BigDecimal
+    `DECIMAL128`, chronological replay). Never store derived holdings; round only for display (`Money`).
+  - Every transaction change must replay the full history under the portfolio lock and reject oversells.
+  - Never show or compute market value or unrealized P&L without a real price observation; label
+    cost-basis and market-value allocation separately.
+  - Never present a portfolio-intelligence category as a trading signal or recommendation.
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**
@@ -124,3 +140,4 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - Claude browser pane blocks iframes → `docs/failures/0006-embedded-browser-iframe.md`
 - Java text-block SQL losing trailing spaces → `docs/failures/0007-text-block-sql-trailing-space.md`
 - IntelliJ run configs: terminal before-launch task, lost Maven wrapper → `docs/failures/0008-intellij-run-config-terminal-before-launch.md`
+- Business dates vs JVM time zone → `docs/failures/0009-market-date-vs-jvm-zone.md`

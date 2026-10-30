@@ -23,16 +23,23 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
 | `research` | Phase 2 | Link classification, secure report downloads and jobs, research items, message↔document provenance |
 | `knowledge` | Phase 3 | Text extraction, chunking, embeddings, index jobs, hybrid search, RAG assistant with validated citations |
 | `common` | Phase 1 | Error handling (RFC 9457), file store, transaction helpers, CORS, shared web types |
-| `portfolio` | planned | Holdings and decision journal |
-
-Planned modules intentionally have **no placeholder code** yet.
+| `investor` | Phase 4 | Investor profile and goals (self-declared) |
+| `portfolio` | Phase 4 | Instruments, manual prices, portfolios, transactions; holdings, valuation and allocation computed on read |
+| `intelligence` | Phase 4 | Research matching, deterministic analysis, impact assessments, portfolio-aware assistant (read-only) |
 
 ### Dependency direction
 
 ```
-knowledge ──▶ email ──▶ research ──▶ document ──▶ common
-               └────────────────────────▲
+intelligence ──▶ knowledge ──▶ email ──▶ research ──▶ document ──▶ common
+     │                          └────────────────────────▲              ▲
+     ├──────▶ portfolio ─────────────────────────────────────────────────┤
+     └──────▶ investor ──────────────────────────────────────────────────┘
 ```
+
+- `investor` and `portfolio` depend only on `common`. `intelligence` uses `knowledge` search/assistant
+  building blocks, `research.link.Keywords` for text folding, and only the **read** services
+  `PortfolioQueryService` / `InvestorQueryService` (enforced by `ArchitectureTest`), so AI output can
+  never change portfolio data. Nothing imports `intelligence`.
 
 - `knowledge` reads sources only through `DocumentService` and `EmailQueryService` (plus the Phase 2
   `ContentAnalyzer`). Nothing imports `knowledge`: new sources are discovered by the index worker
@@ -126,6 +133,22 @@ POST /research/ask ─ HybridSearchService (pgvector + full text + tickers, RRF,
 Details, evaluation and limitations: [phase-3-implementation.md](phase-3-implementation.md),
 [ADR 0005](adr/0005-spring-ai-models-own-vector-schema.md), [ADR 0006](adr/0006-citation-integrity.md).
 
+## Portfolios and portfolio intelligence (Phase 4)
+
+```
+transactions ─ HoldingCalculator (weighted average, chronological replay, DECIMAL128)
+             └ PortfolioValuator + latest manual prices → holdings, summary, allocation (cost vs market value)
+POST /intelligence/portfolios/{id}/impact-assessments
+  └ PortfolioQueryService.snapshot → ResearchMatcher (HybridSearchService per holding: ticker, name, market)
+       → deterministic categories → [ChatGateway + PromptBuilder.sources, if configured]
+       → category allowed? CitationValidator against that holding's sources → save snapshot + evidence hashes
+GET  …/impact-assessments/{id} → stale if holdings hash or cited chunk hashes changed
+POST /intelligence/ask (portfolioId required) → profile, goals, facts + Phase 3 retrieval → validated answer
+```
+
+Details: [phase-4-implementation.md](phase-4-implementation.md),
+[ADR 0007](adr/0007-portfolio-accounting.md), [ADR 0008](adr/0008-read-only-portfolio-intelligence.md).
+
 ## Database
 
 Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`. Tests use the same
@@ -143,6 +166,10 @@ checks that a Phase 1 database upgrades without data loss.
 | `download_jobs` | Queue: status, attempts, next attempt, claim token, lease, last error |
 | `knowledge_sources` | One per document/email: index status and reason, index version, content hash, job lease fields (V3) |
 | `knowledge_chunks` | Chunk text, page range or section, metadata snapshot, tickers, `vector` embedding, model, `tsvector` (V3) |
+| `investor_profile`, `investor_goals` | Self-declared profile (single row) and goals (V4) |
+| `instruments`, `instrument_prices` | User-entered instruments with aliases; manual price observations with source and date (V4) |
+| `portfolios`, `portfolio_transactions` | Portfolios and their BUY/SELL/OPENING_POSITION transactions; the source of truth for holdings (V4) |
+| `impact_assessments`, `impact_assessment_items` | Saved assessments: portfolio snapshot and hash, categories, validated summaries, evidence copies with chunk hashes (V5) |
 
 ## Frontend
 
@@ -152,6 +179,7 @@ src/app/
   shared/     alert, empty state, pager, status badge, pipes
   layout/     application shell
   features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
+              · portfolio (list, dashboard, transaction form, research insights) · investor (profile, goals)
 ```
 
 - Standalone components with signals; no state library and no UI component library.

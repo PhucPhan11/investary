@@ -133,6 +133,18 @@ investary:
       max-context-chars: 12000
       timeout: ${INVESTARY_AI_TIMEOUT:120s}
 
+  # Portfolios (Phase 4). Prices are manual observations; older ones mark the valuation STALE.
+  portfolio:
+    price-stale-after-days: ${INVESTARY_PRICE_STALE_AFTER_DAYS:7}
+
+  # Portfolio-aware intelligence (Phase 4). Reuses the knowledge-base search and assistant settings.
+  intelligence:
+    research-fresh-days: ${INVESTARY_RESEARCH_FRESH_DAYS:90}
+    concentration-threshold-pct: ${INVESTARY_CONCENTRATION_THRESHOLD_PCT:30}
+    max-holdings-in-context: 10
+    evidence-per-holding: 3
+    market-context-results: 3
+
 management:
   endpoints:
     web:

@@ -9,18 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.ObjectProvider;
@@ -28,8 +20,6 @@ import org.springframework.stereotype.Service;
 
 import com.investary.knowledge.KnowledgeProperties;
 import com.investary.knowledge.AiExceptions.AiNotConfiguredException;
-import com.investary.knowledge.AiExceptions.AiProviderException;
-import com.investary.knowledge.AiExceptions.AiTimeoutException;
 import com.investary.knowledge.assistant.PromptBuilder.LabeledHit;
 import com.investary.knowledge.search.HybridSearchService;
 import com.investary.knowledge.search.SearchFilters;
@@ -54,28 +44,24 @@ import tools.jackson.databind.json.JsonMapper;
 public class ResearchAssistantService implements DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(ResearchAssistantService.class);
-    private static final Pattern THINKING = Pattern.compile("(?s)<think>.*?</think>");
-    private static final int EXCERPT_LENGTH = 400;
 
     private final HybridSearchService search;
-    private final ObjectProvider<ChatModel> chatModels;
+    private final ChatGateway chat;
     private final KnowledgeProperties.Assistant settings;
     private final JsonMapper json;
     private final Clock clock;
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     public ResearchAssistantService(HybridSearchService search, ObjectProvider<ChatModel> chatModels,
                                     KnowledgeProperties properties, JsonMapper json, Clock clock) {
         this.search = search;
-        this.chatModels = chatModels;
         this.settings = properties.assistant();
+        this.chat = new ChatGateway(chatModels, settings.timeout());
         this.json = json;
         this.clock = clock;
     }
 
     public AssistantAnswer ask(String question, SearchFilters filters, Integer maxSources) {
-        ChatModel model = chatModels.getIfAvailable();
-        if (model == null) {
+        if (!chat.isAvailable()) {
             throw new AiNotConfiguredException("chat");
         }
         SearchResult result = search.search(question, filters, maxSources);
@@ -84,13 +70,13 @@ public class ResearchAssistantService implements DisposableBean {
             return insufficient(result);
         }
 
-        List<LabeledHit> labeled = label(hits);
+        List<LabeledHit> labeled = Citations.label(hits, settings.maxContextChars());
         Map<String, LabeledHit> byLabel = new LinkedHashMap<>();
         labeled.forEach(hit -> byLabel.put(hit.label(), hit));
         LocalDate today = LocalDate.now(clock.withZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
         Prompt prompt = PromptBuilder.build(question, labeled, today);
 
-        String raw = call(model, prompt);
+        String raw = chat.call(prompt);
         ModelAnswer parsed = parse(raw);
         Map<String, String> sourceText = new LinkedHashMap<>();
         byLabel.forEach((label, hit) -> sourceText.put(label, hit.hit().content()));
@@ -103,7 +89,7 @@ public class ResearchAssistantService implements DisposableBean {
             warnings.add("Không tìm thấy tài liệu đã lập chỉ mục từ: " + String.join(", ", result.coverageGaps()) + ".");
         }
         List<Citation> citations = validated.citedLabels().stream()
-                .map(label -> citation(byLabel.get(label), result.analysis().terms()))
+                .map(label -> Citations.of(byLabel.get(label), result.analysis().terms()))
                 .toList();
         EvidenceStatus status = validated.status();
         if (status == EvidenceStatus.SUPPORTED && !result.coverageGaps().isEmpty()) {
@@ -126,69 +112,27 @@ public class ResearchAssistantService implements DisposableBean {
                 result.coverageGaps(), List.of(), null, null, AssistantAnswer.DISCLAIMER);
     }
 
-    /** Labels hits S1..Sn in rank order until the context budget is used (always at least one). */
-    private List<LabeledHit> label(List<SearchHit> hits) {
-        List<LabeledHit> labeled = new ArrayList<>();
-        int used = 0;
-        for (SearchHit hit : hits) {
-            int size = hit.content().length();
-            if (!labeled.isEmpty() && used + size > settings.maxContextChars()) {
-                continue;
-            }
-            used += size;
-            labeled.add(new LabeledHit("S" + (labeled.size() + 1), hit));
-        }
-        return labeled;
-    }
-
-    private String call(ChatModel model, Prompt prompt) {
-        Future<ChatResponse> future = executor.submit(() -> model.call(prompt));
-        try {
-            ChatResponse response = future.get(settings.timeout().toMillis(), TimeUnit.MILLISECONDS);
-            String text = response == null || response.getResult() == null ? null : response.getResult().getOutput().getText();
-            if (text == null || text.isBlank()) {
-                throw new AiProviderException("The AI model returned an empty answer");
-            }
-            return text;
-        } catch (TimeoutException e) {
-            future.cancel(true);
-            throw new AiTimeoutException(settings.timeout().toSeconds());
-        } catch (ExecutionException e) {
-            log.warn("Chat model call failed: {}", e.getCause().toString());
-            throw new AiProviderException("The AI model request failed (" + e.getCause().getClass().getSimpleName()
-                    + "). Check that the provider is running and the model is available.");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new AiProviderException("Interrupted while waiting for the AI model");
-        }
-    }
-
     /**
      * Reads the model's JSON. Models sometimes wrap it in code fences or emit reasoning first; when no
      * JSON can be read the raw text is kept but treated as unverified.
      */
     ModelAnswer parse(String raw) {
-        String text = THINKING.matcher(raw).replaceAll("").strip();
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
-        if (start >= 0 && end > start) {
-            try {
-                JsonNode node = json.readTree(text.substring(start, end + 1));
-                String answer = node.path("answer").asString("");
-                if (!answer.isBlank()) {
-                    List<String> unsupported = new ArrayList<>();
-                    node.path("unsupportedPoints").forEach(point -> {
-                        String value = point.asString("").strip();
-                        if (!value.isEmpty()) {
-                            unsupported.add(value);
-                        }
-                    });
-                    return new ModelAnswer(answer.strip(), status(node.path("evidenceStatus").asString("")), unsupported, List.of());
-                }
-            } catch (RuntimeException e) {
-                log.debug("Model output was not valid JSON: {}", e.toString());
+        java.util.Optional<JsonNode> parsed = ChatGateway.jsonObject(raw, json);
+        if (parsed.isPresent()) {
+            JsonNode node = parsed.get();
+            String answer = node.path("answer").asString("");
+            if (!answer.isBlank()) {
+                List<String> unsupported = new ArrayList<>();
+                node.path("unsupportedPoints").forEach(point -> {
+                    String value = point.asString("").strip();
+                    if (!value.isEmpty()) {
+                        unsupported.add(value);
+                    }
+                });
+                return new ModelAnswer(answer.strip(), status(node.path("evidenceStatus").asString("")), unsupported, List.of());
             }
         }
+        String text = ChatGateway.withoutThinking(raw);
         return new ModelAnswer(text.replaceAll("(?s)^```\\w*|```$", "").strip(), EvidenceStatus.PARTIAL, List.of(),
                 List.of("Câu trả lời của mô hình không đúng định dạng yêu cầu; hãy kiểm tra kỹ với nguồn."));
     }
@@ -201,13 +145,6 @@ public class ResearchAssistantService implements DisposableBean {
         }
     }
 
-    private static Citation citation(LabeledHit labeled, List<String> terms) {
-        SearchHit hit = labeled.hit();
-        return new Citation(labeled.label(), hit.sourceType(), hit.sourceId(), hit.title(), hit.brokerage(), hit.publishedOn(),
-                hit.dateBasis(), hit.pageStart(), hit.pageEnd(), hit.section(), PromptBuilder.location(hit), hit.senderName(),
-                hit.senderAddress(), hit.sentAt(), hit.chunkId(), Excerpts.best(hit.content(), terms, EXCERPT_LENGTH));
-    }
-
     private static List<UUID> sourceIds(List<SearchHit> hits) {
         return hits.stream().map(SearchHit::sourceId).distinct().toList();
     }
@@ -218,7 +155,7 @@ public class ResearchAssistantService implements DisposableBean {
 
     @Override
     public void destroy() {
-        executor.shutdownNow();
+        chat.close();
     }
 
     record ModelAnswer(String answer, EvidenceStatus status, List<String> unsupportedPoints, List<String> warnings) {

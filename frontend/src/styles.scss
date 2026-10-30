@@ -1030,6 +1030,200 @@ h3 {
   margin-top: 0.5rem;
 }
 
+// ---- Portfolios, profile and portfolio intelligence (Phase 4) ---------------
+
+.field--wide {
+  grid-column: 1 / -1;
+}
+
+.subform {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  border: 1px dashed var(--gray-200);
+  border-radius: var(--radius);
+  background: var(--gray-50);
+}
+
+.form-problems {
+  margin: 0.75rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--red-600);
+  font-size: 0.85rem;
+}
+
+.checkbox-row {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 0.4rem 1rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.pnl--gain {
+  color: var(--green-700);
+}
+
+.pnl--loss {
+  color: var(--red-600);
+}
+
+.limitations {
+  margin: 0.25rem 0 1.25rem;
+  color: var(--gray-500);
+}
+
+.allocation {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 1.25rem 0;
+
+  &__sub {
+    margin: 1rem 0 0.4rem;
+    color: var(--navy-700);
+  }
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 6rem 1fr 4rem;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+
+  &__label {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__value {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.bar {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--gray-200);
+  overflow: hidden;
+
+  &__fill {
+    display: block;
+    height: 100%;
+    background: var(--green-600);
+
+    &--alt {
+      background: var(--navy-500);
+    }
+  }
+}
+
+.insights {
+  margin-top: 1.25rem;
+
+  &__heading {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 0.95rem;
+    color: var(--navy-900);
+  }
+
+  &__subheading {
+    margin: 0.75rem 0 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.insight {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--gray-200);
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+}
+
+.evidence {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.88rem;
+
+  li {
+    margin: 0.2rem 0;
+  }
+
+  .tag {
+    margin-right: 0.35rem;
+  }
+}
+
+.evidence-link {
+  display: block;
+}
+
+.assessment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.3rem 0;
+  }
+}
+
+.assessment {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-200);
+
+  &__overall {
+    margin: 0.6rem 0;
+  }
+}
+
+.mode-switch {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
+    color: var(--navy-700);
+  }
+}
+
+.portfolio-facts {
+  margin: 0.5rem 0;
+
+  &__text {
+    margin: 0.4rem 0 0;
+    padding: 0.6rem;
+    background: var(--gray-50);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+  }
+}
+
 // ---- Responsive -----------------------------------------------------------
 
 @media (max-width: 720px) {

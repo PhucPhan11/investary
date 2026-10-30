@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { errorMessage } from '../../core/api/error-message';
+import { IntelligenceApiService } from '../../core/api/intelligence-api.service';
 import { KnowledgeApiService, ResearchApiService } from '../../core/api/knowledge-api.service';
+import { PortfolioApiService } from '../../core/api/portfolio-api.service';
 import {
   AssistantAnswer,
   Citation,
@@ -13,12 +15,24 @@ import {
   KnowledgeStatus,
   ResearchFilters,
 } from '../../core/models/knowledge.model';
+import { Portfolio } from '../../core/models/portfolio.model';
 import { Alert } from '../../shared/components/alert';
 import { AnswerSegment, answerSegments } from './answer-segments';
+
+export type AssistantMode = 'GENERAL' | 'PORTFOLIO';
+
+/** Portfolio context of a portfolio-aware answer, shown apart from the cited AI text. */
+interface PortfolioContext {
+  name: string;
+  facts: string;
+  focusSymbols: string[];
+}
 
 interface Turn {
   id: number;
   question: string;
+  mode: AssistantMode;
+  portfolio?: PortfolioContext;
   filters: ResearchFilters;
   state: 'loading' | 'done' | 'error';
   answer?: AssistantAnswer;
@@ -44,6 +58,8 @@ const EVIDENCE: Record<EvidenceStatus, { label: string; tone: string }> = {
 export class ResearchAssistant {
   private readonly research = inject(ResearchApiService);
   private readonly knowledge = inject(KnowledgeApiService);
+  private readonly intelligence = inject(IntelligenceApiService);
+  private readonly portfolioApi = inject(PortfolioApiService);
 
   protected readonly brokerages = ['TCBS', 'SSI', 'VNDIRECT', 'VCBS'];
   protected readonly examples = [
@@ -61,6 +77,11 @@ export class ResearchAssistant {
     to: '',
   };
 
+  protected readonly mode = signal<AssistantMode>('GENERAL');
+  protected readonly portfolios = signal<Portfolio[]>([]);
+  protected readonly portfoliosError = signal<string | null>(null);
+  /** Pre-selected only when exactly one portfolio exists; with several the user must choose. */
+  protected portfolioId = '';
   protected readonly status = signal<KnowledgeStatus | null>(null);
   protected readonly statusError = signal<string | null>(null);
   protected readonly turns = signal<Turn[]>([]);
@@ -79,11 +100,29 @@ export class ResearchAssistant {
       next: (status) => this.status.set(status),
       error: (err) => this.statusError.set(errorMessage(err, 'Could not load the knowledge base status.')),
     });
+    this.portfolioApi.list().subscribe({
+      next: (list) => {
+        this.portfolios.set(list);
+        if (list.length === 1) {
+          this.portfolioId = list[0].id;
+        }
+      },
+      error: (err) => this.portfoliosError.set(errorMessage(err, 'Could not load portfolios.')),
+    });
+  }
+
+  /** True when a question can be sent in the current mode (portfolio mode needs an explicit portfolio). */
+  protected canAsk(text = this.question): boolean {
+    return text.trim().length >= 3 && !this.asking() && (this.mode() === 'GENERAL' || !!this.portfolioId);
   }
 
   protected ask(text = this.question): void {
     const question = text.trim();
-    if (question.length < 3 || this.asking()) {
+    if (!this.canAsk(question)) {
+      return;
+    }
+    if (this.mode() === 'PORTFOLIO') {
+      this.askPortfolio(question, this.portfolioId);
       return;
     }
     const filters: ResearchFilters = {
@@ -93,12 +132,43 @@ export class ResearchAssistant {
       from: this.filters.from || null,
       to: this.filters.to || null,
     };
-    const turn: Turn = { id: this.nextId++, question, filters, state: 'loading' };
+    const turn: Turn = { id: this.nextId++, question, mode: 'GENERAL', filters, state: 'loading' };
     this.turns.update((turns) => [...turns, turn]);
     this.question = '';
     this.research.ask(question, filters).subscribe({
       next: (answer) => {
         this.update(turn.id, { state: 'done', answer, segments: answerSegments(answer.answer) });
+        this.selectedTurnId.set(turn.id);
+        this.highlighted.set(null);
+      },
+      error: (err) => this.update(turn.id, { state: 'error', error: errorMessage(err, 'The assistant could not answer.') }),
+    });
+  }
+
+  private askPortfolio(question: string, portfolioId: string): void {
+    const name = this.portfolios().find((p) => p.id === portfolioId)?.name ?? '';
+    const turn: Turn = { id: this.nextId++, question, mode: 'PORTFOLIO', filters: {}, state: 'loading' };
+    this.turns.update((turns) => [...turns, turn]);
+    this.question = '';
+    this.intelligence.ask(question, portfolioId).subscribe({
+      next: (answer) => {
+        const asAssistant: AssistantAnswer = {
+          answer: answer.answer,
+          evidenceStatus: answer.evidenceStatus,
+          citations: answer.citations,
+          retrievedSourceIds: answer.retrievedSourceIds,
+          coverageGaps: [],
+          warnings: answer.warnings,
+          newestEvidenceDate: answer.newestEvidenceDate,
+          model: answer.model,
+          disclaimer: answer.disclaimer,
+        };
+        this.update(turn.id, {
+          state: 'done',
+          answer: asAssistant,
+          segments: answerSegments(answer.answer),
+          portfolio: { name: answer.portfolioName || name, facts: answer.portfolioFacts, focusSymbols: answer.focusSymbols },
+        });
         this.selectedTurnId.set(turn.id);
         this.highlighted.set(null);
       },

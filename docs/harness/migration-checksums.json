@@ -1,5 +1,7 @@
 {
   "V1__create_document_table.sql": "f9ce9a88ed0b5ad0669849032ede422ff144500a2f52dcd5599029499e862b0e",
   "V2__email_ingestion.sql": "ad5a71b98a4e77f393462e8141c86f0f6164dc82c104239fa5c4ca16512dc152",
-  "V3__knowledge_base.sql": "009ea883d3d06ad0690843275a47f8ab7d3cc6e4ce92935ed29b4593230df4e2"
+  "V3__knowledge_base.sql": "009ea883d3d06ad0690843275a47f8ab7d3cc6e4ce92935ed29b4593230df4e2",
+  "V4__investor_portfolio.sql": "a86554e74e690b44583a2c0cb55dbc7d05a24d8e6ea133425c8ad6751f197513",
+  "V5__intelligence.sql": "e556e37dfaaa084aa64c853e4c9719f080cff9975711df8a168ab2c9e8141c23"
 }

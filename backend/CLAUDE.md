@@ -58,6 +58,19 @@ Older examples on the web will not compile here. Use:
 - Java text blocks strip trailing spaces: never end a text block with `where ` and concatenate a condition
   (see `docs/failures/0007-text-block-sql-trailing-space.md`).
 
+## Portfolios and intelligence (Phase 4)
+
+- `text[]` columns map as `String[]` with `@JdbcTypeCode(SqlTypes.ARRAY)` and `columnDefinition = "text[]"`
+  (see `portfolio/domain/Instrument.java`).
+- Money: `BigDecimal` with `HoldingCalculator.MC` (`DECIMAL128`); round only in `Money`. Avoid
+  `BigDecimal.divide` without a `MathContext` (non-terminating expansions throw), also in tests.
+- "Today" for trades and prices is the Asia/Ho_Chi_Minh date (`PortfolioQueryService.today()`); do not use
+  `@PastOrPresent` for those dates, it uses the JVM zone.
+- Model calls outside the knowledge assistant go through `knowledge.assistant.ChatGateway`; never call a
+  `ChatModel` inside a database transaction (`ImpactAssessmentService` saves with `TransactionTemplate`).
+- Intelligence tests: `IntelligenceTestData` for unit tests; `IntelligenceIntegrationTest` indexes the
+  synthetic corpus and scripts the model from the prompt's `<holding>` / `<source>` elements.
+
 ## Validation gotcha
 
 `@ModelAttribute` records stop at the first binding failure. An invalid enum means the other field

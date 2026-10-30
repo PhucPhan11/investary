@@ -32,5 +32,20 @@ export const routes: Routes = [
     title: 'Research assistant · Investary',
     loadComponent: () => import('./features/assistant/research-assistant').then((m) => m.ResearchAssistant),
   },
+  {
+    path: 'portfolios',
+    title: 'Portfolios · Investary',
+    loadComponent: () => import('./features/portfolio/portfolio-list').then((m) => m.PortfolioList),
+  },
+  {
+    path: 'portfolios/:id',
+    title: 'Portfolio · Investary',
+    loadComponent: () => import('./features/portfolio/portfolio-dashboard').then((m) => m.PortfolioDashboard),
+  },
+  {
+    path: 'profile',
+    title: 'Investor profile · Investary',
+    loadComponent: () => import('./features/investor/investor-profile').then((m) => m.InvestorProfilePage),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];
