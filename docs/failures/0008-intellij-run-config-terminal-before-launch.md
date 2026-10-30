@@ -22,6 +22,8 @@ Two problems in the shared `.run/` configurations:
 - A Shell Script configuration used as a before-launch task must run as a process
   (`EXECUTE_IN_TERMINAL=false`) and execute a script file with
   `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File` (`infrastructure/start-postgres.ps1`).
+  The interpreter must be the absolute path `C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe`:
+  IntelliJ does not look it up on PATH and reports "Interpreter not found" for a bare `powershell.exe`.
   Inline script text with `powershell.exe` as interpreter is not passed as a command: PowerShell starts
   interactively and the task waits forever.
 - Maven configurations keep `mavenHomeTypeForPersistence=WRAPPER` and use `jreName=#USE_PROJECT_JDK`,
