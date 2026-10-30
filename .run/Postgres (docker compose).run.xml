@@ -1,16 +1,19 @@
 <component name="ProjectRunConfigurationManager">
+  <!-- Runs a script file as a plain process (not in the terminal) so it can be a before-launch task:
+       IntelliJ waits for "docker compose -f infrastructure/docker-compose.yml up -d --wait" to exit
+       before starting the backend. See docs/failures/0008. -->
   <configuration default="false" name="Postgres (docker compose)" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="docker compose -f infrastructure/docker-compose.yml up -d --wait" />
+    <option name="SCRIPT_TEXT" value="" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
-    <option name="SCRIPT_PATH" value="" />
+    <option name="SCRIPT_PATH" value="$PROJECT_DIR$/infrastructure/start-postgres.ps1" />
     <option name="SCRIPT_OPTIONS" value="" />
     <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
     <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
-    <option name="INTERPRETER_PATH" value="" />
-    <option name="INTERPRETER_OPTIONS" value="" />
-    <option name="EXECUTE_IN_TERMINAL" value="true" />
-    <option name="EXECUTE_SCRIPT_FILE" value="false" />
+    <option name="INTERPRETER_PATH" value="powershell.exe" />
+    <option name="INTERPRETER_OPTIONS" value="-NoProfile -NonInteractive -ExecutionPolicy Bypass -File" />
+    <option name="EXECUTE_IN_TERMINAL" value="false" />
+    <option name="EXECUTE_SCRIPT_FILE" value="true" />
     <envs />
     <method v="2" />
   </configuration>

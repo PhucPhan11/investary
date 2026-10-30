@@ -123,3 +123,4 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - Real personal emails → `docs/failures/0005-real-email-data.md`
 - Claude browser pane blocks iframes → `docs/failures/0006-embedded-browser-iframe.md`
 - Java text-block SQL losing trailing spaces → `docs/failures/0007-text-block-sql-trailing-space.md`
+- IntelliJ run configs: terminal before-launch task, lost Maven wrapper → `docs/failures/0008-intellij-run-config-terminal-before-launch.md`

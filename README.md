@@ -103,7 +103,7 @@ Debug and Compound configurations.
 | Configuration | What it does |
 |---------------|--------------|
 | **Investary (all)** | Starts *Backend (dev)* and *Frontend (npm start)* together |
-| Postgres (docker compose) | `docker compose -f infrastructure/docker-compose.yml up -d --wait` (runs automatically before the backend) |
+| Postgres (docker compose) | `infrastructure/start-postgres.ps1` → `docker compose -f infrastructure/docker-compose.yml up -d --wait` (runs automatically before the backend) |
 | Backend (dev) | `spring-boot:run` with the `dev` profile, through the Maven wrapper |
 | Backend (debug) | Same as above, with the debug agent listening on `localhost:5005` |
 | Attach backend debugger (5005) | Remote JVM Debug; start it after *Backend (debug)* is up |
@@ -113,10 +113,8 @@ Debug and Compound configurations.
 | Harness check | `node scripts/check-harness.mjs` (see "Working with AI coding agents") |
 
 One-time setup:
-1. *File → Project Structure → SDKs → + → Add JDK*: select
-   `C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot` and **name it `temurin-21`**. The Maven
-   configurations look the JDK up by this name. Optionally make it the project SDK as well; the backend
-   is built and tested with JDK 21.
+1. *File → Project Structure → Project → SDK*: select a JDK 21 (any vendor/name). The Maven
+   configurations use the project SDK, so they do not depend on what the JDK is called.
 2. Create `infrastructure/.env` as described in step 1 below.
 3. Run `npm install` in `frontend/` once.
 
@@ -124,6 +122,9 @@ If IntelliJ cannot resolve something, open the configuration and re-select it:
 - the JDK (*Runner → JRE*)
 - the Maven home (*Use Maven wrapper*)
 - for Shell Script configurations, the shell interpreter (PowerShell on Windows)
+
+*Postgres (docker compose)* must not run "in terminal": as a before-launch task IntelliJ has to wait for
+its process to exit (`docs/failures/0008-intellij-run-config-terminal-before-launch.md`).
 
 ### 4. Use it
 
