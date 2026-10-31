@@ -173,6 +173,32 @@ investary:
       lock-lease: 10m
       page-size: 100
 
+  # Automated research processing (Phase 5 / Milestone 2): email/document workflow from import to impact
+  # assessment. Sources imported before the feature was installed are only processed on request.
+  workflow:
+    enabled: ${INVESTARY_WORKFLOW_ENABLED:true}
+    max-attempts: ${INVESTARY_WORKFLOW_MAX_ATTEMPTS:3}
+    retry-backoff: ${INVESTARY_WORKFLOW_RETRY_BACKOFF:1m}
+    wait-poll: 15s
+    download-wait-timeout: 2h
+    index-wait-timeout: 6h
+    max-downloads-per-email: ${INVESTARY_WORKFLOW_MAX_DOWNLOADS_PER_EMAIL:5}
+    max-downloads-per-sync-run: ${INVESTARY_WORKFLOW_MAX_DOWNLOADS_PER_SYNC_RUN:20}
+    auto-assess: ${INVESTARY_WORKFLOW_AUTO_ASSESS:true}
+    max-auto-assessments-per-day: ${INVESTARY_WORKFLOW_MAX_AUTO_ASSESSMENTS_PER_DAY:20}
+    assess-market-context: ${INVESTARY_WORKFLOW_ASSESS_MARKET_CONTEXT:false}
+    worker:
+      enabled: ${INVESTARY_WORKFLOW_WORKER_ENABLED:true}
+      concurrency: ${INVESTARY_WORKFLOW_CONCURRENCY:2}
+      poll-interval: 2s
+      lease: 15m
+      reconcile-interval: 1m
+
+  # Process-wide limits on concurrent AI provider calls (assistant, intelligence, indexing, workflows).
+  ai:
+    max-concurrent-chat: ${INVESTARY_AI_MAX_CONCURRENT_CHAT:2}
+    max-concurrent-embedding: ${INVESTARY_AI_MAX_CONCURRENT_EMBEDDING:1}
+
 management:
   endpoints:
     web:

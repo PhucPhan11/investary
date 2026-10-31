@@ -85,3 +85,16 @@ errors are not reported in the same response. This is expected; see `DocumentCon
 - Container tests: `automation/GmailSyncIntegrationTest.java` points `investary.gmail.*-uri` / `api-base-url` at
   WireMock. Static `WireMock.get` and `WireMock.post` clash with MockMvc's; call them as `WireMock.get(...)`.
 - Tests that enable the Gmail scheduler need `@DirtiesContext`; it is off in `src/test/resources/application.properties`.
+
+## Research workflows (Phase 5 / Milestone 2)
+
+- Engine in `automation/application/workflow/`: one `StageHandler` per `JobType`, `WorkflowJobProcessor`
+  applies results (token-guarded), `WorkflowService` starts/re-opens workflows and listens to
+  `EmailImportedEvent`, `DocumentUploadedEvent` and `ReportDownloadedEvent`. State in `WorkflowStore` and
+  `AutomationJobQueue` (JDBC).
+- A handler returns `Done`, `Wait` (waiting on another worker; uses no attempt) or `Failed`; it must not open a
+  transaction or write job state itself.
+- `ChatGateway` and `EmbeddingService` take the shared `AiConcurrencyLimits`; unit tests pass
+  `AiConcurrencyLimits.unlimited()`.
+- Container tests: `automation/ResearchWorkflowIntegrationTest.java` (WireMock brokerage + fake models). Drive all
+  workers with `WorkflowTestSupport.runAll()`; `investary.workflow.wait-poll` and `retry-backoff` are 1ms in tests.

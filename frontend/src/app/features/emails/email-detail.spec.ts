@@ -80,6 +80,21 @@ describe('EmailDetail', () => {
     http.expectOne('/api/v1/emails/e1/research-items').flush([]);
     fixture?.detectChanges();
     http.expectOne('/api/v1/knowledge/emails/e1').flush(indexed);
+    http.expectOne('/api/v1/automation/workflows/e1').flush({
+      id: 'w1',
+      sourceType: 'EMAIL',
+      sourceId: 'e1',
+      status: 'COMPLETED',
+      trigger: 'EMAIL_IMPORT',
+      processingVersion: 'w1',
+      startedAt: null,
+      completedAt: null,
+      updatedAt: null,
+      importedBeforeAutomation: false,
+      stages: [],
+      matches: [],
+      jobs: [],
+    });
   }
 
   async function render() {

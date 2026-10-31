@@ -15,7 +15,9 @@ A personal, local, single-user investment research assistant. It has three parts
   matching, impact assessments and a portfolio-aware assistant (`docs/phase-4-implementation.md`).
 - **Phase 5 / Milestone 1:** read-only Gmail connection (OAuth + PKCE, encrypted refresh token), brokerage
   source rules, and initial/incremental Gmail sync into the Phase 2 import (`docs/phase-5-milestone-1.md`).
-  Later milestones (automatic PDF download, indexing/impact automation, briefs, notifications) are not built.
+- **Phase 5 / Milestone 2:** research workflows: per email/library document, approved automatic PDF downloads,
+  indexing, deterministic portfolio matching and capped impact assessments, on a persistent job queue
+  (`docs/phase-5-milestone-2.md`). Later milestones (briefs, notifications, Automation Center) are not built.
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
@@ -30,7 +32,7 @@ A personal, local, single-user investment research assistant. It has three parts
 knowledge ──▶ email ──▶ research ──▶ document ──▶ common
 intelligence ──▶ knowledge, portfolio, investor, research (Keywords only)
 portfolio ──▶ common          investor ──▶ common
-automation ──▶ email (application: EmailImportService.importRaw)
+automation ──▶ email, research, knowledge, intelligence, document (application services only)
 ```
 
 | Module | Owns |
@@ -42,7 +44,7 @@ automation ──▶ email (application: EmailImportService.importRaw)
 | `com.investary.investor` | Investor profile and goals |
 | `com.investary.portfolio` | Instruments, prices, portfolios, transactions; holdings/valuation/allocation computed on read |
 | `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant |
-| `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter |
+| `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows, stages, matches and the automation job queue |
 | `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS |
 
 - `common` imports no feature module. `document` imports neither `email` nor `research`. `research`
@@ -52,6 +54,8 @@ automation ──▶ email (application: EmailImportService.importRaw)
   change portfolio, transaction or profile data.
 - `document` reacts to nothing; it publishes `DocumentDeletedEvent`, which `research` listens to.
 - Nothing imports `automation`; it imports Gmail mail only through `EmailImportService.importRaw` (no second parser).
+  Other modules notify it only through events published after commit (`EmailImportedEvent`,
+  `DocumentUploadedEvent`, `ReportDownloadedEvent`).
 - Inside a module, use the layers `api / application / domain / persistence / storage` (`email` also has `parsing`;
   `automation` also has `google` for the Google HTTP clients and `security` for token encryption and OAuth state).
 
@@ -125,6 +129,16 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
   - Match source rules on the verified `From` addr-spec, never the display name. The Gmail cursor may only
     advance after the messages before it are recorded in `gmail_messages`.
   - Tests use WireMock for Google (`GmailSyncIntegrationTest`); never a real Google account or token.
+- **Research workflows:**
+  - Orchestrate only: call the owning modules' services, never re-implement parsing, downloading, indexing or
+    matching. Downloads go only through `DownloadRequestService` (and so `UrlPolicy` / `ReportDownloader`).
+  - Download automatically only for Gmail mail whose enabled rule has `auto_pdf_download`; never for uploads.
+  - Stage handlers run with no transaction open; job writes keep the `claim_token` guard. Every job has a unique
+    idempotency key; handlers must be safe to run again.
+  - Match deterministically before any model call; never infer ETF constituents. Automatic assessments are
+    unique per (portfolio, trigger source, snapshot, content) and capped per day.
+  - Error summaries go through `FailureClassifier.safe` (no URLs, stack traces or secrets).
+  - Tests drive workers synchronously with `WorkflowTestSupport.runAll()`; workers are off in tests.
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**

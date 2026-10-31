@@ -17,6 +17,9 @@ import com.investary.knowledge.assistant.PromptBuilder.LabeledHit;
  */
 final class IntelligencePrompts {
 
+    /** Version of the prompts and rules below; recorded on assessments. Bump when they change. */
+    static final String VERSION = "i1";
+
     private static final String COMMON_RULES = """
             Quy tắc bắt buộc:
             1. Trả lời bằng tiếng Việt, trừ khi người dùng hỏi bằng ngôn ngữ khác.

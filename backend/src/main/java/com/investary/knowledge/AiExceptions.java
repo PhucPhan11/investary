@@ -22,8 +22,23 @@ public final class AiExceptions {
     }
 
     public static class AiProviderException extends ApiException {
+        private final boolean retryable;
+
         public AiProviderException(String detail) {
+            this(detail, true);
+        }
+
+        /**
+         * @param retryable false when the provider rejected the request itself (e.g. an unknown model),
+         *                  so repeating it cannot succeed
+         */
+        public AiProviderException(String detail, boolean retryable) {
             super(HttpStatus.BAD_GATEWAY, ErrorCode.AI_PROVIDER_ERROR, "AI provider error", detail);
+            this.retryable = retryable;
+        }
+
+        public boolean isRetryable() {
+            return retryable;
         }
     }
 

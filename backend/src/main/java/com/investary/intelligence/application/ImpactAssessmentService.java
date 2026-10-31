@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -44,6 +45,8 @@ import com.investary.intelligence.domain.ImpactAssessmentItem;
 import com.investary.intelligence.domain.ImpactCategory;
 import com.investary.intelligence.persistence.ImpactAssessmentItemRepository;
 import com.investary.intelligence.persistence.ImpactAssessmentRepository;
+import com.investary.knowledge.AiConcurrencyLimits;
+import com.investary.knowledge.IndexVersion;
 import com.investary.knowledge.KnowledgeProperties;
 import com.investary.knowledge.assistant.ChatGateway;
 import com.investary.knowledge.assistant.CitationValidator;
@@ -97,25 +100,57 @@ public class ImpactAssessmentService implements DisposableBean {
     private final KnowledgeProperties.Assistant settings;
     private final JsonMapper json;
     private final TransactionTemplate transactions;
+    private final IndexVersion indexVersion;
     private final Clock clock;
 
     public ImpactAssessmentService(PortfolioQueryService portfolios, ResearchMatcher matcher, ChunkLookupService chunks,
                                    ImpactAssessmentRepository assessments, ImpactAssessmentItemRepository items,
                                    ObjectProvider<ChatModel> chatModels, KnowledgeProperties knowledge, JsonMapper json,
-                                   TransactionTemplate transactions, Clock clock) {
+                                   TransactionTemplate transactions, IndexVersion indexVersion, AiConcurrencyLimits limits,
+                                   Clock clock) {
         this.portfolios = portfolios;
         this.matcher = matcher;
         this.chunks = chunks;
         this.assessments = assessments;
         this.items = items;
         this.settings = knowledge.assistant();
-        this.chat = new ChatGateway(chatModels, settings.timeout());
+        this.chat = new ChatGateway(chatModels, settings.timeout(), limits);
         this.json = json;
         this.transactions = transactions;
+        this.indexVersion = indexVersion;
         this.clock = clock;
     }
 
     public AssessmentView create(UUID portfolioId, ResearchFilters filters) {
+        return create(portfolioId, filters, null).view();
+    }
+
+    /**
+     * Creates the assessment a research workflow asks for after new research matched this portfolio. It is
+     * idempotent per (portfolio, trigger source, holdings snapshot, source content): an existing one is
+     * returned instead of calling the model again.
+     */
+    public SourceAssessment createForSource(UUID portfolioId, AssessmentTrigger trigger) {
+        String currentHash = snapshotHash(portfolios.snapshot(portfolioId));
+        var existing = assessments.findFirstByPortfolioIdAndTriggerSourceIdAndSnapshotHashAndTriggerContentSha256(portfolioId,
+                trigger.sourceId(), currentHash, trigger.contentSha256());
+        if (existing.isPresent()) {
+            return new SourceAssessment(existing.get().getId(), false, existing.get().getAiStatus(), null, null);
+        }
+        try {
+            Created created = create(portfolioId, ResearchFilters.NONE, trigger);
+            return new SourceAssessment(created.view().id(), true, created.view().aiStatus(), created.inputTokens(),
+                    created.outputTokens());
+        } catch (DataIntegrityViolationException e) {
+            // Lost a race against the same assessment (unique trigger index).
+            return assessments.findFirstByPortfolioIdAndTriggerSourceIdAndSnapshotHashAndTriggerContentSha256(portfolioId,
+                            trigger.sourceId(), currentHash, trigger.contentSha256())
+                    .map(found -> new SourceAssessment(found.getId(), false, found.getAiStatus(), null, null))
+                    .orElseThrow(() -> e);
+        }
+    }
+
+    private Created create(UUID portfolioId, ResearchFilters filters, AssessmentTrigger trigger) {
         PortfolioSnapshot snapshot = portfolios.snapshot(portfolioId);
         PortfolioResearch research = matcher.match(snapshot.instruments(), filters, portfolios.today());
         Map<UUID, HoldingResearch> byInstrument = research.holdings().stream()
@@ -162,6 +197,8 @@ public class ImpactAssessmentService implements DisposableBean {
         String overall = null;
         EvidenceStatus overallStatus = null;
         String model = null;
+        Integer inputTokens = null;
+        Integer outputTokens = null;
         String facts = PortfolioContext.facts(snapshot);
         if (byLabel.isEmpty()) {
             aiStatus = AiStatus.SKIPPED_NO_EVIDENCE;
@@ -173,7 +210,11 @@ public class ImpactAssessmentService implements DisposableBean {
                     .map(plan -> new HoldingPrompt(plan.holding().symbol(), allowed(plan.tier()).stream().map(Enum::name).toList(),
                             plan.labels()))
                     .toList();
-            String raw = chat.call(IntelligencePrompts.assessment(portfolios.today(), facts, holdingPrompts, List.copyOf(byLabel.values())));
+            ChatGateway.Reply reply = chat.callWithUsage(IntelligencePrompts.assessment(portfolios.today(), facts, holdingPrompts,
+                    List.copyOf(byLabel.values())));
+            String raw = reply.text();
+            inputTokens = reply.inputTokens();
+            outputTokens = reply.outputTokens();
             model = settings.modelLabel();
             aiStatus = AiStatus.COMPLETED;
             JsonNode node = ChatGateway.jsonObject(raw, json).orElse(null);
@@ -207,11 +248,12 @@ public class ImpactAssessmentService implements DisposableBean {
         // 3. Persist with the snapshot used.
         AssessmentSnapshot assessmentSnapshot = snapshot(snapshot);
         ImpactAssessment saved = save(portfolioId, assessmentSnapshot, snapshotHash(snapshot), aiStatus, model, overall, overallStatus,
-                warnings, List.copyOf(result.values()));
-        log.info("Impact assessment created id={} portfolio={} holdings={} sources={} ai={} warnings={}", saved.getId(), portfolioId,
-                plans.size(), byLabel.size(), aiStatus, warnings.size());
-        return new AssessmentView(saved.getId(), portfolioId, saved.getCreatedAt(), aiStatus, model, overall, overallStatus,
-                List.copyOf(warnings), false, List.of(), assessmentSnapshot, List.copyOf(result.values()), IntelligenceViews.DISCLAIMER);
+                warnings, List.copyOf(result.values()), trigger);
+        log.info("Impact assessment created id={} portfolio={} holdings={} sources={} ai={} warnings={} trigger={}", saved.getId(),
+                portfolioId, plans.size(), byLabel.size(), aiStatus, warnings.size(), trigger == null ? null : trigger.sourceId());
+        return new Created(new AssessmentView(saved.getId(), portfolioId, saved.getCreatedAt(), aiStatus, model, overall, overallStatus,
+                List.copyOf(warnings), false, List.of(), assessmentSnapshot, List.copyOf(result.values()), IntelligenceViews.DISCLAIMER),
+                inputTokens, outputTokens);
     }
 
     public List<AssessmentListItem> list(UUID portfolioId) {
@@ -332,10 +374,15 @@ public class ImpactAssessmentService implements DisposableBean {
     }
 
     private ImpactAssessment save(UUID portfolioId, AssessmentSnapshot snapshot, String hash, AiStatus aiStatus, String model,
-                                  String overall, EvidenceStatus overallStatus, List<String> warnings, List<AssessmentItemView> views) {
+                                  String overall, EvidenceStatus overallStatus, List<String> warnings, List<AssessmentItemView> views,
+                                  AssessmentTrigger trigger) {
         return transactions.execute(status -> {
-            ImpactAssessment assessment = assessments.saveAndFlush(new ImpactAssessment(portfolioId, clock.instant(),
-                    json.writeValueAsString(snapshot), hash, aiStatus, model, overall, overallStatus, json.writeValueAsString(warnings)));
+            ImpactAssessment entity = new ImpactAssessment(portfolioId, clock.instant(),
+                    json.writeValueAsString(snapshot), hash, aiStatus, model, overall, overallStatus, json.writeValueAsString(warnings));
+            entity.recordProvenance(IntelligencePrompts.VERSION, indexVersion.current(),
+                    trigger == null ? null : trigger.sourceType(), trigger == null ? null : trigger.sourceId(),
+                    trigger == null ? null : trigger.contentSha256(), trigger == null ? null : trigger.jobId());
+            ImpactAssessment assessment = assessments.saveAndFlush(entity);
             int position = 0;
             for (AssessmentItemView view : views) {
                 items.save(new ImpactAssessmentItem(assessment.getId(), position++, view.instrumentId(), view.symbol(),
@@ -413,6 +460,27 @@ public class ImpactAssessmentService implements DisposableBean {
     @Override
     public void destroy() {
         chat.close();
+    }
+
+    /**
+     * The source that made a research workflow ask for an assessment.
+     *
+     * @param sourceType    EMAIL or DOCUMENT
+     * @param contentSha256 fingerprint of the source content (the email and its documents)
+     * @param jobId         automation job, recorded for provenance
+     */
+    public record AssessmentTrigger(String sourceType, UUID sourceId, String contentSha256, UUID jobId) {
+    }
+
+    /**
+     * @param created      false when an identical earlier assessment was returned (no model call)
+     * @param inputTokens  provider-reported prompt tokens, or null
+     * @param outputTokens provider-reported completion tokens, or null
+     */
+    public record SourceAssessment(UUID assessmentId, boolean created, AiStatus aiStatus, Integer inputTokens, Integer outputTokens) {
+    }
+
+    private record Created(AssessmentView view, Integer inputTokens, Integer outputTokens) {
     }
 
     /** Strength of the evidence matched to a holding. */

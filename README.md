@@ -20,6 +20,11 @@ Personal, AI-ready investment research assistant.
   encrypted refresh token, never sent to the browser), define the brokerage senders to import, and let an
   initial lookback plus incremental history sync (scheduled or *Sync now*) feed matching messages into the
   Phase 2 import as their original bytes. See [docs/phase-5-milestone-1.md](docs/phase-5-milestone-1.md).
+- **Phase 5 / Milestone 2:** **automated research processing**. Each new email (Gmail or upload) or library
+  document runs a persistent workflow: approved PDF links are downloaded (Gmail rules with automatic download
+  only), the email and its reports are indexed, research is matched to holdings by ticker, and an impact
+  assessment is created for matched portfolios (daily cap). Failed steps can be retried without re-importing.
+  See [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md).
 
 > ⚠️ **Local, single-user only.** There is **no authentication or authorization**. Never expose the
 > backend (port 8080) or the database to a network you do not fully control.
@@ -39,7 +44,7 @@ investary/
 │       ├── investor/     Investor profile and goals
 │       ├── portfolio/    Instruments, prices, portfolios, transactions, holdings/valuation/allocation
 │       ├── intelligence/ Research matching, impact assessments, portfolio-aware assistant (read-only)
-│       ├── automation/   Gmail OAuth connection, brokerage source rules, Gmail sync (Phase 5 / M1)
+│       ├── automation/   Gmail OAuth, source rules, Gmail sync (Phase 5 / M1); research workflows and jobs (M2)
 │       └── common/       Errors (RFC 9457), file store, tx helpers, CORS, shared web types
 ├── frontend/         Angular 22 · standalone components · signals · SCSS (no UI library)
 ├── infrastructure/   docker-compose.yml (PostgreSQL 17 + pgvector), .env.example
@@ -191,6 +196,13 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_GMAIL_INITIAL_LOOKBACK_DAYS` | `30` | Window of the first sync |
 | `INVESTARY_GMAIL_MAX_MESSAGES_PER_RUN` | `200` | Matching messages handled per run; the rest continue next run |
 | `INVESTARY_GMAIL_RECOVERY_MAX_LOOKBACK_DAYS` | `30` | Upper bound of the re-check window when Gmail's history cursor expired |
+| `INVESTARY_WORKFLOW_ENABLED` | `true` | Start research workflows automatically for new sources (manual processing always works) |
+| `INVESTARY_WORKFLOW_WORKER_ENABLED` / `INVESTARY_WORKFLOW_CONCURRENCY` | `true` / `2` | Background workflow worker and its thread count |
+| `INVESTARY_WORKFLOW_MAX_ATTEMPTS` / `INVESTARY_WORKFLOW_RETRY_BACKOFF` | `3` / `1m` | Attempts per workflow job; first retry delay (doubles, with jitter) |
+| `INVESTARY_WORKFLOW_MAX_DOWNLOADS_PER_EMAIL` / `INVESTARY_WORKFLOW_MAX_DOWNLOADS_PER_SYNC_RUN` | `5` / `20` | Automatic PDF downloads per email and per Gmail sync run |
+| `INVESTARY_WORKFLOW_AUTO_ASSESS` / `INVESTARY_WORKFLOW_MAX_AUTO_ASSESSMENTS_PER_DAY` | `true` / `20` | Automatic impact assessments for matched portfolios, and their daily cap |
+| `INVESTARY_WORKFLOW_ASSESS_MARKET_CONTEXT` | `false` | Also assess market-wide commentary for every portfolio |
+| `INVESTARY_AI_MAX_CONCURRENT_CHAT` / `INVESTARY_AI_MAX_CONCURRENT_EMBEDDING` | `2` / `1` | Process-wide limits on concurrent model calls |
 
 **Brokerages** are configured under `investary.research.brokerages` (defaults: TCBS `tcbs.com.vn`,
 SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains are used to:
@@ -198,7 +210,8 @@ SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains
 - build the **download allowlist** (sub-domains included)
 
 Download timeouts, redirects, retries and worker settings are under `investary.download.*`. Gmail endpoint
-URLs, timeouts, retries, the sync lock lease and the OAuth state TTL are under `investary.gmail.*`.
+URLs, timeouts, retries, the sync lock lease and the OAuth state TTL are under `investary.gmail.*`. Workflow
+wait intervals and timeouts, the lease and the reconcile interval are under `investary.workflow.*`.
 
 Secrets live only in `infrastructure/.env` or environment variables. `.env`, `storage/`, `*.pdf` and
 `*.eml` are git-ignored; only the synthetic test fixtures under `backend/src/test/resources/eml/` are
@@ -338,6 +351,22 @@ Nothing is downloaded automatically. A user picks a link, and
   this computer (`403 LOCAL_ONLY` otherwise). In Google's *Testing* mode the authorization expires after 7
   days; the page then asks you to reconnect.
 
+## Automated research processing (Phase 5 / Milestone 2)
+
+- Every new email (Gmail sync or EML upload) and every PDF uploaded to the library gets a **workflow**:
+  import → links → reports → knowledge base → holdings → impact. Its stages are shown on the email and
+  document pages ("Automated processing"), with *Process now / again* and *Retry failed steps*.
+- **Automatic PDF downloads** happen only for Gmail messages whose source rule has *automatic PDF download*
+  on, only for links classified as research PDFs, through the same secure downloader as the manual button,
+  and at most 5 per email / 20 per sync run. Uploaded EML files keep the manual Download button; a manual
+  download continues the workflow (indexing, matching, assessment).
+- Matching is deterministic (tickers already in the research vs. symbols/aliases of open holdings; ETF
+  constituents are never guessed). Only matched portfolios get an assessment, at most 20 new ones per day,
+  never twice for the same holdings and content.
+- Emails and documents imported **before** this version are processed only when you click *Process now*.
+- Failures are retried with backoff when transient; permanent ones are shown with a short reason and can be
+  retried manually. Details: [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md).
+
 ## Research assistant (Phase 3)
 
 1. Install [Ollama](https://ollama.com) and pull the models: `ollama pull bge-m3` and `ollama pull qwen3:8b`.
@@ -413,6 +442,7 @@ them on startup. Never edit an applied migration; add a new one.
 | `V4` | `investor_profile`, `investor_goals`, `instruments`, `portfolios`, `portfolio_transactions`, `instrument_prices` |
 | `V5` | `impact_assessments`, `impact_assessment_items` |
 | `V6` | `gmail_accounts`, `email_source_rules`, `gmail_sync_runs`, `gmail_messages`; `source_messages.source_type` allows `GMAIL` |
+| `V7` | `workflow_settings`, `research_workflows`, `workflow_stages`, `automation_jobs`, `workflow_portfolio_matches`; trigger and version columns on `impact_assessments` |
 
 V2 is additive: it leaves `document` untouched and only adds foreign keys to it
 (`ON DELETE SET NULL` / `CASCADE` on association rows).
@@ -435,6 +465,7 @@ cd frontend && npm run build
 | End-to-end | `EmailIngestionIntegrationTest` (import → links → background download from WireMock → library → provenance across emails → delete rules → retries → PDF attachments → search/filter) |
 | Knowledge base & RAG | `PdfTextExtractorTest`, `EmailTextExtractorTest`, `TextChunkerTest`, `TickerDetectorTest`, `EmbeddingServiceTest`, `QueryAnalysisTest`, `CitationValidatorTest`, `ResearchAssistantServiceTest`, `KnowledgeControllerTest`, `ResearchControllerTest`, `KnowledgeBaseIntegrationTest`, `KnowledgeEvaluationTest` (writes `backend/target/knowledge-eval-report.md`) |
 | Gmail sync (Phase 5 / M1) | `TokenCipherTest`, `OAuthStateStoreTest` (one-time state, browser binding, PKCE vector), `SenderVerifierTest`, `RuleMatcherTest`, `GmailQueryValidatorTest`, `SourceRuleServiceTest`, `GoogleClientsTest` (WireMock: code exchange, refresh, `invalid_grant`, revoke, pagination, 401 refresh, 429/403/503 retries, history 404), `LocalOnlyRequestFilterTest`, `AutomationControllersTest`, `GmailSyncIntegrationTest` (OAuth callback, initial/incremental/recovery sync, duplicates, limits, rejects, transient failures, interrupted runs, revoked grant, disconnect) |
+| Research workflows (Phase 5 / M2) | `WorkflowPoliciesTest` (status policy, failure classification, safe summaries, backoff), `AutomationJobQueueTest` (concurrent claims, idempotent enqueue, waits, lease recovery, stale tokens), `ResearchWorkflowIntegrationTest` (end to end with WireMock + fake models: auto download, manual download re-open, no links, duplicate import, failed/partial downloads, rule off, shared PDF, failed indexing + retry, failed LLM + retry, daily cap, restart recovery, deletion mid-workflow, pre-M2 sources, reconcile, library upload) |
 | Frontend | API services, error mapping, file-size pipe, app shell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant |
 
 - Tests that need Docker are **skipped** (not failed) without a Docker daemon; check the surefire summary.
@@ -546,6 +577,16 @@ Upload fields: `file` (required), `brokerageCompany` (≤200), `reportType` (`MA
 | `GET` | `/api/v1/integrations/gmail/sync-history[/{runId}]` | page of runs (counters, mode, status, error) / one run |
 | `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/automation/sources[/{id}]` | brokerage source rules `{name, senderAddresses, senderDomains, subjectKeywords, gmailQuery, enabled, autoImport, autoPdfDownload}` |
 
+### Research workflows and jobs (Phase 5 / M2, local-only)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` | `/api/v1/automation/workflows/{sourceId}` | workflow of an email or document: status, stages (status, reason, counts), matches, jobs · `NOT_STARTED` view · `404 WORKFLOW_NOT_FOUND` |
+| `POST` | `/api/v1/automation/workflows/{sourceId}/process` | `202` start, retry failed jobs, or run again |
+| `GET` | `/api/v1/automation/jobs?status=&type=&workflowId=&page=&size=` | page of jobs (status, attempts, safe error summary, reported tokens) |
+| `GET` | `/api/v1/automation/jobs/{id}` | one job · `404 AUTOMATION_JOB_NOT_FOUND` |
+| `POST` | `/api/v1/automation/jobs/{id}/retry` | `202` · `409 JOB_NOT_RETRYABLE` unless the job failed |
+
 ### curl examples
 
 ```bash
@@ -603,12 +644,16 @@ curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-as
   a real LLM; no streaming or conversation memory. Details in
   [docs/phase-3-implementation.md](docs/phase-3-implementation.md#known-limitations).
 - **Gmail sync:** no authentication (loopback-only boundary), one account, polling instead of push, Testing-mode
-  tokens expire weekly, mail matching no rule is not recorded, `autoPdfDownload` is stored but not acted on.
+  tokens expire weekly, mail matching no rule is not recorded.
   Verified only against a mocked Google API, not a live account. Details in
   [docs/phase-5-milestone-1.md](docs/phase-5-milestone-1.md#known-limitations).
 - **Portfolios:** no corporate actions, cash, FX, lots or tax reports; prices are manual; instruments have
   no master data; AI interpretations are constrained and cited but only tested with a scripted model.
   Details in [docs/phase-4-implementation.md](docs/phase-4-implementation.md#known-limitations).
+- **Research workflows:** caps are best-effort under concurrent workers; matching is by ticker/alias only (no
+  watchlist, sector mapping or ETF constituents); sources imported before the upgrade are processed on request
+  only. Verified with mocked services only. Details in
+  [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md#known-limitations).
 
 ## Next phases
 
@@ -616,7 +661,8 @@ curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-as
 - **Phase 4 — done:** investor profile and goals, transaction-based portfolios, research matching,
   impact assessments and the portfolio-aware assistant.
 - **Phase 5 / Milestone 1 — done:** Gmail connection, source rules, initial and incremental Gmail sync.
+- **Phase 5 / Milestone 2 — done:** automated research processing (downloads, indexing, matching, assessments).
 - **Phase 5 — later milestones:** live-model evaluation and tuning, OCR, an instrument/ticker master list,
   corporate actions and cash, a watchlist and a decision journal linked to assessments, HNSW index.
-- Later: authentication, S3-compatible storage behind the storage ports, Drive ingestion, automated
-  processing of synced mail (PDF downloads, indexing, impact runs, briefs, notifications).
+- Later: authentication, S3-compatible storage behind the storage ports, Drive ingestion, daily research
+  briefs, notifications and the full Automation Center.

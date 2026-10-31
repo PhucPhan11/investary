@@ -11,6 +11,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.investary.knowledge.AiConcurrencyLimits;
 import com.investary.knowledge.KnowledgeProperties;
 
 /**
@@ -31,16 +32,23 @@ public class EmbeddingService {
     private final ObjectProvider<EmbeddingModel> models;
     private final KnowledgeProperties.Embedding settings;
     private final Sleeper sleeper;
+    private final AiConcurrencyLimits limits;
 
     @Autowired
-    public EmbeddingService(ObjectProvider<EmbeddingModel> models, KnowledgeProperties properties) {
-        this(models, properties.embedding(), Thread::sleep);
+    public EmbeddingService(ObjectProvider<EmbeddingModel> models, KnowledgeProperties properties, AiConcurrencyLimits limits) {
+        this(models, properties.embedding(), Thread::sleep, limits);
     }
 
     EmbeddingService(ObjectProvider<EmbeddingModel> models, KnowledgeProperties.Embedding settings, Sleeper sleeper) {
+        this(models, settings, sleeper, AiConcurrencyLimits.unlimited());
+    }
+
+    EmbeddingService(ObjectProvider<EmbeddingModel> models, KnowledgeProperties.Embedding settings, Sleeper sleeper,
+                     AiConcurrencyLimits limits) {
         this.models = models;
         this.settings = settings;
         this.sleeper = sleeper;
+        this.limits = limits;
     }
 
     public boolean isAvailable() {
@@ -85,9 +93,9 @@ public class EmbeddingService {
         int attempt = 0;
         while (true) {
             try {
-                return model.embed(batch);
+                return limitedEmbed(model, batch);
             } catch (NonTransientAiException | IllegalArgumentException e) {
-                throw new EmbeddingException("The embedding provider rejected the request: " + e.getMessage(), e);
+                throw new EmbeddingException("The embedding provider rejected the request: " + e.getMessage(), e, true);
             } catch (RuntimeException e) {
                 if (attempt >= settings.maxRetries()) {
                     throw new EmbeddingException("The embedding provider failed: " + e.getMessage(), e);
@@ -102,6 +110,20 @@ public class EmbeddingService {
                     throw new EmbeddingException("Interrupted while waiting to retry", interrupted);
                 }
             }
+        }
+    }
+
+    private List<float[]> limitedEmbed(EmbeddingModel model, List<String> batch) {
+        try {
+            limits.acquireEmbedding();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new EmbeddingException("Interrupted while waiting for an embedding slot", e);
+        }
+        try {
+            return model.embed(batch);
+        } finally {
+            limits.releaseEmbedding();
         }
     }
 

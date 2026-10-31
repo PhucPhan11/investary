@@ -55,6 +55,26 @@ public final class AutomationExceptions {
         }
     }
 
+    public static class WorkflowNotFoundException extends ApiException {
+        public WorkflowNotFoundException(UUID sourceId) {
+            super(HttpStatus.NOT_FOUND, ErrorCode.WORKFLOW_NOT_FOUND, "Workflow not found",
+                    "No email or document " + sourceId + " was found");
+        }
+    }
+
+    public static class AutomationJobNotFoundException extends ApiException {
+        public AutomationJobNotFoundException(UUID id) {
+            super(HttpStatus.NOT_FOUND, ErrorCode.AUTOMATION_JOB_NOT_FOUND, "Job not found", "Automation job " + id + " was not found");
+        }
+    }
+
+    public static class JobNotRetryableException extends ApiException {
+        public JobNotRetryableException(String status) {
+            super(HttpStatus.CONFLICT, ErrorCode.JOB_NOT_RETRYABLE, "Job not retryable",
+                    "Only failed jobs can be retried; this job is " + status);
+        }
+    }
+
     /** Field errors found by the service (normalisation and Gmail query checks). */
     public static class InvalidSourceRuleException extends ApiException {
         private final Map<String, String> errors;

@@ -61,6 +61,26 @@ public class ImpactAssessment {
     @ColumnTransformer(write = "?::jsonb")
     private String warnings;
 
+    /** Set only for assessments created by a research workflow: the source that triggered it. */
+    @Column(name = "trigger_source_type", updatable = false)
+    private String triggerSourceType;
+
+    @Column(name = "trigger_source_id", updatable = false)
+    private UUID triggerSourceId;
+
+    /** Fingerprint of the trigger source's content (email and its documents) at assessment time. */
+    @Column(name = "trigger_content_sha256", updatable = false)
+    private String triggerContentSha256;
+
+    @Column(name = "prompt_version", updatable = false)
+    private String promptVersion;
+
+    @Column(name = "index_version", updatable = false)
+    private String indexVersion;
+
+    @Column(name = "workflow_job_id", updatable = false)
+    private UUID workflowJobId;
+
     protected ImpactAssessment() {
         // for JPA
     }
@@ -76,6 +96,17 @@ public class ImpactAssessment {
         this.overallSummary = overallSummary;
         this.overallEvidenceStatus = overallEvidenceStatus;
         this.warnings = warnings;
+    }
+
+    /** Records versions and, for workflow assessments, the trigger; call before the first save. */
+    public void recordProvenance(String promptVersion, String indexVersion, String triggerSourceType, UUID triggerSourceId,
+                                 String triggerContentSha256, UUID workflowJobId) {
+        this.promptVersion = promptVersion;
+        this.indexVersion = indexVersion;
+        this.triggerSourceType = triggerSourceType;
+        this.triggerSourceId = triggerSourceId;
+        this.triggerContentSha256 = triggerContentSha256;
+        this.workflowJobId = workflowJobId;
     }
 
     public UUID getId() {
@@ -116,5 +147,29 @@ public class ImpactAssessment {
 
     public String getWarnings() {
         return warnings;
+    }
+
+    public String getTriggerSourceType() {
+        return triggerSourceType;
+    }
+
+    public UUID getTriggerSourceId() {
+        return triggerSourceId;
+    }
+
+    public String getTriggerContentSha256() {
+        return triggerContentSha256;
+    }
+
+    public String getPromptVersion() {
+        return promptVersion;
+    }
+
+    public String getIndexVersion() {
+        return indexVersion;
+    }
+
+    public UUID getWorkflowJobId() {
+        return workflowJobId;
     }
 }

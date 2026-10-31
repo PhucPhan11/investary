@@ -1026,7 +1026,8 @@ h3 {
   }
 }
 
-.index-status .actions {
+.index-status .actions,
+.workflow-status .actions {
   margin-top: 0.5rem;
 }
 
@@ -1302,5 +1303,21 @@ h3 {
       justify-content: flex-end;
       padding-top: 0.5rem;
     }
+  }
+}
+
+// Automated processing stages (workflow-status)
+.workflow-stages {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
   }
 }

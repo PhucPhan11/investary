@@ -33,6 +33,14 @@ const BADGES: Record<string, { label: string; tone: Tone }> = {
   RUNNING: { label: 'Running…', tone: 'warning' },
   SUCCEEDED: { label: 'Succeeded', tone: 'success' },
   SYNC_PARTIAL: { label: 'Partial (continues)', tone: 'warning' },
+  // Research workflows and their stages (prefixed: PARTIAL/FAILED mean something else for parsing)
+  WORKFLOW_NOT_STARTED: { label: 'Not started', tone: 'neutral' },
+  WORKFLOW_PENDING: { label: 'Waiting', tone: 'neutral' },
+  WORKFLOW_RUNNING: { label: 'Running…', tone: 'warning' },
+  WORKFLOW_COMPLETED: { label: 'Completed', tone: 'success' },
+  WORKFLOW_PARTIAL: { label: 'Partial', tone: 'warning' },
+  WORKFLOW_FAILED: { label: 'Failed', tone: 'danger' },
+  WORKFLOW_SKIPPED: { label: 'Skipped', tone: 'muted' },
 };
 
 /** Small coloured label for statuses and categories returned by the API. */

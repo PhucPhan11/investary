@@ -68,3 +68,74 @@ export interface SourceRuleRequest {
   autoImport: boolean;
   autoPdfDownload: boolean;
 }
+
+export type WorkflowStatus = 'NOT_STARTED' | 'PENDING' | 'RUNNING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
+export type WorkflowStageName =
+  | 'EMAIL_IMPORTED'
+  | 'EMAIL_PARSED'
+  | 'LINKS_CLASSIFIED'
+  | 'DOCUMENTS_PROCESSED'
+  | 'KNOWLEDGE_INDEXED'
+  | 'PORTFOLIO_MATCHED'
+  | 'IMPACT_ASSESSED'
+  | 'COMPLETED';
+export type AutomationJobType = 'PREPARE' | 'DOWNLOADS' | 'INDEX' | 'MATCH' | 'ASSESS';
+export type AutomationJobStatus = 'PENDING' | 'RUNNING' | 'WAITING' | 'SUCCEEDED' | 'FAILED';
+
+export interface WorkflowStageView {
+  stage: WorkflowStageName;
+  status: Exclude<WorkflowStatus, 'NOT_STARTED'>;
+  reason: string | null;
+  counts: Record<string, number | string>;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+export interface WorkflowMatch {
+  portfolioId: string;
+  instrumentId: string | null;
+  symbol: string | null;
+  matchKind: 'DIRECT' | 'MARKET_CONTEXT';
+  publishedOn: string | null;
+  matchedAt: string;
+}
+
+export interface AutomationJob {
+  id: string;
+  type: AutomationJobType;
+  workflowId: string;
+  sourceType: 'EMAIL' | 'DOCUMENT' | null;
+  sourceId: string | null;
+  portfolioId: string | null;
+  status: AutomationJobStatus;
+  outcome: string | null;
+  attempts: number;
+  maxAttempts: number;
+  nextAttemptAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  errorCode: string | null;
+  errorSummary: string | null;
+  processingVersion: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Automated research processing of one email or library document (Phase 5 / Milestone 2). */
+export interface ResearchWorkflow {
+  id: string | null;
+  sourceType: 'EMAIL' | 'DOCUMENT';
+  sourceId: string;
+  status: WorkflowStatus;
+  trigger: string | null;
+  processingVersion: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  updatedAt: string | null;
+  importedBeforeAutomation: boolean;
+  stages: WorkflowStageView[];
+  matches: WorkflowMatch[];
+  jobs: AutomationJob[];
+}

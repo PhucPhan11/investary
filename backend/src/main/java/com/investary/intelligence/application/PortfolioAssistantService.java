@@ -17,6 +17,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
+import com.investary.knowledge.AiConcurrencyLimits;
 import com.investary.intelligence.application.IntelligenceExceptions.PortfolioRequiredException;
 import com.investary.investor.application.GoalView;
 import com.investary.investor.application.InvestorQueryService;
@@ -68,13 +69,13 @@ public class PortfolioAssistantService implements DisposableBean {
 
     public PortfolioAssistantService(PortfolioQueryService portfolios, InvestorQueryService investor, HybridSearchService search,
                                      IntelligenceProperties properties, KnowledgeProperties knowledge,
-                                     ObjectProvider<ChatModel> chatModels, JsonMapper json) {
+                                     ObjectProvider<ChatModel> chatModels, JsonMapper json, AiConcurrencyLimits limits) {
         this.portfolios = portfolios;
         this.investor = investor;
         this.search = search;
         this.properties = properties;
         this.settings = knowledge.assistant();
-        this.chat = new ChatGateway(chatModels, settings.timeout());
+        this.chat = new ChatGateway(chatModels, settings.timeout(), limits);
         this.json = json;
     }
 

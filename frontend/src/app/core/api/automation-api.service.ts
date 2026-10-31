@@ -2,11 +2,20 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { GmailStatus, SourceRule, SourceRuleRequest, SyncRun } from '../models/automation.model';
+import {
+  AutomationJob,
+  GmailStatus,
+  ResearchWorkflow,
+  SourceRule,
+  SourceRuleRequest,
+  SyncRun,
+} from '../models/automation.model';
 import { Page } from '../models/document.model';
 
 export const GMAIL_API = '/api/v1/integrations/gmail';
 export const SOURCES_API = '/api/v1/automation/sources';
+export const WORKFLOWS_API = '/api/v1/automation/workflows';
+export const JOBS_API = '/api/v1/automation/jobs';
 
 /** Gmail connection and sync. The backend keeps all tokens; the browser only gets Google's consent URL. */
 @Injectable({ providedIn: 'root' })
@@ -58,5 +67,23 @@ export class SourceRuleApiService {
 
   private url(id: string): string {
     return `${SOURCES_API}/${encodeURIComponent(id)}`;
+  }
+}
+
+/** Automated research processing: workflow state per email or document, manual processing and job retry. */
+@Injectable({ providedIn: 'root' })
+export class WorkflowApiService {
+  private readonly http = inject(HttpClient);
+
+  workflow(sourceId: string): Observable<ResearchWorkflow> {
+    return this.http.get<ResearchWorkflow>(`${WORKFLOWS_API}/${encodeURIComponent(sourceId)}`);
+  }
+
+  process(sourceId: string): Observable<ResearchWorkflow> {
+    return this.http.post<ResearchWorkflow>(`${WORKFLOWS_API}/${encodeURIComponent(sourceId)}/process`, null);
+  }
+
+  retry(jobId: string): Observable<AutomationJob> {
+    return this.http.post<AutomationJob>(`${JOBS_API}/${encodeURIComponent(jobId)}/retry`, null);
   }
 }

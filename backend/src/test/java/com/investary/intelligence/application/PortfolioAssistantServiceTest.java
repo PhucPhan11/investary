@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.model.ChatModel;
 
+import com.investary.knowledge.AiConcurrencyLimits;
 import com.investary.intelligence.application.IntelligenceExceptions.PortfolioRequiredException;
 import com.investary.intelligence.application.PortfolioAssistantService.PortfolioAnswer;
 import com.investary.investor.application.GoalView;
@@ -155,6 +156,6 @@ class PortfolioAssistantServiceTest {
 
     private PortfolioAssistantService service(ChatModel model) {
         return new PortfolioAssistantService(portfolios, investor, search, new IntelligenceProperties(90, 30, 2, 3, 3),
-                TestKnowledgeProperties.defaults(), provider(model), JsonMapper.builder().build());
+                TestKnowledgeProperties.defaults(), provider(model), JsonMapper.builder().build(), AiConcurrencyLimits.unlimited());
     }
 }

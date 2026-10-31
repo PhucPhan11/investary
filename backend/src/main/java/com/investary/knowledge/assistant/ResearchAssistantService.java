@@ -18,6 +18,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
+import com.investary.knowledge.AiConcurrencyLimits;
 import com.investary.knowledge.KnowledgeProperties;
 import com.investary.knowledge.AiExceptions.AiNotConfiguredException;
 import com.investary.knowledge.assistant.PromptBuilder.LabeledHit;
@@ -52,10 +53,10 @@ public class ResearchAssistantService implements DisposableBean {
     private final Clock clock;
 
     public ResearchAssistantService(HybridSearchService search, ObjectProvider<ChatModel> chatModels,
-                                    KnowledgeProperties properties, JsonMapper json, Clock clock) {
+                                    KnowledgeProperties properties, JsonMapper json, Clock clock, AiConcurrencyLimits limits) {
         this.search = search;
         this.settings = properties.assistant();
-        this.chat = new ChatGateway(chatModels, settings.timeout());
+        this.chat = new ChatGateway(chatModels, settings.timeout(), limits);
         this.json = json;
         this.clock = clock;
     }

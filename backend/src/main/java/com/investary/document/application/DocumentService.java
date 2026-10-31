@@ -78,6 +78,7 @@ public class DocumentService {
         try {
             Document saved = repository.saveAndFlush(document);
             log.info("Document uploaded documentId={} size={} sha256={}", saved.getId(), saved.getFileSize(), saved.getSha256Checksum());
+            publishUploaded(saved.getId(), command.origin());
             return saved;
         } catch (RuntimeException e) {
             discardStoredContent(storageKey);
@@ -121,6 +122,15 @@ public class DocumentService {
         String storageKey = document.getStorageKey();
         AfterCommit.run(() -> deleteStoredContent(id, storageKey));
         log.info("Document deleted documentId={}", id);
+    }
+
+    private void publishUploaded(UUID documentId, UploadOrigin origin) {
+        try {
+            events.publishEvent(new DocumentUploadedEvent(documentId, origin));
+        } catch (RuntimeException e) {
+            // The document is stored; follow-up processing has its own reconciliation.
+            log.error("Document uploaded event failed documentId={}", documentId, e);
+        }
     }
 
     private ContentInfo inspect(UploadDocumentCommand command) {

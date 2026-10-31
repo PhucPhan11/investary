@@ -27,7 +27,7 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
 | `investor` | Phase 4 | Investor profile and goals (self-declared) |
 | `portfolio` | Phase 4 | Instruments, manual prices, portfolios, transactions; holdings, valuation and allocation computed on read |
 | `intelligence` | Phase 4 | Research matching, deterministic analysis, impact assessments, portfolio-aware assistant (read-only) |
-| `automation` | Phase 5 / M1 | Gmail OAuth connection (encrypted refresh token), brokerage source rules, Gmail sync (runs, cursor, message mapping), local-only filter |
+| `automation` | Phase 5 / M1, M2 | Gmail OAuth connection (encrypted refresh token), brokerage source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows and the automation job queue (M2) |
 
 ### Dependency direction
 
@@ -38,8 +38,10 @@ intelligence ──▶ knowledge ──▶ email ──▶ research ──▶ do
      └──────▶ investor ──────────────────────────────────────────────────┘
 ```
 
-- `automation` depends only on `email` (application: `EmailImportService.importRaw`, `EmailExceptions`) and
-  `common`. Nothing imports `automation`. Synced mail goes through the Phase 2 import unchanged.
+- `automation` imports Gmail mail only through `EmailImportService.importRaw` (Phase 2 import unchanged). Its
+  research workflows (M2) call the `application` services of `email`, `research`, `knowledge`,
+  `intelligence` and `document`. Nothing imports `automation`; the owning modules notify it with events
+  published after commit (`EmailImportedEvent`, `DocumentUploadedEvent`, `ReportDownloadedEvent`).
 - `investor` and `portfolio` depend only on `common`. `intelligence` uses `knowledge` search/assistant
   building blocks, `research.link.Keywords` for text folding, and only the **read** services
   `PortfolioQueryService` / `InvestorQueryService` (enforced by `ArchitectureTest`), so AI output can
@@ -167,6 +169,26 @@ POST /integrations/gmail/sync | GmailSyncScheduler ─ lease on gmail_accounts (
 
 Details: [phase-5-milestone-1.md](phase-5-milestone-1.md), [ADR 0009](adr/0009-gmail-oauth-and-sync.md).
 
+## Automated research processing (Phase 5 / Milestone 2)
+
+```
+EmailImportedEvent | DocumentUploadedEvent(LIBRARY) | reconcile | POST /automation/workflows/{id}/process
+  -> research_workflows + workflow_stages + PREPARE job (idempotent per source)
+AutomationJobWorker (SKIP LOCKED claims, claim token, lease, bounded pool)
+  PREPARE   - reads import results (parsing, links, research items)
+  DOWNLOADS - Gmail rule with auto download? - DownloadRequestService - wait for DownloadJobWorker
+  INDEX     - KnowledgeIndexService.request (only untracked/failed/stale) - wait for KnowledgeIndexWorker
+  MATCH     - tickers from chunks/items/links - SourceRelevanceService (holdings, no AI) - matches
+  ASSESS    - per matched portfolio, daily cap - ImpactAssessmentService.createForSource (unique trigger)
+ReportDownloadedEvent -> re-opens INDEX -> MATCH -> ASSESS for the email's workflow
+```
+
+Handlers run without a transaction; results are applied in one token-guarded transaction. Transient failures
+are retried with exponential backoff and jitter; permanent ones fail the job, which can be retried manually.
+`AiConcurrencyLimits` bounds concurrent chat and embedding calls for the whole application.
+
+Details: [phase-5-milestone-2.md](phase-5-milestone-2.md), [ADR 0010](adr/0010-research-workflow-orchestration.md).
+
 ## Database
 
 Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`. Tests use the same
@@ -187,18 +209,22 @@ checks that a Phase 1 database upgrades without data loss.
 | `investor_profile`, `investor_goals` | Self-declared profile (single row) and goals (V4) |
 | `instruments`, `instrument_prices` | User-entered instruments with aliases; manual price observations with source and date (V4) |
 | `portfolios`, `portfolio_transactions` | Portfolios and their BUY/SELL/OPENING_POSITION transactions; the source of truth for holdings (V4) |
-| `impact_assessments`, `impact_assessment_items` | Saved assessments: portfolio snapshot and hash, categories, validated summaries, evidence copies with chunk hashes (V5) |
+| `impact_assessments`, `impact_assessment_items` | Saved assessments: portfolio snapshot and hash, categories, validated summaries, evidence copies with chunk hashes (V5); trigger source, content fingerprint, prompt and index versions (V7) |
 | `gmail_accounts` | Gmail connection: status, encrypted refresh token + key id, scopes, history cursor, last sync result, sync lease (V6) |
 | `email_source_rules` | Approved brokerage senders (addresses/domains), subject keywords, Gmail query, enabled / auto-import / auto-PDF flags (V6) |
 | `gmail_messages` | Handled Gmail messages per account (unique Gmail id), outcome, rule, imported `source_messages` row (V6) |
 | `gmail_sync_runs` | Sync history: trigger, mode, status, counters, history ids, error (V6) |
+| `workflow_settings` | Activation time; older sources are processed on request only (V7) |
+| `research_workflows`, `workflow_stages` | One workflow per email or library document; stage status, reason and counters (V7) |
+| `automation_jobs` | Workflow job queue: type, unique idempotency key, status, attempts, wait deadline, lease, safe error, reported tokens (V7) |
+| `workflow_portfolio_matches` | Deterministic matches of a workflow's source to portfolio holdings (V7) |
 
 ## Frontend
 
 ```
 src/app/
   core/       API services (documents, emails), models, error mapping
-  shared/     alert, empty state, pager, status badge, pipes
+  shared/     alert, empty state, pager, status badge, pipes, index status, workflow status
   layout/     application shell
   features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
               · portfolio (list, dashboard, transaction form, research insights) · investor (profile, goals)

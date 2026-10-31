@@ -39,6 +39,8 @@ import com.investary.intelligence.domain.AiStatus;
 import com.investary.intelligence.domain.ImpactCategory;
 import com.investary.intelligence.persistence.ImpactAssessmentItemRepository;
 import com.investary.intelligence.persistence.ImpactAssessmentRepository;
+import com.investary.knowledge.AiConcurrencyLimits;
+import com.investary.knowledge.IndexVersion;
 import com.investary.knowledge.ScriptedChatModel;
 import com.investary.knowledge.TestKnowledgeProperties;
 import com.investary.knowledge.assistant.EvidenceStatus;
@@ -246,6 +248,7 @@ class ImpactAssessmentServiceTest {
     private ImpactAssessmentService service(ChatModel model) {
         return new ImpactAssessmentService(portfolios, matcher, chunks, assessments, items, provider(model),
                 TestKnowledgeProperties.defaults(), JsonMapper.builder().build(), transactions,
+                new IndexVersion(TestKnowledgeProperties.defaults()), AiConcurrencyLimits.unlimited(),
                 Clock.fixed(Instant.parse("2026-10-30T03:00:00Z"), ZoneOffset.UTC));
     }
 }

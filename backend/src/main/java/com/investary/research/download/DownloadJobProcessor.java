@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -18,7 +19,9 @@ import com.investary.document.application.DocumentService;
 import com.investary.document.application.DuplicateDocumentException;
 import com.investary.document.application.InvalidDocumentException;
 import com.investary.document.application.UploadDocumentCommand;
+import com.investary.document.application.UploadOrigin;
 import com.investary.document.domain.ReportType;
+import com.investary.research.application.ReportDownloadedEvent;
 import com.investary.research.download.DownloadJobQueue.ClaimedJob;
 import com.investary.research.link.BrokerageRegistry;
 import com.investary.research.link.LinkCategory;
@@ -44,11 +47,13 @@ public class DownloadJobProcessor {
     private final BrokerageRegistry brokerages;
     private final DownloadProperties properties;
     private final TransactionTemplate transactions;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public DownloadJobProcessor(ReportDownloader downloader, DocumentService documentService, SourceLinkRepository links,
                                 ProvenanceRepository provenance, DownloadJobQueue queue, BrokerageRegistry brokerages,
-                                DownloadProperties properties, TransactionTemplate transactions, Clock clock) {
+                                DownloadProperties properties, TransactionTemplate transactions, ApplicationEventPublisher events,
+                                Clock clock) {
         this.downloader = downloader;
         this.documentService = documentService;
         this.links = links;
@@ -57,6 +62,7 @@ public class DownloadJobProcessor {
         this.brokerages = brokerages;
         this.properties = properties;
         this.transactions = transactions;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -69,20 +75,32 @@ public class DownloadJobProcessor {
         log.info("Download started jobId={} linkId={} attempt={}/{} host={}", job.jobId(), link.getId(), job.attempts(), job.maxAttempts(), link.getHost());
         try {
             UUID documentId = downloadAndStore(link);
-            transactions.executeWithoutResult(status -> {
+            Boolean recorded = transactions.execute(status -> {
                 if (!queue.complete(job)) {
                     log.warn("Download finished after its claim expired jobId={}; result kept in the library only", job.jobId());
-                    return;
+                    return false;
                 }
                 links.findById(link.getId()).ifPresent(current -> current.markDownloaded(documentId, clock.instant()));
                 provenance.record(link.getSourceMessageId(), documentId, RelationshipType.LINKED_REPORT, link.getId(), null);
+                return true;
             });
             log.info("Download succeeded jobId={} linkId={} documentId={}", job.jobId(), link.getId(), documentId);
+            if (Boolean.TRUE.equals(recorded)) {
+                publishDownloaded(new ReportDownloadedEvent(link.getSourceMessageId(), documentId, link.getId()));
+            }
         } catch (DownloadException e) {
             handleFailure(job, link.getId(), e.getMessage(), e.isRetryable());
         } catch (RuntimeException e) {
             log.error("Unexpected error in download jobId={}", job.jobId(), e);
             handleFailure(job, link.getId(), "Unexpected error while storing the report", true);
+        }
+    }
+
+    private void publishDownloaded(ReportDownloadedEvent event) {
+        try {
+            events.publishEvent(event);
+        } catch (RuntimeException e) {
+            log.error("Report downloaded event failed linkId={}", event.linkId(), e);
         }
     }
 
@@ -95,7 +113,8 @@ public class DownloadJobProcessor {
                     brokerages.identifyHost(link.getHost()).orElse(link.getSourceBrokerage()),
                     reportType(link.getCategory()),
                     link.getTickerHint(),
-                    null);
+                    null,
+                    UploadOrigin.LINKED_REPORT);
             try {
                 return documentService.upload(command).getId();
             } catch (DuplicateDocumentException e) {
