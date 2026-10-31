@@ -44,5 +44,6 @@ export interface ProblemDetail {
   status?: number;
   code?: string;
   existingDocumentId?: string;
+  existingEmailId?: string;
   errors?: Record<string, string>;
 }

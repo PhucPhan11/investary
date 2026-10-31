@@ -3,9 +3,12 @@
 *.env.local
 !.env.example
 
-# --- Uploaded financial documents (never commit) ---
+# --- Uploaded financial documents and emails (never commit) ---
 storage/
 *.pdf
+*.eml
+# Synthetic, sanitized test fixtures only
+!backend/src/test/resources/eml/*.eml
 
 # --- Backend ---
 backend/target/

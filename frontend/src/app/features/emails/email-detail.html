@@ -1,0 +1,243 @@
+<a routerLink="/emails" class="link back-link">← Email research</a>
+
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+@if (loading() && !email()) {
+  <p class="muted">Loading email…</p>
+} @else if (email(); as e) {
+  <section class="card detail-header">
+    <div class="detail-header__main">
+      <h1 class="page-title">{{ e.subject || '(no subject)' }}</h1>
+      <dl class="meta">
+        <div>
+          <dt>From</dt>
+          <dd>
+            {{ e.senderName || e.senderAddress || '—' }}
+            @if (e.senderName && e.senderAddress) {
+              <span class="muted">{{ e.senderAddress }}</span>
+            }
+          </dd>
+        </div>
+        <div><dt>Sent</dt><dd>{{ e.sentAt ? (e.sentAt | date: 'medium') : '—' }}</dd></div>
+        <div><dt>Imported</dt><dd>{{ e.importedAt | date: 'medium' }}</dd></div>
+        @if (e.brokerage) {
+          <div><dt>Brokerage</dt><dd><span class="tag tag--plain">{{ e.brokerage }}</span></dd></div>
+        }
+        @if (e.languages.length) {
+          <div><dt>Languages</dt><dd>{{ e.languages.join(', ') }}</dd></div>
+        }
+        <div><dt>Parsing</dt><dd><app-status-badge [value]="e.parsingStatus" /></dd></div>
+      </dl>
+      @if (e.parsingError) {
+        <p class="muted small">Parsing notes: {{ e.parsingError }}</p>
+      }
+      @if (e.sameMessageIdAs.length) {
+        <p class="muted small">
+          Another import has the same Message-ID but different file content:
+          @for (other of e.sameMessageIdAs; track other) {
+            <a class="link" [routerLink]="['/emails', other]">open</a>
+          }
+        </p>
+      }
+    </div>
+    <div class="detail-header__actions">
+      <a class="btn btn--small btn--ghost" [href]="'/api/v1/emails/' + e.id + '/original'" download>Original .eml ({{ e.fileSize | fileSize }})</a>
+      <button type="button" class="btn btn--small btn--danger" (click)="deleteEmail()">Delete</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">Research links</h2>
+      <span class="muted">{{ e.statistics.researchLinks }} research · {{ links().length }} total</span>
+    </div>
+    @if (notice(); as message) {
+      <app-alert kind="error" [dismissible]="true" (dismissed)="notice.set(null)">{{ message }}</app-alert>
+    }
+    @if (links().length === 0) {
+      <app-empty-state title="No links found">This email does not contain any http(s) links.</app-empty-state>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Link</th>
+              <th scope="col">Category</th>
+              <th scope="col">Domain</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="actions-col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (link of visibleLinks(); track link.id) {
+              <tr>
+                <td data-label="Link">
+                  <span class="filename">{{ link.displayText || link.targetUrl }}</span>
+                  @if (link.language) {
+                    <span class="tag tag--plain">{{ link.language }}</span>
+                  }
+                  @if (link.section) {
+                    <span class="link-section">{{ link.section }}</span>
+                  }
+                </td>
+                <td data-label="Category">
+                  <app-status-badge [value]="link.category" />
+                  @if (link.tickerHint) {
+                    <span class="tag">{{ link.tickerHint }}</span>
+                  }
+                </td>
+                <td data-label="Domain" class="domain" [title]="link.targetUrl">{{ link.host }}</td>
+                <td data-label="Status">
+                  <app-status-badge [value]="link.status" />
+                  @if (link.errorMessage) {
+                    <span class="link-error">{{ link.errorMessage }}</span>
+                  }
+                  @if (link.download && link.status === 'DOWNLOADING') {
+                    <span class="link-section">attempt {{ link.download.attempts || 1 }} of {{ link.download.maxAttempts }}</span>
+                  }
+                </td>
+                <td class="actions-col">
+                  @if (link.status === 'DOWNLOADED' && link.documentId) {
+                    <a class="btn btn--small btn--ghost" [routerLink]="['/documents', link.documentId]">Open</a>
+                  } @else if (canDownload(link)) {
+                    <button type="button" class="btn btn--small" [class.btn--primary]="link.status === 'READY'" [class.btn--ghost]="link.status !== 'READY'"
+                            [disabled]="isRequesting(link)" (click)="download(link)">
+                      {{ link.status === 'FAILED' ? 'Retry' : 'Download' }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (hiddenCount() > 0) {
+        <button type="button" class="btn btn--small btn--ghost toggle-links" (click)="showAllLinks.set(!showAllLinks())">
+          {{ showAllLinks() ? 'Hide' : 'Show' }} navigation &amp; promotion links ({{ hiddenCount() }})
+        </button>
+      }
+      <p class="muted small">
+        Downloads run in the background over HTTPS from allowlisted brokerage domains only. Tracking redirects are bypassed.
+      </p>
+    }
+  </section>
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">Linked reports</h2>
+      <span class="muted">In the document library</span>
+    </div>
+    @if (documents().length === 0) {
+      <p class="muted">No reports yet. Download a research link above; PDF attachments are added automatically.</p>
+    } @else {
+      <ul class="recent-list">
+        @for (doc of documents(); track doc.documentId + doc.relationshipType) {
+          <li class="recent-list__item">
+            <div class="recent-list__main">
+              <a class="recent-list__name link-plain" [routerLink]="['/documents', doc.documentId]">{{ doc.originalFilename }}</a>
+              <span class="recent-list__meta">
+                {{ doc.relationshipType === 'ATTACHMENT' ? 'Attachment' : 'Downloaded from link' }} ·
+                {{ doc.reportType | reportTypeLabel }}
+                @if (doc.ticker) {
+                  · <span class="tag">{{ doc.ticker }}</span>
+                }
+              </span>
+            </div>
+            <div class="recent-list__side">
+              <a class="btn btn--small btn--ghost" [href]="downloadUrl(doc.documentId)" download>Download PDF</a>
+              <span class="muted">{{ doc.fileSize | fileSize }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (items().length) {
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">Extracted research</h2>
+        <span class="muted">Deterministic rules · original text kept</span>
+      </div>
+      <ul class="items">
+        @for (item of items(); track item.id) {
+          <li class="item" [class.item--recommendation]="item.itemType === 'STOCK_RECOMMENDATION'">
+            <div class="item__head">
+              <span class="badge badge--info">{{ itemTypeLabels[item.itemType] }}</span>
+              @if (item.ticker) {
+                <span class="tag">{{ item.ticker }}</span>
+              }
+              @if (item.title) {
+                <strong>{{ item.title }}</strong>
+              }
+              @if (item.language) {
+                <span class="tag tag--plain">{{ item.language }}</span>
+              }
+            </div>
+            @if (recommendation(item); as rec) {
+              <p class="item__recommendation">
+                {{ item.brokerage || 'The source' }} states: <strong>{{ rec }}</strong>
+                @for (t of translations(item); track t.language) {
+                  <span class="muted"> ({{ t.language }}: {{ t.recommendation }})</span>
+                }
+              </p>
+              <p class="item__disclaimer">Recommendation as published by the brokerage — not advice from Investary.</p>
+            }
+            <p class="item__content">{{ item.content }}</p>
+            <span class="link-section">{{ item.sourceLocation }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (e.attachments.length) {
+    <section class="card">
+      <div class="card__header"><h2 class="card__title">Attachments</h2></div>
+      <ul class="recent-list">
+        @for (a of e.attachments; track a.id) {
+          <li class="recent-list__item">
+            <div class="recent-list__main">
+              <span class="recent-list__name">{{ a.filename || '(unnamed)' }}</span>
+              <span class="recent-list__meta">{{ a.contentType }} · {{ a.disposition.toLowerCase() }}</span>
+              @if (a.importError) {
+                <span class="link-error">{{ a.importError }}</span>
+              }
+            </div>
+            <div class="recent-list__side">
+              @if (a.documentId) {
+                <a class="link" [routerLink]="['/documents', a.documentId]">In library</a>
+              }
+              <span class="muted">{{ a.size | fileSize }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">Email content</h2>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="tab() === 'text'" [attr.aria-selected]="tab() === 'text'" (click)="tab.set('text')">
+          Text
+        </button>
+        @if (e.hasHtml) {
+          <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="tab() === 'html'" [attr.aria-selected]="tab() === 'html'" (click)="tab.set('html')">
+            Safe HTML preview
+          </button>
+        }
+      </div>
+    </div>
+    @if (tab() === 'text') {
+      <pre class="email-text">{{ e.normalizedText || '(no readable text)' }}</pre>
+    } @else {
+      <iframe class="email-frame" title="Sanitized email preview" [src]="htmlUrl()"
+              sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+      <p class="muted small">Scripts, forms, styles and remote images are removed; links point to their real destination.</p>
+    }
+  </section>
+}

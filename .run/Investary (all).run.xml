@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <!-- Backend starts Postgres first (before-launch task), the frontend starts in parallel. -->
+  <configuration default="false" name="Investary (all)" type="CompoundRunConfigurationType">
+    <toRun name="Backend (dev)" type="MavenRunConfiguration" />
+    <toRun name="Frontend (npm start)" type="ShConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

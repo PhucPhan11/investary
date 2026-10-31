@@ -43,7 +43,7 @@
           @for (doc of p.content; track doc.id) {
             <tr>
               <td data-label="File name">
-                <span class="filename">{{ doc.originalFilename }}</span>
+                <a class="filename link-plain" [routerLink]="['/documents', doc.id]">{{ doc.originalFilename }}</a>
                 @if (doc.ticker) {
                   <span class="tag">{{ doc.ticker }}</span>
                 }
@@ -69,21 +69,6 @@
       </table>
     </div>
 
-    @if (p.totalPages > 1) {
-      <nav class="pager" aria-label="Pagination">
-        <button type="button" class="btn btn--small btn--ghost" [disabled]="p.page === 0 || loading()" (click)="load(p.page - 1)">
-          ← Previous
-        </button>
-        <span class="muted">Page {{ p.page + 1 }} of {{ p.totalPages }}</span>
-        <button
-          type="button"
-          class="btn btn--small btn--ghost"
-          [disabled]="p.page + 1 >= p.totalPages || loading()"
-          (click)="load(p.page + 1)"
-        >
-          Next →
-        </button>
-      </nav>
-    }
+    <app-pager [page]="p.page" [totalPages]="p.totalPages" [disabled]="loading()" (pageChange)="load($event)" />
   }
 </section>

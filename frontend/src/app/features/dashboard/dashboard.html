@@ -25,6 +25,10 @@
     <span class="stat-card__label">Brokerage sources</span>
     <span class="stat-card__value">{{ loading() ? '…' : brokerageCount() }}</span>
   </article>
+  <a class="stat-card stat-card--link" routerLink="/emails">
+    <span class="stat-card__label">Imported emails</span>
+    <span class="stat-card__value">{{ emailCount() ?? '…' }}</span>
+  </a>
 </section>
 
 <section class="card">

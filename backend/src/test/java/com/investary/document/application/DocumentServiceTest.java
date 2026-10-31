@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -47,11 +48,14 @@ class DocumentServiceTest {
     @Mock
     DocumentStorage storage;
 
+    @Mock
+    ApplicationEventPublisher events;
+
     private DocumentService service;
 
     @BeforeEach
     void setUp() {
-        service = new DocumentService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new DocumentService(repository, storage, events, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test
@@ -159,6 +163,7 @@ class DocumentServiceTest {
 
         verify(repository).delete(document);
         verify(storage).delete(STORAGE_KEY);
+        verify(events).publishEvent(new DocumentDeletedEvent(id));
     }
 
     @Test
@@ -166,7 +171,7 @@ class DocumentServiceTest {
         UUID id = UUID.randomUUID();
         Document document = withId(document(), id);
         when(repository.findById(id)).thenReturn(Optional.of(document));
-        when(storage.delete(STORAGE_KEY)).thenThrow(new com.investary.document.storage.StorageException("locked"));
+        when(storage.delete(STORAGE_KEY)).thenThrow(new com.investary.common.storage.StorageException("locked"));
 
         service.delete(id);
 

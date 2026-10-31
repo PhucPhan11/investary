@@ -1,0 +1,35 @@
+import { Component, computed, input } from '@angular/core';
+
+type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'muted';
+
+const BADGES: Record<string, { label: string; tone: Tone }> = {
+  // Link status
+  DISCOVERED: { label: 'Discovered', tone: 'neutral' },
+  READY: { label: 'Ready', tone: 'info' },
+  DOWNLOADING: { label: 'Downloading…', tone: 'warning' },
+  DOWNLOADED: { label: 'Downloaded', tone: 'success' },
+  FAILED: { label: 'Failed', tone: 'danger' },
+  SKIPPED: { label: 'Skipped', tone: 'muted' },
+  // Parsing status
+  PARSED: { label: 'Parsed', tone: 'success' },
+  PARTIAL: { label: 'Partially parsed', tone: 'warning' },
+  // Link category
+  RESEARCH_REPORT: { label: 'Research report', tone: 'info' },
+  STOCK_RESEARCH: { label: 'Stock research', tone: 'info' },
+  MARKET_REPORT: { label: 'Market report', tone: 'info' },
+  NAVIGATION: { label: 'Navigation', tone: 'muted' },
+  PROMOTION: { label: 'Promotion', tone: 'muted' },
+  OTHER: { label: 'Other', tone: 'neutral' },
+};
+
+/** Small coloured label for statuses and categories returned by the API. */
+@Component({
+  selector: 'app-status-badge',
+  template: `<span [class]="'badge badge--' + badge().tone">{{ badge().label }}</span>`,
+})
+export class StatusBadge {
+  readonly value = input.required<string>();
+  protected readonly badge = computed(
+    () => BADGES[this.value()] ?? { label: this.value(), tone: 'neutral' as Tone },
+  );
+}

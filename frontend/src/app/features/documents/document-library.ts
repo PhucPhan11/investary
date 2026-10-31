@@ -1,11 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { DocumentApiService } from '../../core/api/document-api.service';
 import { errorMessage } from '../../core/api/error-message';
 import { Page, ResearchDocument } from '../../core/models/document.model';
 import { Alert } from '../../shared/components/alert';
 import { EmptyState } from '../../shared/components/empty-state';
+import { Pager } from '../../shared/components/pager';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
 import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
 import { UploadPanel } from './upload-panel';
@@ -14,7 +16,7 @@ const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-document-library',
-  imports: [DatePipe, Alert, EmptyState, FileSizePipe, ReportTypeLabelPipe, UploadPanel],
+  imports: [DatePipe, RouterLink, Alert, EmptyState, Pager, FileSizePipe, ReportTypeLabelPipe, UploadPanel],
   templateUrl: './document-library.html',
 })
 export class DocumentLibrary implements OnInit {

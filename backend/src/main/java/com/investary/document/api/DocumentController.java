@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.investary.common.web.PageResponse;
 import com.investary.document.application.DocumentDownload;
 import com.investary.document.application.DocumentService;
 import com.investary.document.application.UploadDocumentCommand;

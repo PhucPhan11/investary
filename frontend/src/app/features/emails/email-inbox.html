@@ -1,0 +1,90 @@
+<section class="page-header">
+  <div>
+    <h1 class="page-title">Email research</h1>
+    <p class="page-subtitle">Brokerage emails, their research links and the reports downloaded from them.</p>
+  </div>
+</section>
+
+<app-email-import-panel (imported)="onImported($event)" />
+
+@if (success(); as message) {
+  <app-alert kind="success" [dismissible]="true" (dismissed)="success.set(null)">{{ message }}</app-alert>
+}
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Imported emails</h2>
+    @if (page(); as p) {
+      <span class="muted">{{ p.totalElements }} total</span>
+    }
+  </div>
+
+  <div class="filters">
+    <label class="field">
+      <span class="field__label">Search subject</span>
+      <input class="input" type="search" placeholder="e.g. Cơ hội đầu tư" [value]="query()" (input)="onSearch($any($event.target).value)" />
+    </label>
+    <label class="field">
+      <span class="field__label">Sender</span>
+      <select class="input" [value]="sender()" (change)="onSenderChange($any($event.target).value)">
+        <option value="">All senders</option>
+        @for (s of senders(); track s.address) {
+          <option [value]="s.address">{{ s.name ? s.name + ' · ' : '' }}{{ s.address }} ({{ s.messages }})</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (loading() && !page()) {
+    <p class="muted">Loading emails…</p>
+  } @else if (page()?.totalElements === 0) {
+    @if (query() || sender()) {
+      <app-empty-state title="No matching emails">Try a different search or sender.</app-empty-state>
+    } @else {
+      <app-empty-state title="No emails imported yet">Import a brokerage .eml file above to extract its research links.</app-empty-state>
+    }
+  } @else if (page(); as p) {
+    <div class="table-wrap" [class.table-wrap--loading]="loading()">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Subject</th>
+            <th scope="col">Sender</th>
+            <th scope="col">Date</th>
+            <th scope="col" class="num">Research links</th>
+            <th scope="col" class="num">Reports</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="actions-col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (email of p.content; track email.id) {
+            <tr>
+              <td data-label="Subject">
+                <a class="filename link-plain" [routerLink]="['/emails', email.id]">{{ email.subject || '(no subject)' }}</a>
+                @if (email.brokerage) {
+                  <span class="tag">{{ email.brokerage }}</span>
+                }
+              </td>
+              <td data-label="Sender">{{ email.senderName || email.senderAddress || '—' }}</td>
+              <td data-label="Date">{{ (email.sentAt ?? email.importedAt) | date: 'mediumDate' }}</td>
+              <td data-label="Research links" class="num">{{ email.statistics.researchLinks }}</td>
+              <td data-label="Reports" class="num">{{ email.statistics.documents }}</td>
+              <td data-label="Status"><app-status-badge [value]="processing(email)" /></td>
+              <td class="actions-col">
+                <a class="btn btn--small btn--ghost" [routerLink]="['/emails', email.id]">Open</a>
+                <button type="button" class="btn btn--small btn--danger" [disabled]="deletingId() === email.id" (click)="remove(email)">
+                  {{ deletingId() === email.id ? 'Deleting…' : 'Delete' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pager [page]="p.page" [totalPages]="p.totalPages" [disabled]="loading()" (pageChange)="load($event)" />
+  }
+</section>
