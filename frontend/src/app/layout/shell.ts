@@ -30,12 +30,13 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <a routerLink="/portfolios" routerLinkActive="nav__link--active" class="nav__link">Portfolios</a>
         <a routerLink="/profile" routerLinkActive="nav__link--active" class="nav__link">Profile</a>
         <a routerLink="/assistant" routerLinkActive="nav__link--active" class="nav__link">Research assistant</a>
+      <a routerLink="/automation" routerLinkActive="nav__link--active" class="nav__link">Gmail sync</a>
       </nav>
     </header>
     <main class="content">
       <router-outlet />
     </main>
-    <footer class="footer">Investary · Phase 4 · local single-user mode, no authentication · not investment advice</footer>
+    <footer class="footer">Investary · Phase 5 · local single-user mode, no authentication · not investment advice</footer>
   `,
 })
 export class Shell {

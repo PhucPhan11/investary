@@ -11,6 +11,7 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
                                        │      └─filesystem──▶ document store (original PDFs)
                                        │                      email store    (original EML files)
                                        ├─HTTPS (allowlisted, background jobs)──▶ brokerage websites
+                                       ├─HTTPS (OAuth 2.0, read-only Gmail API, polling)──▶ Google
                                        └─HTTP (Spring AI, configurable)──▶ AI provider (default: local Ollama)
 ```
 
@@ -26,6 +27,7 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
 | `investor` | Phase 4 | Investor profile and goals (self-declared) |
 | `portfolio` | Phase 4 | Instruments, manual prices, portfolios, transactions; holdings, valuation and allocation computed on read |
 | `intelligence` | Phase 4 | Research matching, deterministic analysis, impact assessments, portfolio-aware assistant (read-only) |
+| `automation` | Phase 5 / M1 | Gmail OAuth connection (encrypted refresh token), brokerage source rules, Gmail sync (runs, cursor, message mapping), local-only filter |
 
 ### Dependency direction
 
@@ -36,6 +38,8 @@ intelligence ──▶ knowledge ──▶ email ──▶ research ──▶ do
      └──────▶ investor ──────────────────────────────────────────────────┘
 ```
 
+- `automation` depends only on `email` (application: `EmailImportService.importRaw`, `EmailExceptions`) and
+  `common`. Nothing imports `automation`. Synced mail goes through the Phase 2 import unchanged.
 - `investor` and `portfolio` depend only on `common`. `intelligence` uses `knowledge` search/assistant
   building blocks, `research.link.Keywords` for text folding, and only the **read** services
   `PortfolioQueryService` / `InvestorQueryService` (enforced by `ArchitectureTest`), so AI output can
@@ -149,6 +153,20 @@ POST /intelligence/ask (portfolioId required) → profile, goals, facts + Phase 
 Details: [phase-4-implementation.md](phase-4-implementation.md),
 [ADR 0007](adr/0007-portfolio-accounting.md), [ADR 0008](adr/0008-read-only-portfolio-intelligence.md).
 
+## Gmail integration and sync (Phase 5 / Milestone 1)
+
+```
+POST /integrations/gmail/connect ─ OAuthStateStore (state, PKCE, cookie binding) ─▶ Google consent
+GET  /integrations/gmail/callback ─ state + cookie ─ token exchange ─ scope/refresh-token checks
+     ─ users.getProfile ─ TokenCipher (AES-GCM) ─ gmail_accounts CONNECTED
+POST /integrations/gmail/sync | GmailSyncScheduler ─ lease on gmail_accounts (token) ─ GmailSyncRunner
+     INITIAL/RECOVERY: messages.list per enabled rule (from:… after:…)   INCREMENTAL: history.list(cursor)
+     ─ metadata ─ SenderVerifier (From addr-spec, Gmail dmarc) ─ RuleMatcher ─ raw ─ EmailImportService.importRaw
+     ─ gmail_messages (dedup key) ─ token-guarded cursor checkpoint ─ gmail_sync_runs
+```
+
+Details: [phase-5-milestone-1.md](phase-5-milestone-1.md), [ADR 0009](adr/0009-gmail-oauth-and-sync.md).
+
 ## Database
 
 Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`. Tests use the same
@@ -170,6 +188,10 @@ checks that a Phase 1 database upgrades without data loss.
 | `instruments`, `instrument_prices` | User-entered instruments with aliases; manual price observations with source and date (V4) |
 | `portfolios`, `portfolio_transactions` | Portfolios and their BUY/SELL/OPENING_POSITION transactions; the source of truth for holdings (V4) |
 | `impact_assessments`, `impact_assessment_items` | Saved assessments: portfolio snapshot and hash, categories, validated summaries, evidence copies with chunk hashes (V5) |
+| `gmail_accounts` | Gmail connection: status, encrypted refresh token + key id, scopes, history cursor, last sync result, sync lease (V6) |
+| `email_source_rules` | Approved brokerage senders (addresses/domains), subject keywords, Gmail query, enabled / auto-import / auto-PDF flags (V6) |
+| `gmail_messages` | Handled Gmail messages per account (unique Gmail id), outcome, rule, imported `source_messages` row (V6) |
+| `gmail_sync_runs` | Sync history: trigger, mode, status, counters, history ids, error (V6) |
 
 ## Frontend
 
@@ -180,6 +202,7 @@ src/app/
   layout/     application shell
   features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
               · portfolio (list, dashboard, transaction form, research insights) · investor (profile, goals)
+              · automation (Gmail connection, sync history, brokerage sources)
 ```
 
 - Standalone components with signals; no state library and no UI component library.
@@ -210,6 +233,10 @@ src/app/
 - **External URLs** are untrusted: https only, allowlisted domains, per-hop redirect checks, DNS-level
   SSRF and rebinding protection, size and time limits, and content validation. Downloads only happen
   when the user asks for them.
+- **Gmail credentials** never reach the browser or the logs: OAuth with PKCE and a browser-bound one-time
+  state, `gmail.readonly` only, refresh token AES-GCM encrypted with a key from the environment, access tokens
+  in memory. The integration endpoints accept only loopback clients with a loopback `Host` (DNS rebinding) and,
+  for writes, no foreign `Origin`. Synced mail is untrusted like any imported EML.
 - **Source text sent to an LLM** is untrusted: instructions live only in the system message, sources are
   delimited and neutralised, and citations/figures are validated against stored chunks. Logs contain ids
   and counts, never document text, prompts or API keys. With a remote provider, retrieved excerpts leave

@@ -1,0 +1,230 @@
+<header class="page-header">
+  <div>
+    <h1 class="page-title">Gmail sync</h1>
+    <p class="page-subtitle">
+      Imports brokerage emails from Gmail (read-only) into Email research. Only senders you approve below are
+      imported; everything else in your mailbox is ignored.
+    </p>
+  </div>
+</header>
+
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+@if (notice(); as message) {
+  <app-alert kind="success" [dismissible]="true" (dismissed)="notice.set(null)">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Gmail connection</h2>
+    @if (status(); as s) {
+      @if (!s.configured) {
+        <app-status-badge value="NOT_CONFIGURED" />
+      } @else if (account(); as a) {
+        <app-status-badge [value]="a.status" />
+      } @else {
+        <app-status-badge value="DISCONNECTED" />
+      }
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="muted" role="status">Loading Gmail status…</p>
+  } @else if (status(); as s) {
+    @if (!s.configured) {
+      <p>
+        Gmail is not configured. Set <code>INVESTARY_GMAIL_CLIENT_ID</code>, <code>INVESTARY_GMAIL_CLIENT_SECRET</code>
+        and <code>INVESTARY_GMAIL_TOKEN_KEY</code> in <code>infrastructure/.env</code> and restart the backend
+        (see <code>docs/phase-5-milestone-1.md</code>).
+      </p>
+    } @else {
+      @if (account(); as a) {
+        <dl class="meta">
+          <dt>Account</dt>
+          <dd>{{ a.emailAddress }}</dd>
+          <dt>Last successful sync</dt>
+          <dd>{{ a.lastSyncSuccessAt ? (a.lastSyncSuccessAt | date: 'medium') : 'Never' }}</dd>
+          <dt>Imported from Gmail</dt>
+          <dd>{{ s.importedTotal }} email(s)</dd>
+          <dt>Schedule</dt>
+          <dd>
+            @if (s.schedulerEnabled) {
+              Every {{ s.syncIntervalMinutes }} minutes
+            } @else {
+              Manual only
+            }
+            · first sync looks back {{ s.initialLookbackDays }} days
+          </dd>
+        </dl>
+        @if (a.status === 'RECONNECT_REQUIRED') {
+          <app-alert kind="error">Google no longer accepts Investary's access ({{ a.lastError }}). Reconnect to resume syncing.</app-alert>
+        } @else if (a.lastError) {
+          <app-alert kind="error">Last sync failed: {{ a.lastError }}</app-alert>
+        }
+        @if (s.lastRun; as run) {
+          <p class="small muted" data-testid="last-run">
+            Last run {{ run.startedAt | date: 'medium' }} · {{ run.status }} · {{ run.imported }} imported,
+            {{ run.duplicates }} duplicate(s), {{ run.skipped }} skipped, {{ run.rejected }} rejected
+            @if (run.warning) {
+              · {{ run.warning }}
+            }
+          </p>
+        }
+      } @else {
+        <p>No Gmail account is connected. Investary asks Google only for read-only access to your mail.</p>
+      }
+      <div class="actions">
+        @if (connected()) {
+          <button type="button" class="btn btn--primary" (click)="syncNow()" [disabled]="busy() || running()">
+            {{ running() ? 'Syncing…' : 'Sync now' }}
+          </button>
+          <button type="button" class="btn btn--danger" (click)="disconnect()" [disabled]="busy()">Disconnect</button>
+        } @else if (account()?.status === 'RECONNECT_REQUIRED') {
+          <button type="button" class="btn btn--primary" (click)="connect()" [disabled]="busy()">Reconnect Gmail</button>
+          <button type="button" class="btn btn--ghost" (click)="disconnect()" [disabled]="busy()">Disconnect</button>
+        } @else {
+          <button type="button" class="btn btn--primary" (click)="connect()" [disabled]="busy()">Connect Gmail</button>
+        }
+      </div>
+    }
+  }
+</section>
+
+<section class="card">
+  <h2 class="card__title">Sync history</h2>
+  @if (runs().length === 0) {
+    <app-empty-state title="No syncs yet">Runs appear here after the first manual or scheduled sync.</app-empty-state>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Started</th>
+            <th>Trigger</th>
+            <th>Mode</th>
+            <th>Status</th>
+            <th class="num">Imported</th>
+            <th class="num">Duplicates</th>
+            <th class="num">Skipped</th>
+            <th class="num">Rejected</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (run of runs(); track run.id) {
+            <tr>
+              <td>{{ run.startedAt | date: 'short' }}</td>
+              <td>{{ run.trigger === 'MANUAL' ? 'Manual' : 'Scheduled' }}</td>
+              <td>{{ run.mode ?? '—' }}</td>
+              <td><app-status-badge [value]="run.status === 'PARTIAL' ? 'SYNC_PARTIAL' : run.status" /></td>
+              <td class="num">{{ run.imported }}</td>
+              <td class="num">{{ run.duplicates }}</td>
+              <td class="num">{{ run.skipped }}</td>
+              <td class="num">{{ run.rejected }}</td>
+              <td class="small">{{ run.errorMessage ?? run.warning ?? '' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (runsTotalPages() > 1) {
+      <app-pager [page]="runsPage()" [totalPages]="runsTotalPages()" (pageChange)="loadRuns($event)" />
+    }
+  }
+</section>
+
+<section class="card">
+  <h2 class="card__title">Brokerage sources</h2>
+  <p class="small muted">
+    A message is imported only if the address in its <em>From</em> header (never the display name) matches an
+    enabled source. Domains include their sub-domains. Brokerage ratings in imported emails are the brokerage's
+    statements, not Investary advice.
+  </p>
+
+  @if (rulesLoading()) {
+    <p class="muted" role="status">Loading sources…</p>
+  } @else if (rules().length === 0) {
+    <app-empty-state title="No sources yet">
+      Add a brokerage, e.g. TCBS with domain <code>tcbs.com.vn</code>. Nothing is imported until a source exists.
+    </app-empty-state>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Senders</th>
+            <th>Subject keywords</th>
+            <th>Options</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (rule of rules(); track rule.id) {
+            <tr>
+              <td>{{ rule.name }}</td>
+              <td class="small">{{ senders(rule) }}</td>
+              <td class="small">{{ rule.subjectKeywords.join(', ') || 'Any subject' }}</td>
+              <td>
+                <span class="badge" [class.badge--success]="rule.enabled" [class.badge--muted]="!rule.enabled">
+                  {{ rule.enabled ? 'Enabled' : 'Disabled' }}
+                </span>
+                @if (!rule.autoImport) {
+                  <span class="badge badge--warning">Record only</span>
+                }
+                @if (rule.autoPdfDownload) {
+                  <span class="badge badge--info" title="Stored for a later milestone; not acted on yet">Auto PDF (later)</span>
+                }
+              </td>
+              <td class="actions-col">
+                <button type="button" class="btn btn--ghost btn--small" (click)="editRule(rule)">Edit</button>
+                <button type="button" class="btn btn--danger btn--small" (click)="deleteRule(rule)">Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <form class="subform form-grid" (ngSubmit)="saveRule()">
+    <h3 class="card__title field--wide">{{ editingRuleId() ? 'Edit source' : 'Add source' }}</h3>
+    <label class="field">
+      <span class="field__label">Name</span>
+      <input class="input" name="name" required maxlength="100" [(ngModel)]="draft.name" placeholder="TCBS" />
+    </label>
+    <label class="field">
+      <span class="field__label">Gmail search (optional)</span>
+      <input class="input" name="gmailQuery" maxlength="500" [(ngModel)]="draft.gmailQuery" placeholder="-category:promotions" />
+    </label>
+    <label class="field">
+      <span class="field__label">Sender addresses (one per line)</span>
+      <textarea class="input" name="senderAddresses" rows="3" [(ngModel)]="draft.senderAddresses" placeholder="research@tcbs.com.vn"></textarea>
+    </label>
+    <label class="field">
+      <span class="field__label">Sender domains (one per line)</span>
+      <textarea class="input" name="senderDomains" rows="3" [(ngModel)]="draft.senderDomains" placeholder="tcbs.com.vn"></textarea>
+    </label>
+    <label class="field field--wide">
+      <span class="field__label">Subject keywords (optional, any of them)</span>
+      <textarea class="input" name="subjectKeywords" rows="2" [(ngModel)]="draft.subjectKeywords" placeholder="Bản tin"></textarea>
+    </label>
+    <div class="field field--wide checkbox-row">
+      <label class="small"><input type="checkbox" name="enabled" [(ngModel)]="draft.enabled" /> Enabled</label>
+      <label class="small"><input type="checkbox" name="autoImport" [(ngModel)]="draft.autoImport" /> Import automatically</label>
+      <label class="small">
+        <input type="checkbox" name="autoPdfDownload" [(ngModel)]="draft.autoPdfDownload" />
+        Download linked PDFs automatically (stored for a later milestone)
+      </label>
+    </div>
+    <div class="actions field--wide">
+      <button type="submit" class="btn btn--primary" [disabled]="savingRule() || !draft.name.trim()">
+        {{ editingRuleId() ? 'Save source' : 'Add source' }}
+      </button>
+      @if (editingRuleId()) {
+        <button type="button" class="btn btn--ghost" (click)="cancelRule()">Cancel</button>
+      }
+    </div>
+  </form>
+</section>

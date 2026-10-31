@@ -101,10 +101,29 @@ public class EmailImportService {
         } catch (IOException e) {
             throw new StorageException("Failed to read uploaded email", e);
         }
-        return importEml(raw, file.getOriginalFilename());
+        return importEml(raw, SourceType.EML_UPLOAD, file.getOriginalFilename());
+    }
+
+    /**
+     * Imports the original RFC 822 bytes of a message fetched by another module (e.g. Gmail sync), through
+     * the same pipeline as an upload: size limit, SHA-256 duplicate check, parsing, storage and research data.
+     *
+     * @throws DuplicateEmailException if identical bytes were imported before
+     * @throws EmailTooLargeException  if the message exceeds {@code investary.email.max-size}
+     * @throws InvalidEmailException   if the bytes are not an email
+     */
+    public UUID importRaw(byte[] raw, SourceType sourceType, String filename) {
+        if (raw.length > properties.maxSize().toBytes()) {
+            throw new EmailTooLargeException(properties.maxSize().toMegabytes());
+        }
+        return importEml(raw, sourceType, filename);
     }
 
     UUID importEml(byte[] raw, String originalFilename) {
+        return importEml(raw, SourceType.EML_UPLOAD, originalFilename);
+    }
+
+    private UUID importEml(byte[] raw, SourceType sourceType, String originalFilename) {
         if (raw.length == 0) {
             throw new InvalidEmailException("The uploaded file is empty");
         }
@@ -126,7 +145,7 @@ public class EmailImportService {
         String storageKey = storage.store(raw, now);
         UUID messageId;
         try {
-            messageId = transactions.execute(status -> persist(parsed, analysis, raw.length, sha256, storageKey,
+            messageId = transactions.execute(status -> persist(parsed, analysis, sourceType, raw.length, sha256, storageKey,
                     sanitizeFilename(originalFilename), brokerage, now));
         } catch (RuntimeException e) {
             discardStoredFile(storageKey);
@@ -138,8 +157,8 @@ public class EmailImportService {
             }
             throw e;
         }
-        log.info("Email imported emailId={} size={} parsingStatus={} links={} attachments={}",
-                messageId, raw.length, analysis.status(), analysis.content().links().size(), parsed.attachments().size());
+        log.info("Email imported emailId={} sourceType={} size={} parsingStatus={} links={} attachments={}",
+                messageId, sourceType, raw.length, analysis.status(), analysis.content().links().size(), parsed.attachments().size());
 
         importPdfAttachments(messageId, parsed.attachments(), brokerage);
         return messageId;
@@ -186,9 +205,9 @@ public class EmailImportService {
         return new Analysis(content, status, error);
     }
 
-    private UUID persist(ParsedEmail parsed, Analysis analysis, long size, String sha256, String storageKey,
+    private UUID persist(ParsedEmail parsed, Analysis analysis, SourceType sourceType, long size, String sha256, String storageKey,
                          String originalFilename, String brokerage, Instant now) {
-        SourceMessage message = new SourceMessage(SourceType.EML_UPLOAD, storageKey, originalFilename, size, sha256,
+        SourceMessage message = new SourceMessage(sourceType, storageKey, originalFilename, size, sha256,
                 truncate(parsed.messageId(), 998), truncate(parsed.senderAddress(), 320), truncate(parsed.senderName(), 500),
                 parsed.recipients(), parsed.subject(), parsed.sentAt(), now);
         message.applyContent(brokerage, analysis.content().languages(), parsed.htmlBody(),

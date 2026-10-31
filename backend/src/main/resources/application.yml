@@ -145,6 +145,34 @@ investary:
     evidence-per-holding: 3
     market-context-results: 3
 
+  # Gmail integration (Phase 5 / Milestone 1). Credentials come only from the environment (infrastructure/.env
+  # in dev). Without them the integration reports "not configured" and the rest of the app works as before.
+  gmail:
+    client-id: ${INVESTARY_GMAIL_CLIENT_ID:}
+    client-secret: ${INVESTARY_GMAIL_CLIENT_SECRET:}
+    token-key: ${INVESTARY_GMAIL_TOKEN_KEY:}
+    redirect-uri: ${INVESTARY_GMAIL_REDIRECT_URI:http://localhost:8080/api/v1/integrations/gmail/callback}
+    ui-redirect-url: ${INVESTARY_GMAIL_UI_REDIRECT_URL:http://localhost:4200/automation}
+    auth-uri: https://accounts.google.com/o/oauth2/v2/auth
+    token-uri: https://oauth2.googleapis.com/token
+    revoke-uri: https://oauth2.googleapis.com/revoke
+    api-base-url: https://gmail.googleapis.com
+    connect-timeout: 10s
+    read-timeout: 60s
+    max-retries: 4
+    retry-backoff: 1s
+    max-retry-wait: 30s
+    state-ttl: 10m
+    sync:
+      scheduler-enabled: ${INVESTARY_GMAIL_SYNC_SCHEDULER_ENABLED:true}
+      interval: ${INVESTARY_GMAIL_SYNC_INTERVAL:30m}
+      initial-delay: 2m
+      initial-lookback-days: ${INVESTARY_GMAIL_INITIAL_LOOKBACK_DAYS:30}
+      max-messages-per-run: ${INVESTARY_GMAIL_MAX_MESSAGES_PER_RUN:200}
+      recovery-max-lookback-days: ${INVESTARY_GMAIL_RECOVERY_MAX_LOOKBACK_DAYS:30}
+      lock-lease: 10m
+      page-size: 100
+
 management:
   endpoints:
     web:

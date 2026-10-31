@@ -16,6 +16,10 @@ Personal, AI-ready investment research assistant.
   research matched to holdings, saved impact assessments that go stale when holdings or evidence change,
   and a portfolio-aware assistant mode. The AI only reads portfolio data. See
   [docs/phase-4-implementation.md](docs/phase-4-implementation.md).
+- **Phase 5 / Milestone 1:** **Gmail integration**. Connect one Gmail account read-only (OAuth 2.0 + PKCE,
+  encrypted refresh token, never sent to the browser), define the brokerage senders to import, and let an
+  initial lookback plus incremental history sync (scheduled or *Sync now*) feed matching messages into the
+  Phase 2 import as their original bytes. See [docs/phase-5-milestone-1.md](docs/phase-5-milestone-1.md).
 
 > ⚠️ **Local, single-user only.** There is **no authentication or authorization**. Never expose the
 > backend (port 8080) or the database to a network you do not fully control.
@@ -35,6 +39,7 @@ investary/
 │       ├── investor/     Investor profile and goals
 │       ├── portfolio/    Instruments, prices, portfolios, transactions, holdings/valuation/allocation
 │       ├── intelligence/ Research matching, impact assessments, portfolio-aware assistant (read-only)
+│       ├── automation/   Gmail OAuth connection, brokerage source rules, Gmail sync (Phase 5 / M1)
 │       └── common/       Errors (RFC 9457), file store, tx helpers, CORS, shared web types
 ├── frontend/         Angular 22 · standalone components · signals · SCSS (no UI library)
 ├── infrastructure/   docker-compose.yml (PostgreSQL 17 + pgvector), .env.example
@@ -43,7 +48,8 @@ investary/
 
 - **Modular monolith.** One deployable backend, organised by business capability. Dependencies point one way:
   `knowledge → email → research → document → common`; `investor` and `portfolio` depend only on `common`,
-  and `intelligence` sits on top of `knowledge`, `portfolio` and `investor`. See [docs/architecture.md](docs/architecture.md).
+  and `intelligence` sits on top of `knowledge`, `portfolio` and `investor`; `automation` imports Gmail mail
+  through `email`'s import service. See [docs/architecture.md](docs/architecture.md).
 - **Sources of truth.** Original files are authoritative: PDFs in the document store, `.eml` files in
   the email store, both outside the repo. PostgreSQL holds metadata and *derived* data (parsed text,
   links, research items), which can be regenerated from the originals.
@@ -177,13 +183,22 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_PRICE_STALE_AFTER_DAYS` | `7` | A manual price older than this marks the holding's valuation stale |
 | `INVESTARY_RESEARCH_FRESH_DAYS` | `90` | Matched research older than this (by publication date) is flagged outdated |
 | `INVESTARY_CONCENTRATION_THRESHOLD_PCT` | `30` | Cost-basis weight above which the analysis reports a concentration (reference only) |
+| `INVESTARY_GMAIL_CLIENT_ID` / `INVESTARY_GMAIL_CLIENT_SECRET` | — | Google OAuth client (*Web application*); Gmail stays "not configured" without them |
+| `INVESTARY_GMAIL_TOKEN_KEY` | — | Base64 32-byte AES key that encrypts the stored refresh token (changing it forces a reconnect) |
+| `INVESTARY_GMAIL_REDIRECT_URI` | `http://localhost:8080/api/v1/integrations/gmail/callback` | Must equal the redirect URI registered for the client |
+| `INVESTARY_GMAIL_UI_REDIRECT_URL` | `http://localhost:4200/automation` | Where the OAuth callback sends the browser |
+| `INVESTARY_GMAIL_SYNC_SCHEDULER_ENABLED` / `INVESTARY_GMAIL_SYNC_INTERVAL` | `true` / `30m` | Periodic Gmail sync |
+| `INVESTARY_GMAIL_INITIAL_LOOKBACK_DAYS` | `30` | Window of the first sync |
+| `INVESTARY_GMAIL_MAX_MESSAGES_PER_RUN` | `200` | Matching messages handled per run; the rest continue next run |
+| `INVESTARY_GMAIL_RECOVERY_MAX_LOOKBACK_DAYS` | `30` | Upper bound of the re-check window when Gmail's history cursor expired |
 
 **Brokerages** are configured under `investary.research.brokerages` (defaults: TCBS `tcbs.com.vn`,
 SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains are used to:
 - identify the brokerage from the sender's address
 - build the **download allowlist** (sub-domains included)
 
-Download timeouts, redirects, retries and worker settings are under `investary.download.*`.
+Download timeouts, redirects, retries and worker settings are under `investary.download.*`. Gmail endpoint
+URLs, timeouts, retries, the sync lock lease and the OAuth state TTL are under `investary.gmail.*`.
 
 Secrets live only in `infrastructure/.env` or environment variables. `.env`, `storage/`, `*.pdf` and
 `*.eml` are git-ignored; only the synthetic test fixtures under `backend/src/test/resources/eml/` are
@@ -301,6 +316,28 @@ Nothing is downloaded automatically. A user picks a link, and
   never deleted with an email**, because other emails may reference them.
 - **Deleting a document** removes its associations; links that pointed at it become `READY` again.
 
+## Gmail sync (Phase 5 / Milestone 1)
+
+1. **Google Cloud (once):** create a project, enable the Gmail API, configure the consent screen (External,
+   *Testing*, yourself as test user, scope `gmail.readonly`) and create a **Web application** OAuth client
+   with the redirect URI `http://localhost:8080/api/v1/integrations/gmail/callback`. Step by step:
+   [docs/phase-5-milestone-1.md](docs/phase-5-milestone-1.md#google-cloud-setup-manual-once).
+2. Put `INVESTARY_GMAIL_CLIENT_ID`, `INVESTARY_GMAIL_CLIENT_SECRET` and `INVESTARY_GMAIL_TOKEN_KEY`
+   (generate it with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) into
+   `infrastructure/.env` and restart the backend.
+3. Open **http://localhost:4200/automation** (use `localhost`, not `127.0.0.1`). Add a source per brokerage
+   (e.g. TCBS → `tcbs.com.vn`, SSI → `ssi.com.vn`, VNDIRECT → `vndirect.com.vn`, VCBS → `vcbs.com.vn`; these
+   are examples, not built in), then **Connect Gmail** and **Sync now**.
+
+- Only messages whose `From` address (never the display name) matches an enabled source are imported, through
+  the Phase 2 import (same parser, original bytes, SHA-256 duplicates). Messages Gmail marks `dmarc=fail` are
+  rejected. Mail that matches no source is never stored.
+- The first sync looks back 30 days; later syncs read Gmail's history every 30 minutes. If Gmail's history
+  expired, a bounded window since the last success is re-checked.
+- Tokens stay in the backend (refresh token AES-GCM encrypted). The Gmail endpoints answer only requests from
+  this computer (`403 LOCAL_ONLY` otherwise). In Google's *Testing* mode the authorization expires after 7
+  days; the page then asks you to reconnect.
+
 ## Research assistant (Phase 3)
 
 1. Install [Ollama](https://ollama.com) and pull the models: `ollama pull bge-m3` and `ollama pull qwen3:8b`.
@@ -375,6 +412,7 @@ them on startup. Never edit an applied migration; add a new one.
 | `V3` | `vector` extension, `knowledge_sources`, `knowledge_chunks` |
 | `V4` | `investor_profile`, `investor_goals`, `instruments`, `portfolios`, `portfolio_transactions`, `instrument_prices` |
 | `V5` | `impact_assessments`, `impact_assessment_items` |
+| `V6` | `gmail_accounts`, `email_source_rules`, `gmail_sync_runs`, `gmail_messages`; `source_messages.source_type` allows `GMAIL` |
 
 V2 is additive: it leaves `document` untouched and only adds foreign keys to it
 (`ON DELETE SET NULL` / `CASCADE` on association rows).
@@ -396,6 +434,7 @@ cd frontend && npm run build
 | Persistence | `DownloadJobQueueTest` (concurrent claims, lease recovery, stale tokens, backoff), `FlywayUpgradeTest` (Phase 1 data survives V2), `LocalFileStoreTest` |
 | End-to-end | `EmailIngestionIntegrationTest` (import → links → background download from WireMock → library → provenance across emails → delete rules → retries → PDF attachments → search/filter) |
 | Knowledge base & RAG | `PdfTextExtractorTest`, `EmailTextExtractorTest`, `TextChunkerTest`, `TickerDetectorTest`, `EmbeddingServiceTest`, `QueryAnalysisTest`, `CitationValidatorTest`, `ResearchAssistantServiceTest`, `KnowledgeControllerTest`, `ResearchControllerTest`, `KnowledgeBaseIntegrationTest`, `KnowledgeEvaluationTest` (writes `backend/target/knowledge-eval-report.md`) |
+| Gmail sync (Phase 5 / M1) | `TokenCipherTest`, `OAuthStateStoreTest` (one-time state, browser binding, PKCE vector), `SenderVerifierTest`, `RuleMatcherTest`, `GmailQueryValidatorTest`, `SourceRuleServiceTest`, `GoogleClientsTest` (WireMock: code exchange, refresh, `invalid_grant`, revoke, pagination, 401 refresh, 429/403/503 retries, history 404), `LocalOnlyRequestFilterTest`, `AutomationControllersTest`, `GmailSyncIntegrationTest` (OAuth callback, initial/incremental/recovery sync, duplicates, limits, rejects, transient failures, interrupted runs, revoked grant, disconnect) |
 | Frontend | API services, error mapping, file-size pipe, app shell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant |
 
 - Tests that need Docker are **skipped** (not failed) without a Docker daemon; check the surefire summary.
@@ -432,7 +471,8 @@ Errors use RFC 9457 `application/problem+json` with a machine-readable `code`:
 `VALIDATION_FAILED`, `INVALID_DOCUMENT`, `DOCUMENT_NOT_FOUND`, `DUPLICATE_DOCUMENT`, `INVALID_EMAIL`,
 `DUPLICATE_EMAIL`, `EMAIL_NOT_FOUND`, `LINK_NOT_FOUND`, `DOWNLOAD_NOT_ALLOWED`, `PAYLOAD_TOO_LARGE`,
 `STORAGE_ERROR`, `INTERNAL_ERROR`, `KNOWLEDGE_JOB_NOT_FOUND`, `AI_NOT_CONFIGURED` (503), `AI_PROVIDER_ERROR` (502),
-`AI_TIMEOUT` (504), `GOAL_NOT_FOUND`, `INSTRUMENT_NOT_FOUND`, `DUPLICATE_INSTRUMENT` (409), `INSTRUMENT_IN_USE` (409),
+`AI_TIMEOUT` (504), `GMAIL_NOT_CONFIGURED` (503), `GMAIL_NOT_CONNECTED` (409), `GMAIL_SYNC_IN_PROGRESS` (409),
+`SYNC_RUN_NOT_FOUND`, `SOURCE_RULE_NOT_FOUND`, `DUPLICATE_SOURCE_RULE` (409), `LOCAL_ONLY` (403), `GOAL_NOT_FOUND`, `INSTRUMENT_NOT_FOUND`, `DUPLICATE_INSTRUMENT` (409), `INSTRUMENT_IN_USE` (409),
 `PRICE_NOT_FOUND`, `DUPLICATE_PRICE` (409), `PORTFOLIO_NOT_FOUND`, `DUPLICATE_PORTFOLIO` (409), `TRANSACTION_NOT_FOUND`,
 `INSUFFICIENT_HOLDINGS` (422), `CURRENCY_MISMATCH` (422), `PORTFOLIO_REQUIRED` (422), `ASSESSMENT_NOT_FOUND`.
 
@@ -494,6 +534,18 @@ Upload fields: `file` (required), `brokerageCompany` (≤200), `reportType` (`MA
 | `GET`/`DELETE` | `/api/v1/intelligence/impact-assessments/{id}` | saved assessment |
 | `POST` | `/api/v1/intelligence/ask` | `{question, portfolioId}` → facts, cited answer, warnings |
 
+### Gmail integration and source rules (Phase 5 / M1, local-only)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` | `/api/v1/integrations/gmail/status` | configured flag, account, running, last run, imported total, schedule (never tokens) |
+| `POST` | `/api/v1/integrations/gmail/connect` | `{authorizationUrl}` + HttpOnly binding cookie · `503 GMAIL_NOT_CONFIGURED` |
+| `GET` | `/api/v1/integrations/gmail/callback` | `303` to the UI with `?gmail=connected` or `?gmail=error&reason=<CODE>` |
+| `POST` | `/api/v1/integrations/gmail/disconnect` | `204` (revokes at Google, deletes tokens, keeps imported emails) |
+| `POST` | `/api/v1/integrations/gmail/sync` | `202 {runId}` · `409 GMAIL_SYNC_IN_PROGRESS` · `409 GMAIL_NOT_CONNECTED` |
+| `GET` | `/api/v1/integrations/gmail/sync-history[/{runId}]` | page of runs (counters, mode, status, error) / one run |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/automation/sources[/{id}]` | brokerage source rules `{name, senderAddresses, senderDomains, subjectKeywords, gmailQuery, enabled, autoImport, autoPdfDownload}` |
+
 ### curl examples
 
 ```bash
@@ -550,6 +602,10 @@ curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-as
   heuristic; the similarity threshold is untuned; answers were only tested with fake models, not with
   a real LLM; no streaming or conversation memory. Details in
   [docs/phase-3-implementation.md](docs/phase-3-implementation.md#known-limitations).
+- **Gmail sync:** no authentication (loopback-only boundary), one account, polling instead of push, Testing-mode
+  tokens expire weekly, mail matching no rule is not recorded, `autoPdfDownload` is stored but not acted on.
+  Verified only against a mocked Google API, not a live account. Details in
+  [docs/phase-5-milestone-1.md](docs/phase-5-milestone-1.md#known-limitations).
 - **Portfolios:** no corporate actions, cash, FX, lots or tax reports; prices are manual; instruments have
   no master data; AI interpretations are constrained and cited but only tested with a scripted model.
   Details in [docs/phase-4-implementation.md](docs/phase-4-implementation.md#known-limitations).
@@ -559,6 +615,8 @@ curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-as
 - **Phase 3 — done:** knowledge base, hybrid search and RAG assistant with validated citations.
 - **Phase 4 — done:** investor profile and goals, transaction-based portfolios, research matching,
   impact assessments and the portfolio-aware assistant.
-- **Phase 5 — recommended:** live-model evaluation and tuning, OCR, an instrument/ticker master list,
+- **Phase 5 / Milestone 1 — done:** Gmail connection, source rules, initial and incremental Gmail sync.
+- **Phase 5 — later milestones:** live-model evaluation and tuning, OCR, an instrument/ticker master list,
   corporate actions and cash, a watchlist and a decision journal linked to assessments, HNSW index.
-- Later: authentication, S3-compatible storage behind the storage ports, Gmail/Drive ingestion.
+- Later: authentication, S3-compatible storage behind the storage ports, Drive ingestion, automated
+  processing of synced mail (PDF downloads, indexing, impact runs, briefs, notifications).

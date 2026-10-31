@@ -13,6 +13,9 @@ A personal, local, single-user investment research assistant. It has three parts
   hybrid search) and a RAG assistant with backend-validated citations (`docs/phase-3-implementation.md`).
 - **Phase 4:** investor profile and goals, transaction-based portfolios with manual prices, research
   matching, impact assessments and a portfolio-aware assistant (`docs/phase-4-implementation.md`).
+- **Phase 5 / Milestone 1:** read-only Gmail connection (OAuth + PKCE, encrypted refresh token), brokerage
+  source rules, and initial/incremental Gmail sync into the Phase 2 import (`docs/phase-5-milestone-1.md`).
+  Later milestones (automatic PDF download, indexing/impact automation, briefs, notifications) are not built.
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
@@ -27,6 +30,7 @@ A personal, local, single-user investment research assistant. It has three parts
 knowledge ──▶ email ──▶ research ──▶ document ──▶ common
 intelligence ──▶ knowledge, portfolio, investor, research (Keywords only)
 portfolio ──▶ common          investor ──▶ common
+automation ──▶ email (application: EmailImportService.importRaw)
 ```
 
 | Module | Owns |
@@ -38,6 +42,7 @@ portfolio ──▶ common          investor ──▶ common
 | `com.investary.investor` | Investor profile and goals |
 | `com.investary.portfolio` | Instruments, prices, portfolios, transactions; holdings/valuation/allocation computed on read |
 | `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant |
+| `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter |
 | `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS |
 
 - `common` imports no feature module. `document` imports neither `email` nor `research`. `research`
@@ -46,7 +51,9 @@ portfolio ──▶ common          investor ──▶ common
 - `intelligence` may only use `*QueryService` classes from `portfolio` and `investor`: AI output must never
   change portfolio, transaction or profile data.
 - `document` reacts to nothing; it publishes `DocumentDeletedEvent`, which `research` listens to.
-- Inside a module, use the layers `api / application / domain / persistence / storage` (`email` also has `parsing`).
+- Nothing imports `automation`; it imports Gmail mail only through `EmailImportService.importRaw` (no second parser).
+- Inside a module, use the layers `api / application / domain / persistence / storage` (`email` also has `parsing`;
+  `automation` also has `google` for the Google HTTP clients and `security` for token encryption and OAuth state).
 
 ## Sources of truth
 
@@ -111,6 +118,13 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
   - Never show or compute market value or unrealized P&L without a real price observation; label
     cost-basis and market-value allocation separately.
   - Never present a portfolio-intelligence category as a trading signal or recommendation.
+- **Gmail / credentials:**
+  - Never return, log or store in plain text OAuth tokens, client secrets or `INVESTARY_GMAIL_TOKEN_KEY`; tokens stay
+    in the backend (`TokenCipher`, `GmailAccessTokens`). Request only `gmail.readonly`.
+  - Keep `/api/v1/integrations/**` and `/api/v1/automation/**` behind `LocalOnlyRequestFilter`.
+  - Match source rules on the verified `From` addr-spec, never the display name. The Gmail cursor may only
+    advance after the messages before it are recorded in `gmail_messages`.
+  - Tests use WireMock for Google (`GmailSyncIntegrationTest`); never a real Google account or token.
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**

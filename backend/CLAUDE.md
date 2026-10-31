@@ -75,3 +75,13 @@ Older examples on the web will not compile here. Use:
 
 `@ModelAttribute` records stop at the first binding failure. An invalid enum means the other field
 errors are not reported in the same response. This is expected; see `DocumentControllerTest`.
+
+## Gmail integration (Phase 5 / Milestone 1)
+
+- Module `automation`: Google HTTP clients in `automation/google/` (`GoogleHttp` = `RestClient` over the JDK client),
+  token encryption and OAuth state in `automation/security/`, sync engine in `automation/application/GmailSyncRunner.java`.
+- Gmail state uses JDBC stores (`GmailAccountStore`, `GmailSyncRunStore`, `GmailMessageStore`); only source rules
+  are a JPA entity. Cursor and status writes of a running sync must keep the `sync_lock_token = :token` guard.
+- Container tests: `automation/GmailSyncIntegrationTest.java` points `investary.gmail.*-uri` / `api-base-url` at
+  WireMock. Static `WireMock.get` and `WireMock.post` clash with MockMvc's; call them as `WireMock.get(...)`.
+- Tests that enable the Gmail scheduler need `@DirtiesContext`; it is off in `src/test/resources/application.properties`.

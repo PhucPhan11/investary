@@ -25,6 +25,14 @@ const BADGES: Record<string, { label: string; tone: Tone }> = {
   NAVIGATION: { label: 'Navigation', tone: 'muted' },
   PROMOTION: { label: 'Promotion', tone: 'muted' },
   OTHER: { label: 'Other', tone: 'neutral' },
+  // Gmail integration and sync runs
+  NOT_CONFIGURED: { label: 'Not configured', tone: 'muted' },
+  CONNECTED: { label: 'Connected', tone: 'success' },
+  RECONNECT_REQUIRED: { label: 'Reconnect required', tone: 'danger' },
+  DISCONNECTED: { label: 'Not connected', tone: 'neutral' },
+  RUNNING: { label: 'Running…', tone: 'warning' },
+  SUCCEEDED: { label: 'Succeeded', tone: 'success' },
+  SYNC_PARTIAL: { label: 'Partial (continues)', tone: 'warning' },
 };
 
 /** Small coloured label for statuses and categories returned by the API. */

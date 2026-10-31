@@ -47,5 +47,10 @@ export const routes: Routes = [
     title: 'Investor profile · Investary',
     loadComponent: () => import('./features/investor/investor-profile').then((m) => m.InvestorProfilePage),
   },
+  {
+    path: 'automation',
+    title: 'Gmail sync · Investary',
+    loadComponent: () => import('./features/automation/gmail-sync').then((m) => m.GmailSync),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];

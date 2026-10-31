@@ -35,7 +35,8 @@ class ArchitectureTest {
             "knowledge", Set.of("email", "research", "document"),
             "investor", Set.of(),
             "portfolio", Set.of(),
-            "intelligence", Set.of("knowledge", "portfolio", "investor", "research"));
+            "intelligence", Set.of("knowledge", "portfolio", "investor", "research"),
+            "automation", Set.of("email"));
 
     /** The only investor/portfolio services intelligence may use: read-only queries, so AI output can never change data. */
     private static final Pattern READ_ONLY_SERVICE = Pattern.compile("^[A-Za-z]*QueryService$");
