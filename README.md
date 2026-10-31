@@ -83,7 +83,7 @@ cd backend
 PowerShell, if your default `JAVA_HOME` is not JDK 21:
 
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot'; cd backend; .\mvnw.cmd spring-boot:run
+$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.10.7-hotspot'; cd backend; .\mvnw.cmd spring-boot:run
 ```
 
 `spring-boot:run` activates the **`dev`** profile, which:

@@ -5,6 +5,9 @@
 
 # --- Uploaded financial documents and emails (never commit) ---
 storage/
+# Java packages named "storage" are source code, not uploads
+!backend/src/main/java/**/storage/
+!backend/src/test/java/**/storage/
 *.pdf
 *.eml
 # Synthetic, sanitized test fixtures only

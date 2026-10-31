@@ -9,6 +9,7 @@
 //   2. migrations        applied Flyway migrations are immutable (checksums in docs/harness/migration-checksums.json)
 //   3. docs drift        paths and npm scripts named in agent docs exist; IntelliJ run configs point at real paths
 //   4. failure memory    every docs/failures/*.md has "## Prevention" and "## Detection" sections
+//   5. ignored sources   no file under backend/src or frontend/src is ignored by git
 
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -168,11 +169,20 @@ function checkFailureMemory() {
   }
 }
 
+function checkIgnoredSources() {
+  const ignored = execFileSync('git', ['ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--', 'backend/src', 'frontend/src'],
+    { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean);
+  for (const file of ignored) {
+    fail('ignored-sources', `${file}: source file is ignored by .gitignore and would never be committed`);
+  }
+}
+
 const update = process.argv.includes('--update-migrations');
 checkSensitiveFiles();
 checkMigrations(update);
 checkDocsDrift();
 checkFailureMemory();
+checkIgnoredSources();
 
 if (problems.length > 0) {
   console.error(`Harness check failed (${problems.length} problem${problems.length === 1 ? '' : 's'}):`);
@@ -181,4 +191,4 @@ if (problems.length > 0) {
   }
   process.exit(1);
 }
-console.log('Harness check passed: sensitive files, migrations, docs drift, failure memory.');
+console.log('Harness check passed: sensitive files, migrations, docs drift, failure memory, ignored sources.');

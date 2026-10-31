@@ -60,7 +60,7 @@ portfolio ──▶ common          investor ──▶ common
 ## Commands
 
 Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 first:
-`export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.9.10-hotspot"` (bash), or the
+`export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.10.7-hotspot"` (bash), or the
 `$env:JAVA_HOME` equivalent in PowerShell.
 
 | Purpose | Command (from repo root unless noted) |
@@ -141,3 +141,4 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - Java text-block SQL losing trailing spaces → `docs/failures/0007-text-block-sql-trailing-space.md`
 - IntelliJ run configs: terminal before-launch task, lost Maven wrapper → `docs/failures/0008-intellij-run-config-terminal-before-launch.md`
 - Business dates vs JVM time zone → `docs/failures/0009-market-date-vs-jvm-zone.md`
+- The `.gitignore` storage rule hid the Java `storage` packages → `docs/failures/0010-gitignore-storage-hides-java-packages.md`
