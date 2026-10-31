@@ -36,6 +36,10 @@ public class BrokerageRegistry {
                 .findFirst();
     }
 
+    public List<String> names() {
+        return brokerages.stream().map(ResearchProperties.Brokerage::name).toList();
+    }
+
     public List<String> domains() {
         return brokerages.stream().flatMap(b -> b.domains().stream()).toList();
     }

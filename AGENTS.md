@@ -9,17 +9,20 @@ A personal, local, single-user investment research assistant. It has three parts
 - **Phase 1:** a PDF research library.
 - **Phase 2:** brokerage email (`.eml`) ingestion, link classification, secure background download of
   linked reports, and deterministic research items.
-- **Planned:** text extraction/search, then AI/RAG, then a portfolio module. Do not add AI or new
-  infrastructure unless asked.
+- **Phase 3:** a research knowledge base (PDF/email text extraction, chunks, pgvector embeddings,
+  hybrid search) and a RAG assistant with backend-validated citations (`docs/phase-3-implementation.md`).
+- **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
 - Frontend: Angular 22 (standalone, signals, zoneless, Vitest, SCSS, no UI library), in `frontend/`.
-- Infra: `infrastructure/docker-compose.yml` (Postgres only), config from `infrastructure/.env`.
+- Infra: `infrastructure/docker-compose.yml` (PostgreSQL 17 + pgvector), config from `infrastructure/.env`.
+- AI: Spring AI 2.0 model interfaces only (`EmbeddingModel`, `ChatModel`); provider by config, default
+  `none` (local default: Ollama). No vector-store starter; the schema is ours (`V3`).
 
 ## Module boundaries (enforced by `ArchitectureTest`)
 
 ```
-email ──▶ research ──▶ document ──▶ common
+knowledge ──▶ email ──▶ research ──▶ document ──▶ common
 ```
 
 | Module | Owns |
@@ -27,6 +30,7 @@ email ──▶ research ──▶ document ──▶ common
 | `com.investary.document` | PDF library |
 | `com.investary.email` | EML import, parsing, sanitizing, original files |
 | `com.investary.research` | Links, classification, downloads/jobs, research items, `message_documents` provenance |
+| `com.investary.knowledge` | Extraction, chunking, embeddings, `knowledge_sources` jobs, hybrid search, RAG assistant, citations |
 | `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS |
 
 - `common` imports no feature module. `document` imports neither `email` nor `research`. `research`
@@ -81,11 +85,22 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
   - Email HTML is untrusted. Serve it only through `HtmlSanitizer`. The UI shows it in a sandboxed
     iframe, never via `innerHTML` or `bypassSecurityTrustHtml`.
 - **Deletes:** deleting an email must never delete library PDFs (retention policy in `README.md`).
+- **AI / knowledge base:**
+  - Text from documents and emails is untrusted. Instructions go only in the system message
+    (`PromptBuilder`); source text stays inside `<source>` elements.
+  - Citations are built from stored chunks; never trust ids, titles, pages or figures from model output.
+    Keep `CitationValidator` able only to lower the evidence status.
+  - Never log document text, prompts, answers or API keys; log ids and counts.
+  - A change to chunking or extraction output must bump `IndexVersion.PIPELINE`; never mix vectors of
+    different models or dimensions.
+  - Tests must not call a real AI provider: use `FakeAiConfiguration` + `classpath:fake-ai.properties`.
+  - Never present a brokerage rating as Investary's recommendation.
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**
   - Never commit real emails, PDFs or `infrastructure/.env`.
-  - Fixtures are synthetic and live in `backend/src/test/resources/eml/`.
+  - Fixtures are synthetic and live in `backend/src/test/resources/eml/`; research PDFs are generated in
+    tests (`TestResearchPdfs`), never committed. The evaluation set is `backend/src/test/resources/knowledge/eval/questions.json`.
   - Tests must not contact real websites; use WireMock.
 - **Git:** do not commit, push or create branches unless the user asks. Work happens on per-phase branches.
 
@@ -107,3 +122,5 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - Background worker in integration tests → `docs/failures/0004-integration-test-background-worker.md`
 - Real personal emails → `docs/failures/0005-real-email-data.md`
 - Claude browser pane blocks iframes → `docs/failures/0006-embedded-browser-iframe.md`
+- Java text-block SQL losing trailing spaces → `docs/failures/0007-text-block-sql-trailing-space.md`
+- IntelliJ run configs: terminal before-launch task, lost Maven wrapper → `docs/failures/0008-intellij-run-config-terminal-before-launch.md`

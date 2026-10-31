@@ -41,6 +41,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.investary.TestDatabase;
 import com.investary.document.TestPdfs;
 import com.investary.research.application.ResearchQueryService;
 import com.investary.research.application.SourceLinkView;
@@ -67,7 +68,7 @@ class EmailIngestionIntegrationTest {
 
     @Container
     @ServiceConnection
-    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17.6-alpine");
+    static final PostgreSQLContainer POSTGRES = TestDatabase.container();
 
     @RegisterExtension
     static WireMockExtension brokerage = WireMockExtension.newInstance().options(wireMockConfig().dynamicPort()).build();

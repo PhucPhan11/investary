@@ -2,7 +2,9 @@ name: investary
 
 services:
   postgres:
-    image: postgres:17.6-alpine
+    # PostgreSQL 17 with the pgvector extension (Phase 3 knowledge base). Same major version and volume as before,
+    # so existing data is kept; see README "Upgrading to Phase 3" for the one-time REINDEX.
+    image: pgvector/pgvector:0.8.7-pg17
     container_name: investary-postgres
     restart: unless-stopped
     environment:

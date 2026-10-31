@@ -28,6 +28,12 @@ const email = {
   sameMessageIdAs: [],
 };
 
+const indexed = {
+  id: 'k1', sourceType: 'EMAIL', sourceId: 'e1', status: 'INDEXED', statusReason: null, indexVersion: 'v',
+  currentVersion: true, chunkCount: 4, pageCount: null, attempts: 1, maxAttempts: 3, lastError: null,
+  requestedAt: null, startedAt: null, completedAt: '2026-10-29T08:00:00Z', nextAttemptAt: null,
+};
+
 function link(status: string, category = 'STOCK_RESEARCH') {
   return {
     id: category === 'PROMOTION' ? 'l2' : 'l1',
@@ -67,11 +73,13 @@ describe('EmailDetail', () => {
     http.verify();
   });
 
-  function flushInitial(links: unknown[]): void {
+  function flushInitial(links: unknown[], fixture?: { detectChanges(): void }): void {
     http.expectOne('/api/v1/emails/e1').flush(email);
     http.expectOne('/api/v1/emails/e1/links').flush(links);
     http.expectOne('/api/v1/emails/e1/documents').flush([]);
     http.expectOne('/api/v1/emails/e1/research-items').flush([]);
+    fixture?.detectChanges();
+    http.expectOne('/api/v1/knowledge/emails/e1').flush(indexed);
   }
 
   async function render() {
@@ -84,7 +92,7 @@ describe('EmailDetail', () => {
 
   it('hides promotion links by default and shows a retry action for failed downloads', async () => {
     const fixture = await render();
-    flushInitial([link('FAILED'), link('SKIPPED', 'PROMOTION')]);
+    flushInitial([link('FAILED'), link('SKIPPED', 'PROMOTION')], fixture);
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
@@ -96,7 +104,7 @@ describe('EmailDetail', () => {
 
   it('requests a download and polls until the report is stored', async () => {
     const fixture = await render();
-    flushInitial([link('READY')]);
+    flushInitial([link('READY')], fixture);
     fixture.detectChanges();
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('tbody button')!.click();

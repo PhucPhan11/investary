@@ -20,6 +20,8 @@
 - **Email HTML:** never render it with `innerHTML` or `bypassSecurityTrustHtml`. Show the backend's
   sanitized `/api/v1/emails/{id}/html` in an `<iframe sandbox>` without `allow-scripts` / `allow-same-origin`.
 - **Errors:** map HTTP errors to user text with `errorMessage()`. Show loading, empty and error states on every page.
+- **AI answers** are plain text: split them with `answerSegments()` and render citation markers as buttons;
+  never `innerHTML`. Citations link to `/documents/:id` or `/emails/:id`.
 
 ## Tests (Vitest via `ng test`)
 

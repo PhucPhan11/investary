@@ -1,0 +1,86 @@
+{
+  "description": "Retrieval evaluation over SyntheticResearchCorpus (synthetic data only). Each case lists sources that must be retrieved (all), at least one of (any), must not be retrieved (none), or expects no evidence at all.",
+  "cases": [
+    {
+      "id": "factual-recommendation",
+      "category": "factual lookup",
+      "question": "TCBS đang khuyến nghị gì về cổ phiếu SCS?",
+      "any": ["tcbs-scs-report", "tcbs-newsletter"],
+      "none": ["vnd-fpt-report", "ssi-bank-sector"]
+    },
+    {
+      "id": "factual-risks",
+      "category": "factual lookup",
+      "question": "Những rủi ro chính của SCS theo báo cáo gần nhất là gì?",
+      "all": ["tcbs-scs-report"]
+    },
+    {
+      "id": "airport-impact",
+      "category": "factual lookup",
+      "question": "Báo cáo nào đề cập đến tác động của sân bay Long Thành?",
+      "all": ["tcbs-scs-report"]
+    },
+    {
+      "id": "compare-brokerages",
+      "category": "multi-document comparison",
+      "question": "So sánh nhận định của TCBS và SSI về SCS.",
+      "all": ["ssi-scs-email"],
+      "any": ["tcbs-scs-report", "tcbs-newsletter"]
+    },
+    {
+      "id": "conflicting-opinions",
+      "category": "conflicting sources",
+      "question": "Có báo cáo nào đưa ra quan điểm trái ngược về cổ phiếu SCS không? Khuyến nghị Mua hay Bán?",
+      "all": ["tcbs-scs-report", "ssi-scs-email"]
+    },
+    {
+      "id": "positive-banking",
+      "category": "multi-document comparison",
+      "question": "Những công ty chứng khoán nào đang có quan điểm tích cực về ngành ngân hàng?",
+      "all": ["ssi-bank-sector"]
+    },
+    {
+      "id": "ticker-fpt",
+      "category": "ticker disambiguation",
+      "question": "Khuyến nghị cho FPT là gì?",
+      "all": ["vnd-fpt-report"],
+      "none": ["tcbs-frt-report"]
+    },
+    {
+      "id": "ticker-frt",
+      "category": "ticker disambiguation",
+      "question": "FRT được khuyến nghị thế nào?",
+      "filters": {"ticker": "FRT"},
+      "all": ["tcbs-frt-report"],
+      "none": ["vnd-fpt-report"]
+    },
+    {
+      "id": "date-filtered",
+      "category": "date-filtered",
+      "question": "Khuyến nghị mới nhất về SCS",
+      "filters": {"from": "2026-10-24"},
+      "any": ["ssi-scs-email", "tcbs-newsletter"],
+      "none": ["tcbs-scs-report"]
+    },
+    {
+      "id": "email-only",
+      "category": "source-type filter",
+      "question": "Khuyến nghị cổ phiếu SCS trong bản tin email",
+      "filters": {"sourceType": "EMAIL"},
+      "any": ["ssi-scs-email", "tcbs-newsletter"],
+      "none": ["tcbs-scs-report"]
+    },
+    {
+      "id": "no-evidence-gold",
+      "category": "no evidence",
+      "question": "Giá vàng thế giới tuần này thế nào?",
+      "empty": true
+    },
+    {
+      "id": "no-evidence-fed",
+      "category": "no evidence",
+      "question": "Cục Dự trữ Liên bang Mỹ sẽ quyết định lãi suất điều hành ra sao vào năm 2027?",
+      "empty": true
+    }
+  ]
+}

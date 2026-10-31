@@ -1,8 +1,25 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Backend tests (verify)" type="MavenRunConfiguration" factoryName="Maven">
     <MavenSettings>
-      <option name="myGeneralSettings" />
-      <option name="myRunnerSettings" />
+      <option name="myGeneralSettings">
+        <MavenGeneralSettings>
+          <!-- Use backend/mvnw (Maven 3.9.11 from Maven Central), not a locally installed Maven. -->
+          <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+          <option name="mavenHome" value="Use Maven wrapper" />
+        </MavenGeneralSettings>
+      </option>
+      <option name="myRunnerSettings">
+        <MavenRunnerSettings>
+          <!-- The project SDK (JDK 21); avoids hard-coding a machine-specific SDK name. -->
+          <option name="jreName" value="#USE_PROJECT_JDK" />
+          <option name="skipTests" value="false" />
+          <option name="environmentProperties">
+            <map />
+          </option>
+          <option name="passParentEnv" value="true" />
+          <option name="vmOptions" value="" />
+        </MavenRunnerSettings>
+      </option>
       <option name="myRunnerParameters">
         <MavenRunnerParameters>
           <option name="cmdOptions" value="" />

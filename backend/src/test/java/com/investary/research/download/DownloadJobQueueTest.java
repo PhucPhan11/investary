@@ -23,6 +23,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import com.investary.TestDatabase;
 import com.investary.research.download.DownloadJobQueue.ClaimedJob;
 
 /**
@@ -34,7 +35,7 @@ class DownloadJobQueueTest {
 
     @Container
     @ServiceConnection
-    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17.6-alpine");
+    static final PostgreSQLContainer POSTGRES = TestDatabase.container();
 
     @Autowired
     DownloadJobQueue queue;

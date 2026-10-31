@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * Enforces the module dependency direction {@code email → research → document → common}
+ * Enforces the module dependency direction {@code knowledge → email → research → document → common}
  * (see AGENTS.md and docs/failures/0003-module-dependency-cycle.md) by scanning main-source imports.
  * Fix the offending dependency instead of relaxing these rules.
  */
@@ -31,7 +31,8 @@ class ArchitectureTest {
             "common", Set.of(),
             "document", Set.of(),
             "research", Set.of("document"),
-            "email", Set.of("research", "document"));
+            "email", Set.of("research", "document"),
+            "knowledge", Set.of("email", "research", "document"));
 
     /** Packages that are internal to their module. */
     private static final Set<String> INTERNAL_LAYERS = Set.of("api", "persistence", "storage");

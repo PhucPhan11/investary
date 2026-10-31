@@ -1,7 +1,11 @@
 package com.investary.email.application;
 
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.core.io.Resource;
@@ -15,6 +19,7 @@ import org.springframework.web.util.HtmlUtils;
 
 import com.investary.email.application.EmailExceptions.EmailNotFoundException;
 import com.investary.email.application.EmailViews.Attachment;
+import com.investary.email.application.EmailViews.EmailContent;
 import com.investary.email.application.EmailViews.EmailDetail;
 import com.investary.email.application.EmailViews.EmailSummary;
 import com.investary.email.application.EmailViews.Sender;
@@ -93,6 +98,36 @@ public class EmailQueryService {
 
     public List<Sender> senders() {
         return messages.findSenders().stream().map(s -> new Sender(s.getAddress(), s.getName(), s.getMessages())).toList();
+    }
+
+    /**
+     * Parsed content for re-use (e.g. indexing) without re-reading the original EML.
+     */
+    public EmailContent content(UUID id) {
+        SourceMessage m = require(id);
+        return new EmailContent(m.getId(), m.getSubject(), m.getSenderName(), m.getSenderAddress(), m.getSentAt(),
+                m.getBrokerage(), m.getParsingStatus(), m.getHtmlContent(), m.getNormalizedText());
+    }
+
+    /**
+     * Earliest sent date of the emails that reference a document; a fallback date for reports without
+     * a publication date. Empty when no email references it or none has a date.
+     */
+    public Optional<Instant> firstReferencedAt(UUID documentId) {
+        return messages.findAllById(research.messageIdsForDocument(documentId)).stream()
+                .map(SourceMessage::getSentAt)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder());
+    }
+
+    /**
+     * Brokerage of the earliest email that references a document, if known.
+     */
+    public Optional<String> referencingBrokerage(UUID documentId) {
+        return messages.findAllById(research.messageIdsForDocument(documentId)).stream()
+                .filter(m -> m.getBrokerage() != null)
+                .min(Comparator.comparing(SourceMessage::getSentAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(SourceMessage::getBrokerage);
     }
 
     public SourceMessage require(UUID id) {
