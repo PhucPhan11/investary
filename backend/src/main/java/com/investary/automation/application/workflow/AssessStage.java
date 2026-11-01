@@ -8,7 +8,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
-import com.investary.automation.WorkflowProperties;
+import com.investary.automation.application.settings.AutomationSettings;
 import com.investary.automation.application.workflow.StageResult.Done;
 import com.investary.automation.domain.JobType;
 import com.investary.automation.domain.StageStatus;
@@ -18,6 +18,7 @@ import com.investary.automation.persistence.WorkflowStore.WorkflowRow;
 import com.investary.intelligence.application.ImpactAssessmentService;
 import com.investary.intelligence.application.ImpactAssessmentService.AssessmentTrigger;
 import com.investary.intelligence.application.ImpactAssessmentService.SourceAssessment;
+import com.investary.knowledge.usage.AiSettings;
 
 /**
  * One impact assessment for one matched portfolio, through the Phase 4 service (deterministic tiers,
@@ -32,15 +33,17 @@ class AssessStage implements StageHandler {
     private final ImpactAssessmentService assessments;
     private final AutomationJobQueue queue;
     private final WorkflowSources sources;
-    private final WorkflowProperties properties;
+    private final AutomationSettings settings;
+    private final AiSettings aiSettings;
     private final Clock clock;
 
-    AssessStage(ImpactAssessmentService assessments, AutomationJobQueue queue, WorkflowSources sources, WorkflowProperties properties,
-                Clock clock) {
+    AssessStage(ImpactAssessmentService assessments, AutomationJobQueue queue, WorkflowSources sources, AutomationSettings settings,
+                AiSettings aiSettings, Clock clock) {
         this.assessments = assessments;
         this.queue = queue;
         this.sources = sources;
-        this.properties = properties;
+        this.settings = settings;
+        this.aiSettings = aiSettings;
         this.clock = clock;
     }
 
@@ -51,12 +54,15 @@ class AssessStage implements StageHandler {
 
     @Override
     public StageResult run(ClaimedJob job, WorkflowRow workflow) {
-        if (!properties.autoAssess()) {
+        if (!settings.workflow().autoAssess()) {
             return Done.of(StageStatus.SKIPPED, "AUTO_ASSESS_DISABLED", Map.of(), List.of());
         }
         Instant startOfDay = clock.instant().atZone(MatchStage.MARKET_ZONE).toLocalDate().atStartOfDay(MatchStage.MARKET_ZONE).toInstant();
-        if (queue.countCreatedAssessmentsSince(startOfDay) >= properties.maxAutoAssessmentsPerDay()) {
+        if (queue.countCreatedAssessmentsSince(startOfDay) >= settings.workflow().maxAutoAssessmentsPerDay()) {
             return Done.of(StageStatus.SKIPPED, "DAILY_LIMIT_REACHED", Map.of(), List.of());
+        }
+        if (aiSettings.automaticTokenBudgetReached()) {
+            return Done.of(StageStatus.SKIPPED, "TOKEN_BUDGET_REACHED", Map.of(), List.of());
         }
         SourceAssessment result = assessments.createForSource(job.portfolioId(),
                 new AssessmentTrigger(workflow.sourceType().name(), workflow.sourceId(), sources.fingerprint(workflow), job.id()));

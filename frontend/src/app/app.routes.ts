@@ -59,8 +59,44 @@ export const routes: Routes = [
   },
   {
     path: 'automation',
-    title: 'Gmail sync · Investary',
-    loadComponent: () => import('./features/automation/gmail-sync').then((m) => m.GmailSync),
+    loadComponent: () => import('./features/automation/automation-center').then((m) => m.AutomationCenter),
+    children: [
+      {
+        path: '',
+        title: 'Automation Center · Investary',
+        loadComponent: () => import('./features/automation/automation-overview').then((m) => m.AutomationOverview),
+      },
+      {
+        path: 'sources',
+        title: 'Sources · Automation Center · Investary',
+        loadComponent: () => import('./features/automation/source-rules').then((m) => m.SourceRules),
+      },
+      {
+        path: 'jobs',
+        title: 'Jobs · Automation Center · Investary',
+        loadComponent: () => import('./features/automation/job-history').then((m) => m.JobHistory),
+      },
+      {
+        path: 'jobs/:id',
+        title: 'Job · Automation Center · Investary',
+        loadComponent: () => import('./features/automation/job-detail').then((m) => m.JobDetailPage),
+      },
+      {
+        path: 'settings',
+        title: 'Settings · Automation Center · Investary',
+        loadComponent: () => import('./features/automation/automation-settings').then((m) => m.AutomationSettingsPage),
+      },
+      {
+        path: 'usage',
+        title: 'AI usage · Automation Center · Investary',
+        loadComponent: () => import('./features/automation/ai-usage').then((m) => m.AiUsagePage),
+      },
+    ],
+  },
+  {
+    path: 'notifications',
+    title: 'Notifications · Investary',
+    loadComponent: () => import('./features/notifications/notification-list').then((m) => m.NotificationList),
   },
   { path: '**', redirectTo: 'dashboard' },
 ];

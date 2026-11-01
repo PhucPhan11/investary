@@ -30,3 +30,9 @@
 - With `vi.useFakeTimers()`, do **not** `await fixture.whenStable()` after flushing requests; it hangs.
   Call `fixture.detectChanges()` instead and advance time with `vi.advanceTimersByTime`.
 - Set component inputs with `fixture.componentRef.setInput('id', …)`.
+- Components are not checked by `fixture.detectChanges()` after a test mutates a plain field; type into the input
+  (`input.value = …; dispatchEvent(new Event('input'))`) or change a signal. See
+  `docs/failures/0012-angular-spec-plain-object-mutation.md`.
+- Spec helpers shared between specs live in `src/app/testing/` (importing another `*.spec.ts` runs its tests twice).
+- Automation Center: `features/automation/` (overview, sources, jobs, job detail, settings, AI usage) under the
+  `AutomationCenter` route shell; the header bell is `shared/components/notification-bell.ts`.

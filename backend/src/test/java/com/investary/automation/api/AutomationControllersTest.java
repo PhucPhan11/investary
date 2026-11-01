@@ -55,7 +55,7 @@ class AutomationControllersTest {
 
     @Test
     void statusNeverContainsTokens() throws Exception {
-        when(syncs.status()).thenReturn(new GmailStatusView(false, null, false, null, 0, true, 30, 30));
+        when(syncs.status()).thenReturn(new GmailStatusView(false, null, false, null, 0, true, 30, 30, null, null, true));
         mvc.perform(get("/api/v1/integrations/gmail/status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.configured").value(false))

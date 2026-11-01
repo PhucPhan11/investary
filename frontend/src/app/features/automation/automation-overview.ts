@@ -1,26 +1,14 @@
 import { DatePipe } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, input, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
-import { GmailApiService, SourceRuleApiService } from '../../core/api/automation-api.service';
+import { AutomationCenterApiService, GmailApiService } from '../../core/api/automation-api.service';
 import { errorMessage } from '../../core/api/error-message';
-import { GmailStatus, SourceRule, SourceRuleRequest, SyncRun } from '../../core/models/automation.model';
+import { ComponentHealth, GmailStatus, OverviewPeriod, OverviewReport, SyncRun } from '../../core/models/automation.model';
 import { Alert } from '../../shared/components/alert';
 import { EmptyState } from '../../shared/components/empty-state';
 import { Pager } from '../../shared/components/pager';
 import { StatusBadge } from '../../shared/components/status-badge';
-
-interface RuleDraft {
-  name: string;
-  senderAddresses: string;
-  senderDomains: string;
-  subjectKeywords: string;
-  gmailQuery: string;
-  enabled: boolean;
-  autoImport: boolean;
-  autoPdfDownload: boolean;
-}
 
 /** Reasons the OAuth callback can report (fixed codes, never Google's text). */
 const CONNECT_ERRORS: Record<string, string> = {
@@ -34,20 +22,33 @@ const CONNECT_ERRORS: Record<string, string> = {
   GOOGLE_ERROR: 'Google reported an error. Please try again.',
 };
 
+export const COMPONENT_LABELS: Record<ComponentHealth['component'], string> = {
+  GMAIL: 'Gmail connection',
+  RESEARCH_INGESTION: 'Research ingestion',
+  DOCUMENT_PROCESSING: 'Document processing',
+  KNOWLEDGE_INDEXING: 'Knowledge indexing',
+  BRIEF_GENERATION: 'Brief generation',
+};
+
+const UNAVAILABLE_COMPONENTS = Object.keys(COMPONENT_LABELS) as ComponentHealth['component'][];
+
+export const PERIOD_LABELS: Record<OverviewPeriod, string> = {
+  '24h': 'Last 24 hours',
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+};
+
 const POLL_MS = 2000;
 
-/**
- * Gmail integration: connection, sync status and history, and the brokerage source rules that decide
- * which verified senders are imported.
- */
+/** Automation Center overview: Gmail connection and sync history, record counts for a labelled window, component health. */
 @Component({
-  selector: 'app-gmail-sync',
-  imports: [DatePipe, FormsModule, Alert, EmptyState, Pager, StatusBadge],
-  templateUrl: './gmail-sync.html',
+  selector: 'app-automation-overview',
+  imports: [DatePipe, RouterLink, Alert, EmptyState, Pager, StatusBadge],
+  templateUrl: './automation-overview.html',
 })
-export class GmailSync implements OnInit {
+export class AutomationOverview implements OnInit {
   private readonly gmail = inject(GmailApiService);
-  private readonly rulesApi = inject(SourceRuleApiService);
+  private readonly center = inject(AutomationCenterApiService);
   private readonly router = inject(Router);
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -55,6 +56,9 @@ export class GmailSync implements OnInit {
   readonly gmailResult = input<string | undefined>(undefined, { alias: 'gmail' });
   readonly reason = input<string | undefined>();
 
+  protected readonly periods = Object.keys(PERIOD_LABELS) as OverviewPeriod[];
+  protected readonly periodLabels = PERIOD_LABELS;
+  protected readonly componentLabels = COMPONENT_LABELS;
   protected readonly status = signal<GmailStatus | null>(null);
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
@@ -63,15 +67,30 @@ export class GmailSync implements OnInit {
   protected readonly runs = signal<SyncRun[]>([]);
   protected readonly runsPage = signal(0);
   protected readonly runsTotalPages = signal(0);
-  protected readonly rules = signal<SourceRule[]>([]);
-  protected readonly rulesLoading = signal(true);
-  protected readonly editingRuleId = signal<string | null>(null);
-  protected readonly savingRule = signal(false);
-  protected draft: RuleDraft = this.emptyDraft();
+  protected readonly period = signal<OverviewPeriod>('24h');
+  protected readonly overview = signal<OverviewReport | null>(null);
+  protected readonly overviewLoading = signal(true);
+  protected readonly overviewError = signal<string | null>(null);
 
   protected readonly account = computed(() => this.status()?.account ?? null);
   protected readonly connected = computed(() => this.account()?.status === 'CONNECTED');
   protected readonly running = computed(() => this.status()?.running ?? false);
+  /** If the backend cannot be reached nothing is reported as operational. */
+  protected readonly health = computed<ComponentHealth[]>(() => {
+    const overview = this.overview();
+    if (overview) {
+      return overview.health;
+    }
+    return this.overviewError()
+      ? UNAVAILABLE_COMPONENTS.map((component) => ({
+          component,
+          state: 'UNAVAILABLE' as const,
+          reason: 'The backend could not be reached',
+          lastActivityAt: null,
+          checkedAt: new Date().toISOString(),
+        }))
+      : [];
+  });
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.stopPolling());
@@ -90,7 +109,28 @@ export class GmailSync implements OnInit {
     }
     this.loadStatus();
     this.loadRuns(0);
-    this.loadRules();
+    this.loadOverview();
+  }
+
+  protected selectPeriod(period: OverviewPeriod): void {
+    this.period.set(period);
+    this.loadOverview();
+  }
+
+  protected loadOverview(): void {
+    this.overviewLoading.set(true);
+    this.center.overview(this.period()).subscribe({
+      next: (overview) => {
+        this.overview.set(overview);
+        this.overviewError.set(null);
+        this.overviewLoading.set(false);
+      },
+      error: (err) => {
+        this.overview.set(null);
+        this.overviewError.set(errorMessage(err, 'Could not load the automation overview.'));
+        this.overviewLoading.set(false);
+      },
+    });
   }
 
   protected connect(): void {
@@ -115,6 +155,7 @@ export class GmailSync implements OnInit {
         this.busy.set(false);
         this.notice.set('Gmail disconnected.');
         this.loadStatus();
+        this.loadOverview();
       },
       error: (err) => {
         this.busy.set(false);
@@ -152,57 +193,6 @@ export class GmailSync implements OnInit {
     });
   }
 
-  protected saveRule(): void {
-    const request = this.toRequest(this.draft);
-    this.savingRule.set(true);
-    this.error.set(null);
-    const id = this.editingRuleId();
-    (id ? this.rulesApi.update(id, request) : this.rulesApi.create(request)).subscribe({
-      next: () => {
-        this.savingRule.set(false);
-        this.cancelRule();
-        this.loadRules();
-      },
-      error: (err) => {
-        this.savingRule.set(false);
-        this.error.set(errorMessage(err, 'Could not save the source rule.'));
-      },
-    });
-  }
-
-  protected editRule(rule: SourceRule): void {
-    this.editingRuleId.set(rule.id);
-    this.draft = {
-      name: rule.name,
-      senderAddresses: rule.senderAddresses.join('\n'),
-      senderDomains: rule.senderDomains.join('\n'),
-      subjectKeywords: rule.subjectKeywords.join('\n'),
-      gmailQuery: rule.gmailQuery ?? '',
-      enabled: rule.enabled,
-      autoImport: rule.autoImport,
-      autoPdfDownload: rule.autoPdfDownload,
-    };
-  }
-
-  protected cancelRule(): void {
-    this.editingRuleId.set(null);
-    this.draft = this.emptyDraft();
-  }
-
-  protected deleteRule(rule: SourceRule): void {
-    if (!confirm(`Delete the source rule "${rule.name}"? Emails already imported stay.`)) {
-      return;
-    }
-    this.rulesApi.delete(rule.id).subscribe({
-      next: () => this.loadRules(),
-      error: (err) => this.error.set(errorMessage(err, 'Could not delete the source rule.')),
-    });
-  }
-
-  protected senders(rule: SourceRule): string {
-    return [...rule.senderAddresses, ...rule.senderDomains.map((d) => `*@${d}`)].join(', ');
-  }
-
   /** Test seam: leaving the app for Google's consent page. */
   protected navigateTo(url: string): void {
     window.location.assign(url);
@@ -216,25 +206,13 @@ export class GmailSync implements OnInit {
         this.loading.set(false);
         if (wasRunning && !status.running) {
           this.loadRuns(0);
+          this.loadOverview();
         }
         this.schedulePoll();
       },
       error: (err) => {
         this.loading.set(false);
         this.error.set(errorMessage(err, 'Could not load the Gmail status.'));
-      },
-    });
-  }
-
-  private loadRules(): void {
-    this.rulesApi.list().subscribe({
-      next: (rules) => {
-        this.rules.set(rules);
-        this.rulesLoading.set(false);
-      },
-      error: (err) => {
-        this.rulesLoading.set(false);
-        this.error.set(errorMessage(err, 'Could not load the source rules.'));
       },
     });
   }
@@ -252,38 +230,4 @@ export class GmailSync implements OnInit {
       this.pollTimer = null;
     }
   }
-
-  private toRequest(draft: RuleDraft): SourceRuleRequest {
-    return {
-      name: draft.name.trim(),
-      senderAddresses: splitList(draft.senderAddresses),
-      senderDomains: splitList(draft.senderDomains),
-      subjectKeywords: splitList(draft.subjectKeywords),
-      gmailQuery: draft.gmailQuery.trim() || null,
-      enabled: draft.enabled,
-      autoImport: draft.autoImport,
-      autoPdfDownload: draft.autoPdfDownload,
-    };
-  }
-
-  private emptyDraft(): RuleDraft {
-    return {
-      name: '',
-      senderAddresses: '',
-      senderDomains: '',
-      subjectKeywords: '',
-      gmailQuery: '',
-      enabled: true,
-      autoImport: true,
-      autoPdfDownload: false,
-    };
-  }
-}
-
-/** One entry per line or comma; blanks dropped. */
-export function splitList(value: string): string[] {
-  return value
-    .split(/[\n,]/)
-    .map((v) => v.trim())
-    .filter((v) => v.length > 0);
 }

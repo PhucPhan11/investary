@@ -46,6 +46,38 @@
     <app-alert kind="info">The AI part is missing ({{ b.errorCode }}): {{ b.errorSummary }}</app-alert>
   }
 
+  <section class="card brief-facts" data-testid="brief-facts">
+    <dl class="meta">
+      <dt>Reporting period</dt>
+      <dd>{{ b.periodStart | date: 'medium' }} – {{ b.periodEnd | date: 'medium' }} · {{ b.zone }}{{ b.partialPeriod ? ' · partial period' : '' }}</dd>
+      <dt>Generated</dt>
+      <dd>{{ b.generatedAt | date: 'medium' }} · sources cut off at {{ b.sourceCutoff | date: 'medium' }}</dd>
+      <dt>Source freshness</dt>
+      <dd data-testid="freshness">
+        @if (freshness().newest) {
+          {{ freshness().sources }} source(s) published {{ freshness().oldest | date: 'mediumDate' }} – {{ freshness().newest | date: 'mediumDate' }}
+        } @else {
+          No dated sources
+        }
+        @if (freshness().old) { · {{ freshness().old }} older research }
+        @if (freshness().late) { · {{ freshness().late }} late arrival(s) }
+        @if (freshness().undated) { · {{ freshness().undated }} without a publication date }
+      </dd>
+    </dl>
+    @if (b.limitations.length) {
+      <h3 class="small">Evidence limitations</h3>
+      <ul class="brief-items" data-testid="limitations">
+        @for (l of b.limitations; track $index) {
+          <li class="small">{{ l.message }}</li>
+        }
+      </ul>
+    }
+    <p class="small muted">
+      A brief summarises stored research for this period; it is not real-time market data. "From source" items are the
+      brokerage's statements; "AI interpretation" items are model text checked against the cited sources.
+    </p>
+  </section>
+
   <div class="assistant brief">
     <section class="assistant__chat">
       @for (section of b.sections; track section.key) {
@@ -155,7 +187,7 @@
       @if (b.citations.length) {
         <ol class="sources">
           @for (c of b.citations; track c.label) {
-            <li class="source" [class.source--active]="selected() === c.label">
+            <li class="source" [id]="'source-' + c.label" [class.source--active]="selected() === c.label">
               <div class="source__head">
                 <button type="button" class="cite" (click)="show(c.label)">{{ c.label }}</button>
                 <span class="tag tag--plain">{{ c.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>

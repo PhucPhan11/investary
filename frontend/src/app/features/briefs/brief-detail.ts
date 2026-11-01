@@ -61,6 +61,20 @@ export class BriefDetail {
   protected readonly regenerating = signal(false);
   protected readonly regenerateError = signal<string | null>(null);
 
+  /** How fresh the cited research is: publication range and old or late sources, from the stored citations. */
+  protected readonly freshness = computed(() => {
+    const citations = this.brief()?.citations ?? [];
+    const dates = citations.map((c) => c.publishedOn).filter((d): d is string => !!d).sort();
+    return {
+      sources: new Set(citations.map((c) => c.sourceId ?? c.label)).size,
+      newest: dates.at(-1) ?? null,
+      oldest: dates[0] ?? null,
+      undated: citations.filter((c) => !c.publishedOn).length,
+      old: citations.filter((c) => c.oldPublication).length,
+      late: citations.filter((c) => c.lateArrival).length,
+    };
+  });
+
   protected readonly selectedCitation = computed(() => {
     const label = this.selected();
     return this.brief()?.citations.find((c) => c.label === label) ?? null;
@@ -95,8 +109,10 @@ export class BriefDetail {
     return status ? EVIDENCE[status] : null;
   }
 
+  /** Selects a citation and brings its source into view in the source panel. */
   protected show(label: string): void {
     this.selected.set(label);
+    setTimeout(() => document.getElementById('source-' + label)?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }));
   }
 
   protected sourceLink(source: BriefCitation | BriefSourceRef): string[] | null {

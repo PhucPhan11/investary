@@ -41,6 +41,9 @@ export class BriefList {
   protected readonly job = signal<BriefJob | null>(null);
   protected readonly generating = signal(false);
   protected readonly generateError = signal<string | null>(null);
+  /** Latest generation jobs (scheduled, manual, regeneration), newest first. */
+  protected readonly recentJobs = signal<BriefJob[]>([]);
+  protected readonly jobsError = signal<string | null>(null);
 
   protected filters = { portfolioId: '', from: '', to: '' };
   protected request = { portfolioId: '', date: '' };
@@ -58,6 +61,29 @@ export class BriefList {
       error: () => this.portfolios.set([]),
     });
     this.load(0);
+    this.loadJobs();
+  }
+
+  protected loadJobs(): void {
+    this.api.jobs('', 0, 5).subscribe({
+      next: (page) => {
+        this.recentJobs.set(page.content);
+        this.jobsError.set(null);
+      },
+      error: (err) => this.jobsError.set(errorMessage(err, 'Could not load the generation status.')),
+    });
+  }
+
+  protected retryJob(job: BriefJob): void {
+    this.api.retryJob(job.id).subscribe({
+      next: (retried) => {
+        this.job.set(retried);
+        this.generating.set(true);
+        this.poll(retried.id);
+        this.loadJobs();
+      },
+      error: (err) => this.jobsError.set(errorMessage(err, 'The brief job could not be retried.')),
+    });
   }
 
   protected load(page = this.pageNumber): void {
@@ -105,6 +131,7 @@ export class BriefList {
           if (job.status === 'SUCCEEDED' || job.status === 'FAILED') {
             this.generating.set(false);
             this.load(0);
+            this.loadJobs();
           } else {
             this.poll(id);
           }

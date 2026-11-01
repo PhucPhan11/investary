@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.investary.automation.domain.WorkflowSourceType;
 import com.investary.automation.persistence.WorkflowStore.WorkflowRow;
+import com.investary.common.error.ApiException;
 import com.investary.common.util.Hashing;
 import com.investary.document.application.DocumentNotFoundException;
 import com.investary.document.application.DocumentService;
@@ -38,6 +39,15 @@ public class WorkflowSources {
     /** @throws com.investary.email.application.EmailExceptions.EmailNotFoundException if the email was deleted */
     public EmailDetail email(UUID id) {
         return emails.get(id);
+    }
+
+    /** Email subject or document file name, or null when the source no longer exists. */
+    public String title(WorkflowSourceType type, UUID id) {
+        try {
+            return type == WorkflowSourceType.EMAIL ? email(id).subject() : document(id).getOriginalFilename();
+        } catch (ApiException e) {
+            return null;
+        }
     }
 
     /** @throws DocumentNotFoundException if the document was deleted */

@@ -5,11 +5,15 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -47,6 +51,9 @@ import com.investary.knowledge.assistant.ChatGateway;
 import com.investary.knowledge.assistant.Citations;
 import com.investary.knowledge.assistant.EvidenceStatus;
 import com.investary.knowledge.assistant.PromptBuilder.LabeledHit;
+import com.investary.knowledge.usage.AiPurpose;
+import com.investary.knowledge.usage.AiSettings;
+import com.investary.knowledge.usage.AiUsageService;
 import com.investary.knowledge.search.ResearchAvailabilityService.PendingSource;
 import com.investary.research.link.Keywords;
 
@@ -72,21 +79,24 @@ class BriefGenerator implements DisposableBean {
 
     private final BriefEvidenceCollector collector;
     private final BriefStore store;
-    private final BriefProperties properties;
+    private final BriefSettings settings;
     private final KnowledgeProperties.Assistant assistant;
     private final IndexVersion indexVersion;
     private final ChatGateway chat;
+    private final AiSettings aiSettings;
     private final JsonMapper json;
     private final Clock clock;
 
-    BriefGenerator(BriefEvidenceCollector collector, BriefStore store, BriefProperties properties, KnowledgeProperties knowledge,
-                   IndexVersion indexVersion, ObjectProvider<ChatModel> chatModels, AiConcurrencyLimits limits, JsonMapper json, Clock clock) {
+    BriefGenerator(BriefEvidenceCollector collector, BriefStore store, BriefSettings settings, KnowledgeProperties knowledge,
+                   IndexVersion indexVersion, ObjectProvider<ChatModel> chatModels, AiConcurrencyLimits limits, AiUsageService usage,
+                   AiSettings aiSettings, JsonMapper json, Clock clock) {
         this.collector = collector;
         this.store = store;
-        this.properties = properties;
+        this.settings = settings;
         this.assistant = knowledge.assistant();
         this.indexVersion = indexVersion;
-        this.chat = new ChatGateway(chatModels, properties.aiTimeout(), limits);
+        this.chat = new ChatGateway(chatModels, settings.current().aiTimeout(), limits, usage, AiPurpose.BRIEF, assistant.modelLabel());
+        this.aiSettings = aiSettings;
         this.json = json;
         this.clock = clock;
     }
@@ -115,7 +125,7 @@ class BriefGenerator implements DisposableBean {
             limitations.add(new Limitation("PARTIAL_PERIOD", "Kỳ báo cáo chưa kết thúc; bản tin chỉ gồm nguồn có đến "
                     + BriefComposer.period(job.periodStart(), job.periodEnd(), zone) + "."));
         }
-        boolean skip = evidence.state() == ResearchState.NO_MATERIAL_RESEARCH && properties.noResearchMode() == BriefProperties.NoResearchMode.SKIP;
+        boolean skip = evidence.state() == ResearchState.NO_MATERIAL_RESEARCH && settings.current().noResearchMode() == BriefProperties.NoResearchMode.SKIP;
         BriefAiStatus aiStatus;
         Review review = null;
         boolean outputInvalid = false;
@@ -129,6 +139,10 @@ class BriefGenerator implements DisposableBean {
         } else if (!chatAvailable) {
             aiStatus = BriefAiStatus.NOT_CONFIGURED;
             limitations.add(new Limitation("AI_NOT_CONFIGURED", "Chưa cấu hình mô hình AI; bản tin chỉ gồm phần tổng hợp tự động."));
+        } else if (aiLimitReached(zone)) {
+            aiStatus = BriefAiStatus.SKIPPED_LIMIT;
+            limitations.add(new Limitation("AI_DAILY_LIMIT",
+                    "Đã đạt giới hạn sử dụng AI trong ngày; bản tin chỉ gồm phần tổng hợp tự động."));
         } else {
             Plan plan = plan(evidence);
             try {
@@ -178,7 +192,16 @@ class BriefGenerator implements DisposableBean {
         return new Draft(false, null, status, evidence.state(), json.writeValueAsString(composition.content()),
                 json.writeValueAsString(composition.limitations()), aiStatus, model, indexVersion.current(), fingerprint, snapshotJson,
                 snapshotHash, composition.evidenceStatus(), errorCode, errorSummary, inputTokens, outputTokens, cutoff,
-                sources(evidence, composition));
+                sources(evidence, composition), conflicts(evidence));
+    }
+
+    /** The daily brief generation limit or the daily token budget of automatic calls is used up. */
+    private boolean aiLimitReached(ZoneId zone) {
+        Instant startOfDay = clock.instant().atZone(zone).toLocalDate().atStartOfDay(zone).toInstant();
+        if (store.countAiBriefsSince(startOfDay) >= settings.maxAiBriefsPerDay()) {
+            return true;
+        }
+        return aiSettings != null && aiSettings.automaticTokenBudgetReached();
     }
 
     /** Model output that was reused, or that the model never produced, does not need a new revision. */
@@ -190,7 +213,7 @@ class BriefGenerator implements DisposableBean {
     private String fingerprint(ClaimedJob job, BriefEvidence evidence, String snapshotHash, String profileAndGoals, boolean chatAvailable) {
         StringBuilder canonical = new StringBuilder();
         canonical.append(BriefPrompts.VERSION).append('|').append(indexVersion.current()).append('|').append(assistant.modelLabel())
-                .append('|').append(chatAvailable).append('|').append(properties.configVersion()).append('|').append(job.periodStart())
+                .append('|').append(chatAvailable).append('|').append(settings.current().configVersion()).append('|').append(job.periodStart())
                 .append('|').append(job.periodEnd()).append('|').append(job.portfolioId()).append('|').append(snapshotHash).append('\n')
                 .append(profileAndGoals).append('\n');
         for (LabeledHit hit : evidence.labeled()) {
@@ -201,6 +224,22 @@ class BriefGenerator implements DisposableBean {
         evidence.pending().forEach(p -> canonical.append("pending:").append(p.sourceId()).append(':').append(p.state()).append('\n'));
         evidence.assessments().forEach((symbol, ref) -> canonical.append("assessment:").append(ref.assessmentId()).append('\n'));
         return Hashing.sha256(canonical.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** The deterministic rating conflicts of the brief, with the sources on each side. */
+    private static List<BriefGeneratedEvent.Conflict> conflicts(BriefEvidence evidence) {
+        Set<String> held = new HashSet<>();
+        Map<String, UUID> sourceByLabel = new HashMap<>();
+        for (Entry entry : evidence.entries()) {
+            entry.heldSymbols().forEach(symbol -> held.add(symbol.toUpperCase(Locale.ROOT)));
+            entry.labels().forEach(label -> sourceByLabel.put(label, entry.source().sourceId()));
+        }
+        List<BriefGeneratedEvent.Conflict> conflicts = new ArrayList<>();
+        BriefConflicts.detect(evidence.entries()).forEach((ticker, views) -> conflicts.add(new BriefGeneratedEvent.Conflict(ticker,
+                held.contains(ticker.toUpperCase(Locale.ROOT)),
+                views.stream().map(view -> sourceByLabel.get(view.label())).filter(Objects::nonNull).distinct().toList(),
+                views.stream().map(BriefConflicts.View::brokerage).distinct().toList())));
+        return conflicts;
     }
 
     /** Which labels each part of the brief may cite. */
@@ -278,11 +317,12 @@ class BriefGenerator implements DisposableBean {
     record Draft(boolean unchanged, UUID unchangedBriefId, BriefStatus status, ResearchState researchState, String contentJson,
                  String limitationsJson, BriefAiStatus aiStatus, String model, String indexVersion, String inputFingerprint,
                  String portfolioSnapshotJson, String snapshotHash, EvidenceStatus evidenceStatus, String errorCode, String errorSummary,
-                 Integer inputTokens, Integer outputTokens, Instant sourceCutoff, List<NewSource> sources) {
+                 Integer inputTokens, Integer outputTokens, Instant sourceCutoff, List<NewSource> sources,
+                 List<BriefGeneratedEvent.Conflict> conflicts) {
 
         static Draft unchanged(UUID briefId) {
             return new Draft(true, briefId, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                    List.of());
+                    List.of(), List.of());
         }
     }
 

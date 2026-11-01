@@ -13,8 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.investary.automation.GmailProperties;
 import com.investary.automation.application.GmailAccessTokens.ReconnectRequiredException;
+import com.investary.automation.application.settings.AutomationSettings;
 import com.investary.automation.domain.EmailSourceRule;
 import com.investary.automation.domain.MessageOutcome;
 import com.investary.automation.domain.SyncMode;
@@ -42,6 +42,7 @@ import com.investary.email.application.EmailExceptions.EmailTooLargeException;
 import com.investary.email.application.EmailExceptions.InvalidEmailException;
 import com.investary.email.application.EmailImportService;
 import com.investary.email.domain.SourceType;
+import com.investary.automation.application.notification.NotificationTriggers;
 
 /**
  * Runs one sync of one account while holding its lock.
@@ -69,13 +70,16 @@ public class GmailSyncRunner {
     private final GmailApiClient gmail;
     private final GmailAccessTokens tokens;
     private final EmailImportService emails;
-    private final GmailProperties properties;
+    private final AutomationSettings settings;
     private final EmailProperties emailProperties;
+    private final NotificationTriggers notifications;
     private final Clock clock;
 
     public GmailSyncRunner(GmailAccountStore accounts, GmailSyncRunStore runs, GmailMessageStore messages,
                            EmailSourceRuleRepository rules, GmailApiClient gmail, GmailAccessTokens tokens,
-                           EmailImportService emails, GmailProperties properties, EmailProperties emailProperties, Clock clock) {
+                           EmailImportService emails, AutomationSettings settings, EmailProperties emailProperties,
+                           NotificationTriggers notifications, Clock clock) {
+        this.notifications = notifications;
         this.accounts = accounts;
         this.runs = runs;
         this.messages = messages;
@@ -83,7 +87,7 @@ public class GmailSyncRunner {
         this.gmail = gmail;
         this.tokens = tokens;
         this.emails = emails;
-        this.properties = properties;
+        this.settings = settings;
         this.emailProperties = emailProperties;
         this.clock = clock;
     }
@@ -115,7 +119,7 @@ public class GmailSyncRunner {
             }
             SyncRunStatus status = complete ? SyncRunStatus.SUCCEEDED : SyncRunStatus.PARTIAL;
             if (!complete) {
-                run.warning = join(run.warning, "Stopped after " + properties.sync().maxMessagesPerRun()
+                run.warning = join(run.warning, "Stopped after " + settings.gmailSync().maxMessagesPerRun()
                         + " matching messages; the next sync continues");
             }
             if (complete) {
@@ -138,6 +142,7 @@ public class GmailSyncRunner {
             fail(run, "INTERNAL_ERROR", "The sync failed unexpectedly; see the server log");
         } finally {
             accounts.releaseLock(accountId, lockToken);
+            notifications.syncFinished(accountId, runId);
         }
     }
 
@@ -148,7 +153,7 @@ public class GmailSyncRunner {
             guard(accounts.setPendingHistoryId(run.accountId, run.lockToken, pending));
         }
         run.endHistoryId = pending;
-        Instant after = clock.instant().minus(Duration.ofDays(properties.sync().initialLookbackDays()));
+        Instant after = clock.instant().minus(Duration.ofDays(settings.gmailSync().initialLookbackDays()));
         return listAndComplete(run, after);
     }
 
@@ -157,12 +162,12 @@ public class GmailSyncRunner {
         guard(accounts.setPendingHistoryId(run.accountId, run.lockToken, current));
         run.endHistoryId = current;
         Instant now = clock.instant();
-        Instant floor = now.minus(Duration.ofDays(properties.sync().recoveryMaxLookbackDays()));
+        Instant floor = now.minus(Duration.ofDays(settings.gmailSync().recoveryMaxLookbackDays()));
         Instant after = account.lastSyncSuccessAt() == null ? floor : account.lastSyncSuccessAt().minus(Duration.ofDays(1));
         if (after.isBefore(floor)) {
             after = floor;
             run.warning = join(run.warning, "The Gmail history expired; mail older than "
-                    + properties.sync().recoveryMaxLookbackDays() + " days was not re-checked");
+                    + settings.gmailSync().recoveryMaxLookbackDays() + " days was not re-checked");
         } else {
             run.warning = join(run.warning, "The Gmail history expired; re-checked mail since the last successful sync");
         }
@@ -253,7 +258,7 @@ public class GmailSyncRunner {
             renew(run);
             return true;
         }
-        if (run.matched >= properties.sync().maxMessagesPerRun()) {
+        if (run.matched >= settings.gmailSync().maxMessagesPerRun()) {
             return false; // budget used up: not recorded, so the next run handles it
         }
         run.matched++;
@@ -309,7 +314,7 @@ public class GmailSyncRunner {
     }
 
     private void renew(Run run) {
-        guard(accounts.renewLock(run.accountId, run.lockToken, properties.sync().lockLease(), clock.instant()));
+        guard(accounts.renewLock(run.accountId, run.lockToken, settings.gmailSync().lockLease(), clock.instant()));
     }
 
     private static void guard(boolean stillLocked) {

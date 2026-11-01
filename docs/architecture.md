@@ -27,7 +27,7 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
 | `investor` | Phase 4 | Investor profile and goals (self-declared) |
 | `portfolio` | Phase 4 | Instruments, manual prices, portfolios, transactions; holdings, valuation and allocation computed on read |
 | `intelligence` | Phase 4, 5 / M3 | Research matching, deterministic analysis, impact assessments, portfolio-aware assistant (read-only); daily briefs, their job queue and scheduler (M3) |
-| `automation` | Phase 5 / M1, M2 | Gmail OAuth connection (encrypted refresh token), brokerage source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows and the automation job queue (M2) |
+| `automation` | Phase 5 / M1, M2, M4 | Gmail OAuth connection (encrypted refresh token), brokerage source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows and the automation job queue (M2); Automation Center overview, settings API, AI usage report and in-app notifications (M4) |
 
 ### Dependency direction
 
@@ -41,7 +41,11 @@ intelligence ──▶ knowledge ──▶ email ──▶ research ──▶ do
 - `automation` imports Gmail mail only through `EmailImportService.importRaw` (Phase 2 import unchanged). Its
   research workflows (M2) call the `application` services of `email`, `research`, `knowledge`,
   `intelligence` and `document`. Nothing imports `automation`; the owning modules notify it with events
-  published after commit (`EmailImportedEvent`, `DocumentUploadedEvent`, `ReportDownloadedEvent`).
+  published after commit (`EmailImportedEvent`, `DocumentUploadedEvent`, `ReportDownloadedEvent`, and from
+  `intelligence` `BriefGeneratedEvent`, `BriefJobFailedEvent`, `ImpactAssessmentCreatedEvent` for notifications).
+- Runtime settings (M4) live in `common.settings` (`RuntimeSettings`, `SettingsStore`, `app_settings`). Each owning
+  module declares its fields with a `SettingsContributor` and reads them through its own effective-settings class
+  (`AutomationSettings`, `BriefSettings`, `AiSettings`) that falls back to its `@ConfigurationProperties`.
 - `investor` and `portfolio` depend only on `common`. `intelligence` uses `knowledge` search/assistant
   building blocks, `research.link.Keywords` for text folding, and only the **read** services
   `PortfolioQueryService` / `InvestorQueryService` (enforced by `ArchitectureTest`), so AI output can
@@ -214,6 +218,24 @@ and `knowledge_sources.first_indexed_at`.
 
 Details: [phase-5-milestone-3.md](phase-5-milestone-3.md), [ADR 0011](adr/0011-daily-brief-in-intelligence.md).
 
+## Automation Center and notifications (Phase 5 / Milestone 4)
+
+```
+Angular /automation (overview, sources, jobs, settings, usage) + header bell + /notifications
+  GET /automation/overview   AutomationOverviewService: GmailSyncService.status, AutomationStatsStore counts,
+                             BriefService.stats, SystemHealth (worker heartbeats, failures, stale jobs, models)
+  /automation/settings       RuntimeSettings (common) <- SettingsContributor fields of automation, intelligence, knowledge
+                             app_settings overrides; AiSettings resizes AiConcurrencyLimits on SettingsChangedEvent
+  /automation/jobs           AutomationJobQueue (filters, attempts via automation_job_attempts), RetryPolicy
+  /automation/usage          AiUsageService (ai_usage_daily, recorded by ChatGateway / EmbeddingService) + counts
+  /notifications             NotificationService <- NotificationTriggers <- workflow MATCH / FAILED, Gmail run end,
+                             intelligence events (after commit); NotificationRules decide; unique dedup_key
+```
+
+Settings are read per use (5 s cache, dropped on write), so changes apply without a restart, except worker pool
+sizes. Notification rules are deterministic and never call a model. Details:
+[phase-5-milestone-4.md](phase-5-milestone-4.md), [ADR 0012](adr/0012-runtime-settings-and-notifications.md).
+
 ## Database
 
 Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`. Tests use the same
@@ -247,17 +269,22 @@ checks that a Phase 1 database upgrades without data loss.
 | `brief_jobs` | Brief generation queue: trigger, scope, period, zone, unique idempotency key, status, attempts, lease, outcome, brief id, safe error, reported tokens (V8) |
 | `briefs` | Immutable brief revisions: scope, period, zone, business date, status, research state, content (JSON sections), limitations, AI status/model, prompt/index/config versions, input fingerprint, portfolio snapshot and hash, revision chain; unique per scheduled scope + period + config and per chain revision (V8) |
 | `brief_sources` | Sources of a brief: role (cited, included, pending, omitted), label, chunk id and hash, publication / sent / import / index dates, page or section, excerpt, relevance, flags (V8) |
+| `app_settings` | Runtime setting overrides, one JSON object per section with a version (V9) |
+| `notifications` | In-app notifications: type, priority, title, message, related entity, portfolio, unique deduplication key, read time (V9) |
+| `automation_job_attempts` | Attempt history of automation jobs: claim, result, safe error, manual retries (V9) |
+| `ai_usage_daily` | AI provider requests, failures and provider-reported tokens per day, operation, purpose and model (V9) |
 
 ## Frontend
 
 ```
 src/app/
   core/       API services (documents, emails), models, error mapping
-  shared/     alert, empty state, pager, status badge, pipes, index status, workflow status
+  shared/     alert, empty state, pager, status badge, pipes, index status, workflow status, notification bell
   layout/     application shell
   features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
               · portfolio (list, dashboard, transaction form, research insights) · investor (profile, goals)
-              · automation (Gmail connection, sync history, brokerage sources) · briefs (list, detail)
+              · automation (Automation Center: overview, sources, jobs, settings, AI usage) · briefs (list, detail)
+              · notifications
 ```
 
 - Standalone components with signals; no state library and no UI component library.

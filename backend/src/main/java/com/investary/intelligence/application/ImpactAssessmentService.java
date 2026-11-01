@@ -25,6 +25,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.investary.common.tx.AfterCommit;
 import com.investary.common.util.Hashing;
 import com.investary.intelligence.application.IntelligenceExceptions.AssessmentNotFoundException;
 import com.investary.intelligence.application.IntelligencePrompts.HoldingPrompt;
@@ -62,6 +63,10 @@ import com.investary.research.link.Keywords;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import com.investary.knowledge.usage.AiPurpose;
+import com.investary.knowledge.usage.AiUsageService;
 
 /**
  * Portfolio impact assessments: deterministic matching first, then an optional AI interpretation that
@@ -102,19 +107,31 @@ public class ImpactAssessmentService implements DisposableBean {
     private final TransactionTemplate transactions;
     private final IndexVersion indexVersion;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     public ImpactAssessmentService(PortfolioQueryService portfolios, ResearchMatcher matcher, ChunkLookupService chunks,
                                    ImpactAssessmentRepository assessments, ImpactAssessmentItemRepository items,
                                    ObjectProvider<ChatModel> chatModels, KnowledgeProperties knowledge, JsonMapper json,
                                    TransactionTemplate transactions, IndexVersion indexVersion, AiConcurrencyLimits limits,
                                    Clock clock) {
+        this(portfolios, matcher, chunks, assessments, items, chatModels, knowledge, json, transactions, indexVersion, limits, null,
+                null, clock);
+    }
+
+    @Autowired
+    public ImpactAssessmentService(PortfolioQueryService portfolios, ResearchMatcher matcher, ChunkLookupService chunks,
+                                   ImpactAssessmentRepository assessments, ImpactAssessmentItemRepository items,
+                                   ObjectProvider<ChatModel> chatModels, KnowledgeProperties knowledge, JsonMapper json,
+                                   TransactionTemplate transactions, IndexVersion indexVersion, AiConcurrencyLimits limits,
+                                   AiUsageService usage, ApplicationEventPublisher events, Clock clock) {
+        this.events = events;
         this.portfolios = portfolios;
         this.matcher = matcher;
         this.chunks = chunks;
         this.assessments = assessments;
         this.items = items;
         this.settings = knowledge.assistant();
-        this.chat = new ChatGateway(chatModels, settings.timeout(), limits);
+        this.chat = new ChatGateway(chatModels, settings.timeout(), limits, usage, AiPurpose.ASSESSMENT, settings.modelLabel());
         this.json = json;
         this.transactions = transactions;
         this.indexVersion = indexVersion;
@@ -390,6 +407,13 @@ public class ImpactAssessmentService implements DisposableBean {
                         json.writeValueAsString(view.evidence())));
             }
             items.flush();
+            if (events != null) {
+                ImpactAssessmentCreatedEvent event = new ImpactAssessmentCreatedEvent(assessment.getId(), portfolioId,
+                        trigger == null ? null : trigger.sourceType(), trigger == null ? null : trigger.sourceId(),
+                        views.stream().map(v -> new ImpactAssessmentCreatedEvent.Item(v.instrumentId(), v.symbol(), v.deterministicCategory(),
+                                v.category(), v.evidenceStatus())).toList());
+                AfterCommit.run(() -> events.publishEvent(event));
+            }
             return assessment;
         });
     }

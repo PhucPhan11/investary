@@ -2,6 +2,7 @@ package com.investary.intelligence.application;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,6 +60,13 @@ public class SourceRelevanceService {
             }
         }
         return result;
+    }
+
+    /** Portfolio names by id, for notification texts. */
+    public Map<UUID, String> portfolioNames() {
+        Map<UUID, String> names = new LinkedHashMap<>();
+        portfolios.portfolios().forEach(p -> names.put(p.id(), p.name()));
+        return names;
     }
 
     private static boolean matches(HoldingView holding, InstrumentView instrument, Set<String> wanted) {

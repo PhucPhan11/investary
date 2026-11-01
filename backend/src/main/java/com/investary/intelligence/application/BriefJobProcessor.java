@@ -9,6 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.TransientDataAccessException;
@@ -18,6 +19,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.investary.common.error.ApiException;
 import com.investary.common.error.ErrorSummaries;
+import com.investary.common.tx.AfterCommit;
 import com.investary.intelligence.application.BriefGenerator.Draft;
 import com.investary.intelligence.application.BriefGenerator.RetryLater;
 import com.investary.intelligence.application.BriefViews.BriefContent;
@@ -47,17 +49,19 @@ public class BriefJobProcessor {
     private final BriefGenerator generator;
     private final BriefJobQueue queue;
     private final BriefStore store;
-    private final BriefProperties properties;
+    private final BriefSettings settings;
     private final TransactionTemplate transactions;
     private final JsonMapper json;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
-    BriefJobProcessor(BriefGenerator generator, BriefJobQueue queue, BriefStore store, BriefProperties properties,
-                      TransactionTemplate transactions, JsonMapper json, Clock clock) {
+    BriefJobProcessor(BriefGenerator generator, BriefJobQueue queue, BriefStore store, BriefSettings settings,
+                      TransactionTemplate transactions, JsonMapper json, ApplicationEventPublisher events, Clock clock) {
+        this.events = events;
         this.generator = generator;
         this.queue = queue;
         this.store = store;
-        this.properties = properties;
+        this.settings = settings;
         this.transactions = transactions;
         this.json = json;
         this.clock = clock;
@@ -89,9 +93,13 @@ public class BriefJobProcessor {
                 queue.complete(job, BriefJobOutcome.UNCHANGED, draft.unchangedBriefId(), null, null);
                 return;
             }
-            UUID id = insert(job, draft.status(), draft, null, null);
-            queue.complete(job, draft.status() == BriefStatus.SKIPPED ? BriefJobOutcome.SKIPPED : BriefJobOutcome.CREATED, id,
-                    draft.inputTokens(), draft.outputTokens());
+            NewBrief brief = insert(job, draft.status(), draft, null, null);
+            if (queue.complete(job, draft.status() == BriefStatus.SKIPPED ? BriefJobOutcome.SKIPPED : BriefJobOutcome.CREATED, brief.id(),
+                    draft.inputTokens(), draft.outputTokens())) {
+                BriefGeneratedEvent event = new BriefGeneratedEvent(brief.id(), brief.rootBriefId(), brief.revision(), job.portfolioId(),
+                        job.trigger(), draft.status(), draft.researchState(), job.periodEnd(), job.businessDate(), draft.conflicts());
+                AfterCommit.run(() -> events.publishEvent(event));
+            }
         });
     }
 
@@ -105,19 +113,22 @@ public class BriefJobProcessor {
             if (!queue.lockClaimed(job)) {
                 return;
             }
-            UUID briefId = portfolioGone ? null : insert(job, BriefStatus.FAILED, null, code, summary);
-            queue.fail(job, code, summary, briefId);
+            UUID briefId = portfolioGone ? null : insert(job, BriefStatus.FAILED, null, code, summary).id();
+            if (queue.fail(job, code, summary, briefId)) {
+                BriefJobFailedEvent event = new BriefJobFailedEvent(job.id(), job.portfolioId(), job.businessDate(), code);
+                AfterCommit.run(() -> events.publishEvent(event));
+            }
         });
     }
 
     private void retry(ClaimedJob job, String code, String summary) {
-        Instant next = clock.instant().plus(ErrorSummaries.backoff(properties.retryBackoff(), job.attempts(),
+        Instant next = clock.instant().plus(ErrorSummaries.backoff(settings.current().retryBackoff(), job.attempts(),
                 ThreadLocalRandom.current().nextDouble()));
         queue.retryLater(job, code, summary, next);
     }
 
     /** Appends a revision to the chain of this scope and period (or of the regenerated brief). */
-    private UUID insert(ClaimedJob job, BriefStatus status, Draft draft, String errorCode, String errorSummary) {
+    private NewBrief insert(ClaimedJob job, BriefStatus status, Draft draft, String errorCode, String errorSummary) {
         Optional<BriefRow> head = job.trigger() == BriefTrigger.REGENERATION ? store.headOfChain(job.previousBriefId())
                 : store.head(job.portfolioId(), job.periodStart(), job.periodEnd());
         UUID id = UUID.randomUUID();
@@ -137,7 +148,7 @@ public class BriefJobProcessor {
                         draft.evidenceStatus(), draft.errorCode(), draft.errorSummary(), draft.inputTokens(), draft.outputTokens(), revision,
                         root, previous, job.id());
         store.insert(brief, draft == null ? List.of() : draft.sources());
-        return id;
+        return brief;
     }
 
     private static Failure classify(RuntimeException e) {

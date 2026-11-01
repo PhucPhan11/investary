@@ -1,0 +1,174 @@
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+@if (notice(); as message) {
+  <app-alert kind="success" [dismissible]="true" (dismissed)="notice.set(null)">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Job history</h2>
+    <div class="tabs" role="group" aria-label="Job kind">
+      <button type="button" class="tabs__tab" [class.tabs__tab--active]="kind() === 'research'" (click)="switchKind('research')">
+        Research processing
+      </button>
+      <button type="button" class="tabs__tab" [class.tabs__tab--active]="kind() === 'brief'" (click)="switchKind('brief')">
+        Brief generation
+      </button>
+    </div>
+  </div>
+
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label class="field">
+      <span class="field__label">Status</span>
+      <select class="input" name="status" [(ngModel)]="filters.status">
+        <option value="">Any</option>
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </label>
+    @if (kind() === 'research') {
+      <label class="field">
+        <span class="field__label">Type</span>
+        <select class="input" name="type" [(ngModel)]="filters.type">
+          <option value="">Any</option>
+          @for (t of types; track t) {
+            <option [value]="t">{{ typeLabels[t] }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Source</span>
+        <select class="input" name="sourceType" [(ngModel)]="filters.sourceType">
+          <option value="">Emails and documents</option>
+          <option value="EMAIL">Emails</option>
+          <option value="DOCUMENT">Library documents</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Gmail source rule</span>
+        <select class="input" name="ruleId" [(ngModel)]="filters.ruleId">
+          <option value="">Any</option>
+          @for (r of rules(); track r.id) {
+            <option [value]="r.id">{{ r.name }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label class="field">
+      <span class="field__label">From</span>
+      <input class="input" type="date" name="from" [(ngModel)]="filters.from" />
+    </label>
+    <label class="field">
+      <span class="field__label">To</span>
+      <input class="input" type="date" name="to" [(ngModel)]="filters.to" />
+    </label>
+    <div class="actions">
+      <button type="submit" class="btn btn--primary btn--small">Apply</button>
+      <button type="button" class="btn btn--ghost btn--small" (click)="clearFilters()">Clear</button>
+    </div>
+  </form>
+  <p class="small muted">Dates are creation dates (Asia/Ho_Chi_Minh for research jobs, the brief time zone for brief jobs). {{ total() }} job(s).</p>
+
+  <div class="table-wrap" [class.table-wrap--loading]="loading()">
+    @if (kind() === 'research') {
+      @if (!loading() && jobs().length === 0) {
+        <app-empty-state title="No jobs">No research-processing job matches these filters.</app-empty-state>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Job</th>
+              <th>Type</th>
+              <th>Source</th>
+              <th>Started</th>
+              <th>Completed</th>
+              <th>Status</th>
+              <th class="num">Attempts</th>
+              <th>Error</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (job of jobs(); track job.id) {
+              <tr [attr.data-job]="job.id">
+                <td data-label="Job"><a class="link mono small" [routerLink]="['/automation/jobs', job.id]">{{ job.id.slice(0, 8) }}</a></td>
+                <td data-label="Type">{{ typeLabels[job.type] }}</td>
+                <td data-label="Source" class="small">
+                  @if (sourceLink(job); as link) {
+                    <a class="link" [routerLink]="link">{{ job.sourceTitle }}</a>
+                  } @else {
+                    <span class="muted">(deleted source)</span>
+                  }
+                </td>
+                <td data-label="Started">{{ job.startedAt ? (job.startedAt | date: 'short') : '—' }}</td>
+                <td data-label="Completed">{{ job.completedAt ? (job.completedAt | date: 'short') : '—' }}</td>
+                <td data-label="Status"><app-status-badge [value]="job.status" /></td>
+                <td class="num" data-label="Attempts">{{ job.attempts }}/{{ job.maxAttempts }}</td>
+                <td class="small" data-label="Error">{{ job.errorCode ? job.errorCode + ': ' + (job.errorSummary ?? '') : '' }}</td>
+                <td class="actions-col">
+                  @if (job.retryable) {
+                    <button type="button" class="btn btn--ghost btn--small" [disabled]="retrying() === job.id" (click)="retry(job)">
+                      {{ retrying() === job.id ? 'Retrying…' : 'Retry' }}
+                    </button>
+                  } @else if (job.status === 'FAILED' && job.retryBlockedReason) {
+                    <span class="small muted" [title]="blockedText[job.retryBlockedReason] ?? ''">No retry</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    } @else {
+      @if (!loading() && briefJobs().length === 0) {
+        <app-empty-state title="No brief jobs">No brief-generation job matches these filters.</app-empty-state>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Business date</th>
+              <th>Trigger</th>
+              <th>Created</th>
+              <th>Completed</th>
+              <th>Status</th>
+              <th class="num">Attempts</th>
+              <th>Error</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (job of briefJobs(); track job.id) {
+              <tr [attr.data-brief-job]="job.id">
+                <td data-label="Business date">
+                  @if (job.briefId) {
+                    <a class="link" [routerLink]="['/briefs', job.briefId]">{{ job.businessDate }}</a>
+                  } @else {
+                    {{ job.businessDate }}
+                  }
+                </td>
+                <td data-label="Trigger">{{ job.triggerType }}</td>
+                <td data-label="Created">{{ job.createdAt | date: 'short' }}</td>
+                <td data-label="Completed">{{ job.completedAt ? (job.completedAt | date: 'short') : '—' }}</td>
+                <td data-label="Status"><app-status-badge [value]="job.status" /></td>
+                <td class="num" data-label="Attempts">{{ job.attempts }}/{{ job.maxAttempts }}</td>
+                <td class="small" data-label="Error">{{ job.errorCode ? job.errorCode + ': ' + (job.errorSummary ?? '') : '' }}</td>
+                <td class="actions-col">
+                  @if (job.status === 'FAILED') {
+                    <button type="button" class="btn btn--ghost btn--small" [disabled]="retrying() === job.id" (click)="retryBrief(job)">
+                      Retry
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  </div>
+  @if (totalPages() > 1) {
+    <app-pager [page]="page()" [totalPages]="totalPages()" [disabled]="loading()" (pageChange)="load($event)" />
+  }
+</section>

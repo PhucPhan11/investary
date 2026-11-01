@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 
 import com.investary.knowledge.AiConcurrencyLimits;
 import com.investary.knowledge.KnowledgeProperties;
+import com.investary.knowledge.usage.AiOperation;
+import com.investary.knowledge.usage.AiPurpose;
+import com.investary.knowledge.usage.AiUsageService;
 
 /**
  * Provider-neutral embedding access. The concrete model comes from Spring AI auto-configuration
@@ -33,22 +36,25 @@ public class EmbeddingService {
     private final KnowledgeProperties.Embedding settings;
     private final Sleeper sleeper;
     private final AiConcurrencyLimits limits;
+    private final AiUsageService usage;
 
     @Autowired
-    public EmbeddingService(ObjectProvider<EmbeddingModel> models, KnowledgeProperties properties, AiConcurrencyLimits limits) {
-        this(models, properties.embedding(), Thread::sleep, limits);
+    public EmbeddingService(ObjectProvider<EmbeddingModel> models, KnowledgeProperties properties, AiConcurrencyLimits limits,
+                            AiUsageService usage) {
+        this(models, properties.embedding(), Thread::sleep, limits, usage);
     }
 
     EmbeddingService(ObjectProvider<EmbeddingModel> models, KnowledgeProperties.Embedding settings, Sleeper sleeper) {
-        this(models, settings, sleeper, AiConcurrencyLimits.unlimited());
+        this(models, settings, sleeper, AiConcurrencyLimits.unlimited(), null);
     }
 
     EmbeddingService(ObjectProvider<EmbeddingModel> models, KnowledgeProperties.Embedding settings, Sleeper sleeper,
-                     AiConcurrencyLimits limits) {
+                     AiConcurrencyLimits limits, AiUsageService usage) {
         this.models = models;
         this.settings = settings;
         this.sleeper = sleeper;
         this.limits = limits;
+        this.usage = usage;
     }
 
     public boolean isAvailable() {
@@ -64,10 +70,15 @@ public class EmbeddingService {
     }
 
     public float[] embedQuery(String text) {
-        return embed(List.of(text)).getFirst();
+        return embed(List.of(text), AiPurpose.SEARCH).getFirst();
     }
 
+    /** Embeds texts for indexing. */
     public List<float[]> embed(List<String> texts) {
+        return embed(texts, AiPurpose.INDEXING);
+    }
+
+    private List<float[]> embed(List<String> texts, AiPurpose purpose) {
         EmbeddingModel model = models.getIfAvailable();
         if (model == null) {
             throw new EmbeddingUnavailableException();
@@ -75,7 +86,7 @@ public class EmbeddingService {
         List<float[]> vectors = new ArrayList<>(texts.size());
         for (int start = 0; start < texts.size(); start += settings.batchSize()) {
             List<String> batch = texts.subList(start, Math.min(texts.size(), start + settings.batchSize()));
-            List<float[]> result = embedBatch(model, batch);
+            List<float[]> result = embedBatch(model, batch, purpose);
             if (result.size() != batch.size()) {
                 throw new EmbeddingException("The embedding provider returned " + result.size() + " vectors for " + batch.size() + " texts", null);
             }
@@ -89,11 +100,11 @@ public class EmbeddingService {
         return vectors;
     }
 
-    private List<float[]> embedBatch(EmbeddingModel model, List<String> batch) {
+    private List<float[]> embedBatch(EmbeddingModel model, List<String> batch, AiPurpose purpose) {
         int attempt = 0;
         while (true) {
             try {
-                return limitedEmbed(model, batch);
+                return limitedEmbed(model, batch, purpose);
             } catch (NonTransientAiException | IllegalArgumentException e) {
                 throw new EmbeddingException("The embedding provider rejected the request: " + e.getMessage(), e, true);
             } catch (RuntimeException e) {
@@ -113,17 +124,23 @@ public class EmbeddingService {
         }
     }
 
-    private List<float[]> limitedEmbed(EmbeddingModel model, List<String> batch) {
+    private List<float[]> limitedEmbed(EmbeddingModel model, List<String> batch, AiPurpose purpose) {
         try {
             limits.acquireEmbedding();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new EmbeddingException("Interrupted while waiting for an embedding slot", e);
         }
+        boolean success = false;
         try {
-            return model.embed(batch);
+            List<float[]> vectors = model.embed(batch);
+            success = true;
+            return vectors;
         } finally {
             limits.releaseEmbedding();
+            if (usage != null) {
+                usage.record(AiOperation.EMBEDDING, purpose, settings.modelId(), success, null, null);
+            }
         }
     }
 

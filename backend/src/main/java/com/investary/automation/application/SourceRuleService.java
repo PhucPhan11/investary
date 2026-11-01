@@ -15,6 +15,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.investary.automation.application.AutomationExceptions.BroadSourceRuleException;
 import com.investary.automation.application.AutomationExceptions.DuplicateSourceRuleException;
 import com.investary.automation.application.AutomationExceptions.InvalidSourceRuleException;
 import com.investary.automation.application.AutomationExceptions.SourceRuleNotFoundException;
@@ -74,6 +75,12 @@ public class SourceRuleService {
 
     private SourceRuleView save(EmailSourceRule rule, SourceRuleCommand command, Instant now) {
         Normalized normalized = normalize(command);
+        List<String> publicDomains = SourceRuleWarnings.publicDomains(normalized.domains());
+        List<String> alreadyAccepted = rule.getSenderDomains() == null ? List.of() : rule.getSenderDomains();
+        boolean newPublicDomain = publicDomains.stream().anyMatch(domain -> !alreadyAccepted.contains(domain));
+        if (newPublicDomain && !Boolean.TRUE.equals(command.acknowledgeBroadRule())) {
+            throw new BroadSourceRuleException(publicDomains);
+        }
         String name = command.name().strip();
         rules.findByNameIgnoreCase(name)
                 .filter(existing -> !existing.getId().equals(rule.getId()))
@@ -172,16 +179,32 @@ public class SourceRuleService {
     /**
      * @param enabled          default true
      * @param autoImport       default true
-     * @param autoPdfDownload  default false; stored only in Milestone 1
+     * @param autoPdfDownload      default false; never switched on unless the request asks for it
+     * @param acknowledgeBroadRule required to add a public mailbox domain (such as gmail.com) as a sender domain
      */
     public record SourceRuleCommand(String name, List<String> senderAddresses, List<String> senderDomains,
                                     List<String> subjectKeywords, String gmailQuery, Boolean enabled, Boolean autoImport,
-                                    Boolean autoPdfDownload) {
+                                    Boolean autoPdfDownload, Boolean acknowledgeBroadRule) {
+
+        public SourceRuleCommand(String name, List<String> senderAddresses, List<String> senderDomains, List<String> subjectKeywords,
+                                 String gmailQuery, Boolean enabled, Boolean autoImport, Boolean autoPdfDownload) {
+            this(name, senderAddresses, senderDomains, subjectKeywords, gmailQuery, enabled, autoImport, autoPdfDownload, null);
+        }
     }
 
+    /**
+     * @param warnings codes of {@link SourceRuleWarnings} for rules that may import more than brokerage research
+     */
     public record SourceRuleView(UUID id, String name, List<String> senderAddresses, List<String> senderDomains,
                                  List<String> subjectKeywords, String gmailQuery, boolean enabled, boolean autoImport,
-                                 boolean autoPdfDownload, Instant createdAt, Instant updatedAt) {
+                                 boolean autoPdfDownload, Instant createdAt, Instant updatedAt, List<String> warnings) {
+
+        public SourceRuleView(UUID id, String name, List<String> senderAddresses, List<String> senderDomains, List<String> subjectKeywords,
+                              String gmailQuery, boolean enabled, boolean autoImport, boolean autoPdfDownload, Instant createdAt,
+                              Instant updatedAt) {
+            this(id, name, senderAddresses, senderDomains, subjectKeywords, gmailQuery, enabled, autoImport, autoPdfDownload, createdAt,
+                    updatedAt, SourceRuleWarnings.of(senderAddresses, senderDomains, subjectKeywords, gmailQuery));
+        }
 
         static SourceRuleView of(EmailSourceRule rule) {
             return new SourceRuleView(rule.getId(), rule.getName(), rule.getSenderAddresses(), rule.getSenderDomains(),

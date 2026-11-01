@@ -4,7 +4,7 @@ import { EvidenceStatus, KnowledgeSourceType } from './knowledge.model';
 export type BriefTrigger = 'SCHEDULED' | 'MANUAL' | 'REGENERATION';
 export type BriefStatus = 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
 export type ResearchState = 'NEW_RESEARCH' | 'NO_MATERIAL_RESEARCH' | 'PENDING_ONLY';
-export type BriefAiStatus = 'COMPLETED' | 'NOT_CONFIGURED' | 'FAILED' | 'SKIPPED_NO_EVIDENCE';
+export type BriefAiStatus = 'COMPLETED' | 'NOT_CONFIGURED' | 'FAILED' | 'SKIPPED_NO_EVIDENCE' | 'SKIPPED_LIMIT';
 export type BriefJobStatus = 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
 export type BriefJobOutcome = 'CREATED' | 'UNCHANGED' | 'SKIPPED';
 /** PORTFOLIO_FACT: computed by Investary; SOURCE_CLAIM: a brokerage statement; AI_INTERPRETATION: validated model text. */

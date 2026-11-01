@@ -13,11 +13,14 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.investary.automation.WorkflowProperties;
+import com.investary.automation.application.settings.AutomationSettings;
 import com.investary.automation.application.AutomationExceptions.AutomationJobNotFoundException;
 import com.investary.automation.application.AutomationExceptions.JobNotRetryableException;
+import com.investary.automation.application.AutomationExceptions.RetryLimitReachedException;
 import com.investary.automation.application.AutomationExceptions.WorkflowNotFoundException;
 import com.investary.automation.application.workflow.StageResult.NextJob;
+import com.investary.automation.application.workflow.WorkflowViews.AttemptView;
+import com.investary.automation.application.workflow.WorkflowViews.JobDetailView;
 import com.investary.automation.application.workflow.WorkflowViews.JobView;
 import com.investary.automation.application.workflow.WorkflowViews.WorkflowView;
 import com.investary.automation.domain.JobStatus;
@@ -27,6 +30,7 @@ import com.investary.automation.domain.WorkflowSourceType;
 import com.investary.automation.domain.WorkflowStage;
 import com.investary.automation.domain.WorkflowTrigger;
 import com.investary.automation.persistence.AutomationJobQueue;
+import com.investary.automation.persistence.AutomationJobQueue.JobFilter;
 import com.investary.automation.persistence.AutomationJobQueue.JobRow;
 import com.investary.automation.persistence.WorkflowStore;
 import com.investary.automation.persistence.WorkflowStore.GmailSource;
@@ -62,24 +66,24 @@ public class WorkflowService {
     private final AutomationJobQueue queue;
     private final WorkflowJobProcessor processor;
     private final WorkflowSources sources;
-    private final WorkflowProperties properties;
+    private final AutomationSettings settings;
     private final TransactionTemplate transactions;
     private final Clock clock;
 
     public WorkflowService(WorkflowStore store, AutomationJobQueue queue, WorkflowJobProcessor processor, WorkflowSources sources,
-                           WorkflowProperties properties, TransactionTemplate transactions, Clock clock) {
+                           AutomationSettings settings, TransactionTemplate transactions, Clock clock) {
         this.store = store;
         this.queue = queue;
         this.processor = processor;
         this.sources = sources;
-        this.properties = properties;
+        this.settings = settings;
         this.transactions = transactions;
         this.clock = clock;
     }
 
     @EventListener
     public void onEmailImported(EmailImportedEvent event) {
-        if (properties.enabled()) {
+        if (settings.workflow().enabled()) {
             safely(() -> start(WorkflowSourceType.EMAIL, event.emailId(),
                     event.sourceType() == SourceType.GMAIL ? WorkflowTrigger.GMAIL : WorkflowTrigger.EMAIL_IMPORT), event.emailId());
         }
@@ -87,7 +91,7 @@ public class WorkflowService {
 
     @EventListener
     public void onDocumentUploaded(DocumentUploadedEvent event) {
-        if (properties.enabled() && event.origin() == UploadOrigin.LIBRARY) {
+        if (settings.workflow().enabled() && event.origin() == UploadOrigin.LIBRARY) {
             safely(() -> start(WorkflowSourceType.DOCUMENT, event.documentId(), WorkflowTrigger.DOCUMENT_UPLOAD), event.documentId());
         }
     }
@@ -150,7 +154,9 @@ public class WorkflowService {
             if (jobs.stream().anyMatch(job -> job.status().isActive())) {
                 return;
             }
-            List<JobRow> failed = jobs.stream().filter(job -> job.status() == JobStatus.FAILED).toList();
+            List<JobRow> failed = jobs.stream().filter(job -> job.status() == JobStatus.FAILED)
+                    .filter(job -> RetryPolicy.blockedReason(job, queue.countManualRetries(job.id()), settings.maxManualRetries()) == null)
+                    .toList();
             if (failed.isEmpty()) {
                 processor.enqueue(workflow, NextJob.of(JobType.PREPARE));
             } else {
@@ -169,9 +175,17 @@ public class WorkflowService {
      */
     public JobView retry(UUID jobId) {
         JobRow job = queue.find(jobId).orElseThrow(() -> new AutomationJobNotFoundException(jobId));
+        String blocked = RetryPolicy.blockedReason(job, queue.countManualRetries(jobId), settings.maxManualRetries());
+        if (RetryPolicy.LIMIT_REACHED.equals(blocked)) {
+            throw new RetryLimitReachedException(settings.maxManualRetries());
+        }
+        if (blocked != null) {
+            throw new JobNotRetryableException(RetryPolicy.describe(blocked, job));
+        }
         transactions.executeWithoutResult(status -> {
+            // The reset is one conditional update: of two concurrent retries only one sees the job FAILED.
             if (!reset(job.workflowId(), job)) {
-                throw new JobNotRetryableException(job.status().name());
+                throw new JobNotRetryableException(RetryPolicy.describe(RetryPolicy.NOT_FAILED, job));
             }
             processor.finishIfIdle(job.workflowId());
         });
@@ -194,7 +208,7 @@ public class WorkflowService {
      * @return number of workflows started
      */
     public int reconcile() {
-        if (!properties.enabled()) {
+        if (!settings.workflow().enabled()) {
             return 0;
         }
         var settled = clock.instant().minus(RECONCILE_SETTLE);
@@ -228,15 +242,31 @@ public class WorkflowService {
         return queue.find(id).map(this::jobView).orElseThrow(() -> new AutomationJobNotFoundException(id));
     }
 
-    public PageResponse<JobView> jobs(JobStatus status, JobType type, UUID workflowId, int page, int size) {
-        long total = queue.count(status, type, workflowId);
-        List<JobView> content = queue.list(status, type, workflowId, page, size).stream().map(this::jobView).toList();
+    /** The job with its workflow stages, attempt history and source. */
+    public JobDetailView jobDetail(UUID id) {
+        JobRow job = queue.find(id).orElseThrow(() -> new AutomationJobNotFoundException(id));
+        WorkflowRow workflow = store.find(job.workflowId()).orElse(null);
+        WorkflowView workflowView = workflow == null ? null
+                : WorkflowViews.workflow(workflow, store.stages(workflow.id()), store.matches(workflow.id()), queue.forWorkflow(workflow.id()));
+        List<AttemptView> attempts = queue.attempts(id).stream()
+                .map(a -> new AttemptView(a.attempt(), a.trigger(), a.startedAt(), a.finishedAt(), a.result(), a.errorCode(),
+                        a.errorSummary()))
+                .toList();
+        return new JobDetailView(jobView(job), workflowView, attempts);
+    }
+
+    public PageResponse<JobView> jobs(JobFilter filter, int page, int size) {
+        long total = queue.count(filter);
+        List<JobView> content = queue.list(filter, page, size).stream().map(this::jobView).toList();
         return new PageResponse<>(content, page, size, total, size == 0 ? 0 : (int) ((total + size - 1) / size));
     }
 
     private JobView jobView(JobRow job) {
         WorkflowRow workflow = store.find(job.workflowId()).orElse(null);
-        return WorkflowViews.job(job, workflow);
+        int manualRetries = queue.countManualRetries(job.id());
+        String title = workflow == null ? null : sources.title(workflow.sourceType(), workflow.sourceId());
+        return WorkflowViews.job(job, workflow, title, RetryPolicy.blockedReason(job, manualRetries, settings.maxManualRetries()),
+                manualRetries);
     }
 
     private SourceRef source(UUID sourceId) {

@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.investary.automation.WorkflowProperties;
+import com.investary.automation.application.settings.AutomationSettings;
 import com.investary.automation.application.workflow.StageResult.Done;
 import com.investary.automation.application.workflow.StageResult.Failed;
 import com.investary.automation.application.workflow.StageResult.NextJob;
@@ -30,6 +30,8 @@ import com.investary.automation.persistence.AutomationJobQueue.JobRow;
 import com.investary.automation.persistence.WorkflowStore;
 import com.investary.automation.persistence.WorkflowStore.StageRow;
 import com.investary.automation.persistence.WorkflowStore.WorkflowRow;
+import com.investary.automation.application.notification.NotificationTriggers;
+import com.investary.common.tx.AfterCommit;
 
 import tools.jackson.databind.json.JsonMapper;
 
@@ -46,17 +48,19 @@ public class WorkflowJobProcessor {
     private final Map<JobType, StageHandler> handlers = new EnumMap<>(JobType.class);
     private final AutomationJobQueue queue;
     private final WorkflowStore store;
-    private final WorkflowProperties properties;
+    private final AutomationSettings settings;
     private final TransactionTemplate transactions;
     private final JsonMapper json;
+    private final NotificationTriggers notifications;
     private final Clock clock;
 
-    public WorkflowJobProcessor(List<StageHandler> handlers, AutomationJobQueue queue, WorkflowStore store, WorkflowProperties properties,
-                                TransactionTemplate transactions, JsonMapper json, Clock clock) {
+    public WorkflowJobProcessor(List<StageHandler> handlers, AutomationJobQueue queue, WorkflowStore store, AutomationSettings settings,
+                                TransactionTemplate transactions, JsonMapper json, NotificationTriggers notifications, Clock clock) {
+        this.notifications = notifications;
         handlers.forEach(handler -> this.handlers.put(handler.type(), handler));
         this.queue = queue;
         this.store = store;
-        this.properties = properties;
+        this.settings = settings;
         this.transactions = transactions;
         this.json = json;
         this.clock = clock;
@@ -109,6 +113,9 @@ public class WorkflowJobProcessor {
         if (applied) {
             log.info("Workflow stage done workflowId={} jobId={} type={} status={} reason={}", workflow.id(), job.id(), job.type(),
                     done.status(), done.reason());
+            if (job.type() == JobType.MATCH) {
+                notifications.matched(workflow.id());
+            }
         } else {
             log.warn("Workflow job finished after its claim was lost jobId={}; result discarded", job.id());
         }
@@ -125,7 +132,7 @@ public class WorkflowJobProcessor {
         boolean retry = failed.retryable() && job.attempts() < job.maxAttempts();
         String summary = failed.summary() == null ? failed.code() : failed.summary();
         if (retry) {
-            Instant next = clock.instant().plus(FailureClassifier.backoff(properties.retryBackoff(), job.attempts(),
+            Instant next = clock.instant().plus(FailureClassifier.backoff(settings.workflow().retryBackoff(), job.attempts(),
                     ThreadLocalRandom.current().nextDouble()));
             queue.retryLater(job, failed.code(), summary, next);
         } else {
@@ -148,7 +155,7 @@ public class WorkflowJobProcessor {
     void enqueue(WorkflowRow workflow, NextJob next) {
         String key = workflow.id() + ":" + next.type() + (next.portfolioId() == null ? "" : ":" + next.portfolioId())
                 + (next.keyPart() == null ? "" : ":" + next.keyPart()) + ":" + WorkflowService.VERSION;
-        queue.enqueue(workflow.id(), next.type(), next.portfolioId(), key, properties.maxAttempts(), WorkflowService.VERSION);
+        queue.enqueue(workflow.id(), next.type(), next.portfolioId(), key, settings.workflow().maxAttempts(), WorkflowService.VERSION);
         if (next.type() != JobType.ASSESS) {
             store.updateStage(workflow.id(), next.type().stage(), StageStatus.PENDING, null, null);
         } else {
@@ -222,6 +229,9 @@ public class WorkflowJobProcessor {
         store.updateStage(workflowId, WorkflowStage.COMPLETED, status, null, null);
         store.updateStatus(workflowId, status, clock.instant());
         log.info("Workflow finished workflowId={} status={}", workflowId, status);
+        if (status == StageStatus.FAILED && workflow.status() != StageStatus.FAILED) {
+            AfterCommit.run(() -> notifications.workflowFailed(workflowId));
+        }
     }
 
     private String counts(Map<String, Object> counts) {

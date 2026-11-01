@@ -1,6 +1,7 @@
 package com.investary.automation.application;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -16,10 +17,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Service;
 
-import com.investary.automation.GmailProperties;
 import com.investary.automation.application.AutomationExceptions.GmailNotConnectedException;
 import com.investary.automation.application.AutomationExceptions.SyncInProgressException;
 import com.investary.automation.application.AutomationExceptions.SyncRunNotFoundException;
+import com.investary.automation.application.settings.AutomationSettings;
+import com.investary.automation.GmailProperties;
 import com.investary.automation.domain.GmailAccountStatus;
 import com.investary.automation.domain.SyncRunStatus;
 import com.investary.automation.domain.SyncTrigger;
@@ -45,18 +47,18 @@ public class GmailSyncService implements DisposableBean {
     private final GmailMessageStore messages;
     private final GmailSyncRunner runner;
     private final GmailConnectionService connection;
-    private final GmailProperties properties;
+    private final AutomationSettings settings;
     private final Clock clock;
     private final ExecutorService executor;
 
     public GmailSyncService(GmailAccountStore accounts, GmailSyncRunStore runs, GmailMessageStore messages, GmailSyncRunner runner,
-                            GmailConnectionService connection, GmailProperties properties, Clock clock) {
+                            GmailConnectionService connection, AutomationSettings settings, Clock clock) {
         this.accounts = accounts;
         this.runs = runs;
         this.messages = messages;
         this.runner = runner;
         this.connection = connection;
-        this.properties = properties;
+        this.settings = settings;
         this.clock = clock;
         this.executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(4), runnable -> {
             Thread thread = new Thread(runnable, "gmail-sync");
@@ -81,12 +83,21 @@ public class GmailSyncService implements DisposableBean {
         return start(account.id(), trigger);
     }
 
-    /** Scheduler entry point: syncs every connected account whose lock is free; never throws. */
+    /**
+     * Scheduler entry point: syncs every connected account that is due (its last sync started at least one
+     * polling interval ago) and whose lock is free; never throws.
+     */
     public void runScheduled() {
-        if (!connection.configured()) {
+        if (!connection.configured() || !settings.pollingEnabled()) {
             return;
         }
+        Instant now = clock.instant();
+        Duration interval = settings.gmailSync().interval();
         for (UUID accountId : accounts.connectedIds()) {
+            Instant lastStarted = accounts.find(accountId).map(AccountRow::lastSyncStartedAt).orElse(null);
+            if (now.isBefore(nextSync(lastStarted, interval, now))) {
+                continue;
+            }
             try {
                 start(accountId, SyncTrigger.SCHEDULED);
             } catch (SyncInProgressException e) {
@@ -100,7 +111,7 @@ public class GmailSyncService implements DisposableBean {
     private UUID start(UUID accountId, SyncTrigger trigger) {
         Instant now = clock.instant();
         UUID lockToken = UUID.randomUUID();
-        if (!accounts.tryLock(accountId, lockToken, properties.sync().lockLease(), now)) {
+        if (!accounts.tryLock(accountId, lockToken, settings.gmailSync().lockLease(), now)) {
             throw new SyncInProgressException();
         }
         UUID runId;
@@ -134,11 +145,28 @@ public class GmailSyncService implements DisposableBean {
                 a.connectedAt(), a.initialSyncCompletedAt() != null, a.lastSyncStartedAt(), a.lastSyncSuccessAt(),
                 a.lastSyncErrorCode(), a.lastSyncError())).orElse(null);
         SyncRunView lastRun = account.flatMap(a -> runs.latest(a.id())).map(SyncRunView::of).orElse(null);
+        Instant lastFailed = account.flatMap(a -> runs.latestWithStatus(a.id(), SyncRunStatus.FAILED)).map(RunRow::startedAt).orElse(null);
+        GmailProperties.Sync sync = settings.gmailSync();
+        boolean polling = connection.configured() && settings.pollingEnabled();
+        Instant nextSync = account.filter(a -> polling && a.status() == GmailAccountStatus.CONNECTED)
+                .map(a -> nextSync(a.lastSyncStartedAt(), sync.interval(), now)).orElse(null);
         return new GmailStatusView(connection.configured(), accountView,
                 account.map(a -> a.syncRunning(now)).orElse(false), lastRun,
                 account.map(a -> messages.countImported(a.id())).orElse(0L),
-                properties.sync().schedulerEnabled(), properties.sync().interval().toMinutes(),
-                properties.sync().initialLookbackDays());
+                polling, sync.interval().toMinutes(), sync.initialLookbackDays(), lastFailed, nextSync,
+                settings.schedulerConfigured());
+    }
+
+    /**
+     * When the next scheduled sync is due: one interval after the last sync started, or now if there was none
+     * or it is overdue. The scheduler checks once a minute, so the actual start can be up to a minute later.
+     */
+    static Instant nextSync(Instant lastStarted, Duration interval, Instant now) {
+        if (lastStarted == null) {
+            return now;
+        }
+        Instant due = lastStarted.plus(interval);
+        return due.isBefore(now) ? now : due;
     }
 
     public PageResponse<SyncRunView> history(int page, int size) {
@@ -165,9 +193,16 @@ public class GmailSyncService implements DisposableBean {
     /**
      * @param importedTotal messages of this account imported by Gmail sync so far
      */
+    /**
+     * @param schedulerEnabled       scheduled syncs run (configuration allows it and polling is switched on)
+     * @param lastFailedSyncAt       start of the latest failed run
+     * @param nextScheduledSyncAt    when the next scheduled sync is due, or null when none will run
+     * @param schedulerConfigured    the configuration allows scheduled syncs at all
+     */
     public record GmailStatusView(boolean configured, AccountView account, boolean running, SyncRunView lastRun,
                                   long importedTotal, boolean schedulerEnabled, long syncIntervalMinutes,
-                                  int initialLookbackDays) {
+                                  int initialLookbackDays, Instant lastFailedSyncAt, Instant nextScheduledSyncAt,
+                                  boolean schedulerConfigured) {
     }
 
     public record AccountView(UUID id, String emailAddress, GmailAccountStatus status, List<String> grantedScopes,

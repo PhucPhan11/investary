@@ -3,9 +3,16 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
+  AiUsage,
   AutomationJob,
+  OverviewReport,
   GmailStatus,
+  JobDetail,
+  JobFilters,
+  OverviewPeriod,
   ResearchWorkflow,
+  SettingValue,
+  SettingsSection,
   SourceRule,
   SourceRuleRequest,
   SyncRun,
@@ -16,6 +23,7 @@ export const GMAIL_API = '/api/v1/integrations/gmail';
 export const SOURCES_API = '/api/v1/automation/sources';
 export const WORKFLOWS_API = '/api/v1/automation/workflows';
 export const JOBS_API = '/api/v1/automation/jobs';
+export const AUTOMATION_API = '/api/v1/automation';
 
 /** Gmail connection and sync. The backend keeps all tokens; the browser only gets Google's consent URL. */
 @Injectable({ providedIn: 'root' })
@@ -85,5 +93,52 @@ export class WorkflowApiService {
 
   retry(jobId: string): Observable<AutomationJob> {
     return this.http.post<AutomationJob>(`${JOBS_API}/${encodeURIComponent(jobId)}/retry`, null);
+  }
+}
+
+/** Automation Center: overview, job history, runtime settings and AI usage (Phase 5 / Milestone 4). */
+@Injectable({ providedIn: 'root' })
+export class AutomationCenterApiService {
+  private readonly http = inject(HttpClient);
+
+  overview(period: OverviewPeriod): Observable<OverviewReport> {
+    return this.http.get<OverviewReport>(`${AUTOMATION_API}/overview`, { params: new HttpParams().set('period', period) });
+  }
+
+  jobs(filters: JobFilters, page = 0, size = 20): Observable<Page<AutomationJob>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) {
+        params = params.set(key, value);
+      }
+    }
+    return this.http.get<Page<AutomationJob>>(JOBS_API, { params });
+  }
+
+  job(id: string): Observable<JobDetail> {
+    return this.http.get<JobDetail>(`${JOBS_API}/${encodeURIComponent(id)}`);
+  }
+
+  retry(id: string): Observable<AutomationJob> {
+    return this.http.post<AutomationJob>(`${JOBS_API}/${encodeURIComponent(id)}/retry`, null);
+  }
+
+  settings(): Observable<SettingsSection[]> {
+    return this.http.get<SettingsSection[]>(`${AUTOMATION_API}/settings`);
+  }
+
+  /** Saves some fields of a section; null resets a field to its default. */
+  saveSettings(section: string, version: number, values: Record<string, SettingValue>): Observable<SettingsSection> {
+    return this.http.put<SettingsSection>(`${AUTOMATION_API}/settings/${encodeURIComponent(section)}`, { version, values });
+  }
+
+  resetSetting(section: string, field: string): Observable<SettingsSection> {
+    return this.http.delete<SettingsSection>(
+      `${AUTOMATION_API}/settings/${encodeURIComponent(section)}/${encodeURIComponent(field)}`,
+    );
+  }
+
+  usage(period: 'day' | 'week', days: number): Observable<AiUsage> {
+    return this.http.get<AiUsage>(`${AUTOMATION_API}/usage`, { params: new HttpParams().set('period', period).set('days', days) });
   }
 }

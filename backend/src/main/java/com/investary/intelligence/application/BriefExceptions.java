@@ -24,6 +24,13 @@ public final class BriefExceptions {
         }
     }
 
+    public static class BriefJobNotRetryableException extends ApiException {
+        public BriefJobNotRetryableException(String status) {
+            super(HttpStatus.CONFLICT, ErrorCode.JOB_NOT_RETRYABLE, "Job not retryable",
+                    "Only failed brief jobs can be retried; this job is " + status);
+        }
+    }
+
     public static class BriefsDisabledException extends ApiException {
         public BriefsDisabledException() {
             super(HttpStatus.CONFLICT, ErrorCode.BRIEFS_DISABLED, "Briefs disabled",

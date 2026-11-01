@@ -1,5 +1,6 @@
 package com.investary.intelligence.application;
 
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +23,8 @@ import com.investary.intelligence.persistence.BriefJobQueue.ClaimedJob;
 @Component
 @ConditionalOnProperty(prefix = "investary.brief.worker", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class BriefJobWorker implements DisposableBean {
+
+    private volatile Instant lastPollAt;
 
     private static final Logger log = LoggerFactory.getLogger(BriefJobWorker.class);
 
@@ -47,6 +50,7 @@ public class BriefJobWorker implements DisposableBean {
 
     @Scheduled(fixedDelayString = "${investary.brief.worker.poll-interval:30s}", initialDelayString = "${investary.brief.worker.poll-interval:30s}")
     public void poll() {
+        lastPollAt = Instant.now();
         try {
             scheduler.enqueueDue();
             int recovered = queue.recoverExpired(settings.lease());
@@ -75,5 +79,10 @@ public class BriefJobWorker implements DisposableBean {
             // Unfinished jobs stay RUNNING and are re-queued after their lease expires.
             executor.shutdownNow();
         }
+    }
+
+    /** When the worker last polled (health check heartbeat), or null before the first poll. */
+    public Instant lastPollAt() {
+        return lastPollAt;
     }
 }

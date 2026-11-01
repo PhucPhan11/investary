@@ -35,7 +35,8 @@ import jakarta.servlet.http.HttpServletResponse;
 public class LocalOnlyRequestFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(LocalOnlyRequestFilter.class);
-    private static final Set<String> PROTECTED_PREFIXES = Set.of("/api/v1/integrations/", "/api/v1/automation/");
+    private static final Set<String> PROTECTED_PREFIXES = Set.of("/api/v1/integrations/", "/api/v1/automation/",
+            "/api/v1/notifications", "/api/v1/briefs/jobs");
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
     private static final Set<String> LOOPBACK_HOSTS = Set.of("localhost", "127.0.0.1", "::1", "[::1]", "0:0:0:0:0:0:0:1");
 

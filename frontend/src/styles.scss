@@ -1225,6 +1225,224 @@ h3 {
   }
 }
 
+// ---- Automation Center and notifications (Phase 5 / Milestone 4) ----------
+
+.subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--gray-200);
+
+  &__link {
+    padding: 0.55rem 0.9rem;
+    border-bottom: 3px solid transparent;
+    color: var(--gray-500);
+    font-size: 0.92rem;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--navy-900);
+    }
+
+    &--active {
+      color: var(--navy-900);
+      font-weight: 600;
+      border-bottom-color: var(--green-600);
+    }
+  }
+}
+
+.stats--compact {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+
+  .stat-card__value {
+    font-size: 1.5rem;
+  }
+}
+
+.stat-card--danger {
+  border-left-color: var(--red-600);
+}
+
+.health-list {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--gray-200);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+.broad-warning {
+  padding: 0.75rem 1rem;
+  border: 1px solid #f0c36d;
+  border-radius: 8px;
+  background: #fff8e6;
+
+  p {
+    margin: 0 0 0.5rem;
+  }
+}
+
+.settings-section .form-grid {
+  align-items: start;
+}
+
+.setting-readonly {
+  padding: 0.45rem 0;
+}
+
+.limit-list {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) 2fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.4rem 0;
+  }
+}
+
+.limit-bar,
+.usage-table__bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--gray-200);
+  overflow: hidden;
+}
+
+.limit-bar__fill,
+.usage-bar {
+  display: block;
+  height: 100%;
+  background: var(--green-600);
+}
+
+.usage-table__bar {
+  min-width: 80px;
+  margin-top: 0.4rem;
+}
+
+.bell {
+  position: relative;
+  margin-left: auto;
+
+  &__button {
+    position: relative;
+    display: inline-flex;
+    padding: 0.4rem;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--navy-700);
+    }
+  }
+
+  &__count {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    min-width: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: var(--green-600);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  &__panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: min(380px, calc(100vw - 2rem));
+    max-height: 70vh;
+    overflow: auto;
+    padding: 0.9rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.notification-items {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--gray-200);
+  border-left: 3px solid transparent;
+
+  &--unread {
+    border-left-color: var(--green-600);
+    background: var(--green-50);
+  }
+
+  &__title {
+    font-weight: 600;
+    color: var(--navy-900);
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+.notification-items--page .notification-item {
+  padding: 0.8rem 0.75rem;
+}
+
 // ---- Responsive -----------------------------------------------------------
 
 @media (max-width: 720px) {
@@ -1247,6 +1465,15 @@ h3 {
 
   .topbar__toggle {
     display: inline-block;
+  }
+
+  .bell {
+    margin-left: 0;
+  }
+
+  .limit-list li {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
   }
 
   .nav {

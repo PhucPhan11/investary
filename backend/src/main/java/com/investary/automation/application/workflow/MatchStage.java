@@ -13,7 +13,7 @@ import java.util.TreeSet;
 
 import org.springframework.stereotype.Component;
 
-import com.investary.automation.WorkflowProperties;
+import com.investary.automation.application.settings.AutomationSettings;
 import com.investary.automation.application.workflow.StageResult.Done;
 import com.investary.automation.application.workflow.StageResult.NextJob;
 import com.investary.automation.application.workflow.StageResult.StageUpdate;
@@ -55,17 +55,17 @@ class MatchStage implements StageHandler {
     private final ChunkLookupService chunks;
     private final SourceRelevanceService relevance;
     private final WorkflowStore store;
-    private final WorkflowProperties properties;
+    private final AutomationSettings settings;
     private final Clock clock;
 
     MatchStage(WorkflowSources sources, ResearchQueryService research, ChunkLookupService chunks, SourceRelevanceService relevance,
-               WorkflowStore store, WorkflowProperties properties, Clock clock) {
+               WorkflowStore store, AutomationSettings settings, Clock clock) {
         this.sources = sources;
         this.research = research;
         this.chunks = chunks;
         this.relevance = relevance;
         this.store = store;
-        this.properties = properties;
+        this.settings = settings;
         this.clock = clock;
     }
 
@@ -98,7 +98,7 @@ class MatchStage implements StageHandler {
             publishedOn = (email.sentAt() != null ? email.sentAt() : email.importedAt()).atZone(MARKET_ZONE).toLocalDate();
         }
 
-        List<PortfolioRelevance> relevant = relevance.match(tickers, marketWide && properties.assessMarketContext());
+        List<PortfolioRelevance> relevant = relevance.match(tickers, marketWide && settings.workflow().assessMarketContext());
         List<MatchRow> rows = new ArrayList<>();
         int holdings = 0;
         for (PortfolioRelevance portfolio : relevant) {
@@ -120,7 +120,7 @@ class MatchStage implements StageHandler {
         counts.put("holdings", holdings);
 
         List<NextJob> next = new ArrayList<>();
-        if (properties.autoAssess() && !relevant.isEmpty()) {
+        if (settings.workflow().autoAssess() && !relevant.isEmpty()) {
             String content = shortHash(sources.fingerprint(workflow));
             relevant.forEach(portfolio -> next.add(new NextJob(JobType.ASSESS, portfolio.portfolioId(),
                     shortHash(portfolio.snapshotHash()) + ":" + content)));

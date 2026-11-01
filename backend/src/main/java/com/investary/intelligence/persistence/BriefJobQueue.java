@@ -183,6 +183,63 @@ public class BriefJobQueue {
                 tokenParams(job).addValue("code", errorCode).addValue("summary", errorSummary).addValue("briefId", briefId)) == 1;
     }
 
+    /**
+     * Manual retry of a failed job: same row and idempotency key, attempts reset.
+     *
+     * @return false if the job is not FAILED (one conditional update, so concurrent retries cannot both apply)
+     */
+    public boolean resetFailed(UUID id) {
+        return jdbc.update("""
+                update brief_jobs
+                set status = 'PENDING', attempts = 0, next_attempt_at = now(), outcome = null, error_code = null,
+                    error_summary = null, completed_at = null, updated_at = now()
+                where id = :id and status = 'FAILED'""", new MapSqlParameterSource("id", id)) == 1;
+    }
+
+    /** Jobs created in [from, to) with an optional status, newest first. */
+    public List<JobRow> list(BriefJobStatus status, Instant from, Instant to, int page, int size) {
+        return jdbc.query("select " + COLUMNS + " from brief_jobs where " + FILTER + " order by created_at desc, id limit :limit offset :offset",
+                filter(status, from, to).addValue("limit", size).addValue("offset", (long) page * size), BriefJobQueue::row);
+    }
+
+    public long count(BriefJobStatus status, Instant from, Instant to) {
+        Long count = jdbc.queryForObject("select count(*) from brief_jobs where " + FILTER, filter(status, from, to), Long.class);
+        return count == null ? 0 : count;
+    }
+
+    /** Jobs that ended FAILED in [from, to). */
+    public long countFailed(Instant from, Instant to) {
+        Long count = jdbc.queryForObject(
+                "select count(*) from brief_jobs where status = 'FAILED' and completed_at >= :from and completed_at < :to",
+                new MapSqlParameterSource("from", Timestamp.from(from)).addValue("to", Timestamp.from(to)), Long.class);
+        return count == null ? 0 : count;
+    }
+
+    /** Jobs PENDING or RUNNING now. */
+    public long countActive() {
+        Long count = jdbc.queryForObject("select count(*) from brief_jobs where status in ('PENDING', 'RUNNING')",
+                new MapSqlParameterSource(), Long.class);
+        return count == null ? 0 : count;
+    }
+
+    /** The most recently finished job, if any. */
+    public Optional<JobRow> latestFinished() {
+        return jdbc.query("select " + COLUMNS + " from brief_jobs where status in ('SUCCEEDED', 'FAILED') order by completed_at desc, id limit 1",
+                new MapSqlParameterSource(), BriefJobQueue::row).stream().findFirst();
+    }
+
+    private static final String FILTER = """
+            (cast(:status as varchar) is null or status = :status)
+              and (cast(:from as timestamptz) is null or created_at >= :from)
+              and (cast(:to as timestamptz) is null or created_at < :to)""";
+
+    private static MapSqlParameterSource filter(BriefJobStatus status, Instant from, Instant to) {
+        return new MapSqlParameterSource()
+                .addValue("status", status == null ? null : status.name())
+                .addValue("from", from == null ? null : Timestamp.from(from))
+                .addValue("to", to == null ? null : Timestamp.from(to));
+    }
+
     public Optional<JobRow> find(UUID id) {
         return jdbc.query("select " + COLUMNS + " from brief_jobs where id = :id",
                 new MapSqlParameterSource("id", id), BriefJobQueue::row).stream().findFirst();

@@ -167,6 +167,8 @@ investary:
       scheduler-enabled: ${INVESTARY_GMAIL_SYNC_SCHEDULER_ENABLED:true}
       interval: ${INVESTARY_GMAIL_SYNC_INTERVAL:30m}
       initial-delay: 2m
+      # The scheduler checks this often whether the (runtime-editable) polling interval has passed.
+      tick: ${INVESTARY_GMAIL_SYNC_TICK:1m}
       initial-lookback-days: ${INVESTARY_GMAIL_INITIAL_LOOKBACK_DAYS:30}
       max-messages-per-run: ${INVESTARY_GMAIL_MAX_MESSAGES_PER_RUN:200}
       recovery-max-lookback-days: ${INVESTARY_GMAIL_RECOVERY_MAX_LOOKBACK_DAYS:30}
@@ -187,6 +189,9 @@ investary:
     auto-assess: ${INVESTARY_WORKFLOW_AUTO_ASSESS:true}
     max-auto-assessments-per-day: ${INVESTARY_WORKFLOW_MAX_AUTO_ASSESSMENTS_PER_DAY:20}
     assess-market-context: ${INVESTARY_WORKFLOW_ASSESS_MARKET_CONTEXT:false}
+    # Phase 5 / Milestone 4: manual retries per job; a pending job older than this degrades the health check.
+    max-manual-retries: ${INVESTARY_WORKFLOW_MAX_MANUAL_RETRIES:5}
+    stuck-job-after: ${INVESTARY_WORKFLOW_STUCK_JOB_AFTER:1h}
     worker:
       enabled: ${INVESTARY_WORKFLOW_WORKER_ENABLED:true}
       concurrency: ${INVESTARY_WORKFLOW_CONCURRENCY:2}
@@ -204,6 +209,8 @@ investary:
     catch-up-window: ${INVESTARY_BRIEF_CATCH_UP_WINDOW:12h}
     # MINIMAL: a short "no material new research" brief; SKIP: only a SKIPPED record that keeps the period.
     no-research-mode: ${INVESTARY_BRIEF_NO_RESEARCH_MODE:MINIMAL}
+    # Briefs per day whose AI part may be generated; later ones are deterministic only (Milestone 4).
+    max-ai-briefs-per-day: ${INVESTARY_BRIEF_MAX_AI_PER_DAY:10}
     max-sources: 12
     chunks-per-source: 2
     max-context-chars: 14000

@@ -150,7 +150,10 @@ describe('BriefDetail', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    http.verify();
+  });
 
   async function render(value: Brief) {
     const fixture = TestBed.createComponent(BriefDetail);
@@ -191,6 +194,29 @@ describe('BriefDetail', () => {
     expect(active.querySelector('a')?.getAttribute('href')).toBe('/emails/e1');
     expect(element.querySelector('.sources a')?.getAttribute('href')).toBe('/documents/d1');
     expect(element.textContent).toContain('being indexed');
+  });
+
+  it('shows the period, freshness and limitations, and scrolls a clicked citation into view', async () => {
+    const fixture = await render(brief());
+    vi.useFakeTimers();
+    const element: HTMLElement = fixture.nativeElement;
+
+    const facts = element.querySelector('[data-testid=brief-facts]')!;
+    expect(facts.textContent).toContain('Asia/Ho_Chi_Minh');
+    expect(facts.querySelector('[data-testid=freshness]')?.textContent).toContain('2 source(s) published');
+    expect(facts.querySelector('[data-testid=freshness]')?.textContent).toContain('1 older research');
+    expect(facts.querySelector('[data-testid=limitations]')?.textContent).toContain('Cũ');
+    expect(facts.textContent).toContain('not real-time market data');
+
+    const target = element.querySelector('#source-S2') as HTMLElement;
+    const scroll = vi.fn();
+    target.scrollIntoView = scroll;
+    (element.querySelectorAll('.brief-item__text button.cite')[2] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    vi.runAllTimers();
+    expect(scroll).toHaveBeenCalled();
+    expect(target.classList).toContain('source--active');
+    vi.useRealTimers();
   });
 
   it('shows a failed brief and its safe error', async () => {

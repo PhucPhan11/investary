@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.investary.automation.WorkflowProperties;
+import com.investary.automation.application.settings.AutomationSettings;
 import com.investary.automation.application.workflow.StageResult.Done;
 import com.investary.automation.application.workflow.StageResult.NextJob;
 import com.investary.automation.domain.JobType;
@@ -54,16 +54,16 @@ class DownloadStage implements StageHandler {
     private final ResearchQueryService research;
     private final DownloadRequestService downloads;
     private final WorkflowStore store;
-    private final WorkflowProperties properties;
+    private final AutomationSettings settings;
     private final JsonMapper json;
     private final Clock clock;
 
-    DownloadStage(ResearchQueryService research, DownloadRequestService downloads, WorkflowStore store, WorkflowProperties properties,
+    DownloadStage(ResearchQueryService research, DownloadRequestService downloads, WorkflowStore store, AutomationSettings settings,
                   JsonMapper json, Clock clock) {
         this.research = research;
         this.downloads = downloads;
         this.store = store;
-        this.properties = properties;
+        this.settings = settings;
         this.json = json;
         this.clock = clock;
     }
@@ -88,7 +88,7 @@ class DownloadStage implements StageHandler {
             // Gmail sync records its message mapping (with the matched rule) right after the import returns.
             boolean expired = job.waitDeadline() != null && clock.instant().isAfter(job.waitDeadline());
             if (!expired) {
-                return new StageResult.Wait(properties.waitPoll(), GMAIL_MAPPING_WAIT);
+                return new StageResult.Wait(settings.workflow().waitPoll(), GMAIL_MAPPING_WAIT);
             }
         }
         return start(workflow, links, gmail);
@@ -97,7 +97,7 @@ class DownloadStage implements StageHandler {
     private StageResult start(WorkflowRow workflow, List<SourceLinkView> links, GmailSource gmail) {
         List<SourceLinkView> candidates = links.stream().filter(l -> l.status() == LinkStatus.READY).toList();
         long downloaded = count(links, LinkStatus.DOWNLOADED);
-        if (gmail == null || !gmail.autoDownload()) {
+        if (gmail == null || !gmail.autoDownload() || !settings.autoPdfDownloadEnabled()) {
             Map<String, Object> counts = new LinkedHashMap<>();
             counts.put("researchLinks", links.size());
             counts.put("awaitingManualDownload", candidates.size());
@@ -105,10 +105,10 @@ class DownloadStage implements StageHandler {
             return done(StageStatus.SKIPPED, "AUTO_DOWNLOAD_DISABLED", counts);
         }
 
-        int budget = Math.max(0, properties.maxDownloadsPerEmail() - workflow.autoDownloadsRequested());
+        int budget = Math.max(0, settings.workflow().maxDownloadsPerEmail() - workflow.autoDownloadsRequested());
         if (gmail.syncRunId() != null) {
             store.linkSyncRun(workflow.id(), gmail.syncRunId());
-            budget = Math.min(budget, Math.max(0, properties.maxDownloadsPerSyncRun() - store.autoDownloadsForSyncRun(gmail.syncRunId())));
+            budget = Math.min(budget, Math.max(0, settings.workflow().maxDownloadsPerSyncRun() - store.autoDownloadsForSyncRun(gmail.syncRunId())));
         }
         int requested = 0;
         int blocked = 0;
@@ -133,7 +133,7 @@ class DownloadStage implements StageHandler {
         counts.put("overLimit", capped);
         store.updateStage(workflow.id(), WorkflowStage.DOCUMENTS_PROCESSED, StageStatus.RUNNING, null, json.writeValueAsString(counts));
         log.info("Workflow downloads requested workflowId={} requested={} blocked={} overLimit={}", workflow.id(), requested, blocked, capped);
-        return new StageResult.Wait(properties.waitPoll(), properties.downloadWaitTimeout(), true);
+        return new StageResult.Wait(settings.workflow().waitPoll(), settings.workflow().downloadWaitTimeout(), true);
     }
 
     private StageResult check(ClaimedJob job, WorkflowRow workflow, List<SourceLinkView> links) {
@@ -145,7 +145,7 @@ class DownloadStage implements StageHandler {
                 counts.put("downloaded", count(links, LinkStatus.DOWNLOADED));
                 return done(StageStatus.PARTIAL, "DOWNLOAD_TIMEOUT", counts);
             }
-            return new StageResult.Wait(properties.waitPoll(), properties.downloadWaitTimeout());
+            return new StageResult.Wait(settings.workflow().waitPoll(), settings.workflow().downloadWaitTimeout());
         }
         long downloaded = count(links, LinkStatus.DOWNLOADED);
         long failed = count(links, LinkStatus.FAILED);

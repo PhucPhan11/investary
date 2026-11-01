@@ -3,13 +3,16 @@ package com.investary.intelligence.application;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.investary.common.web.PageResponse;
 import com.investary.intelligence.application.BriefExceptions.BriefJobNotFoundException;
+import com.investary.intelligence.application.BriefExceptions.BriefJobNotRetryableException;
 import com.investary.intelligence.application.BriefExceptions.BriefNotFoundException;
 import com.investary.intelligence.application.BriefExceptions.BriefsDisabledException;
 import com.investary.intelligence.application.BriefPeriods.Period;
@@ -21,6 +24,7 @@ import com.investary.intelligence.application.BriefViews.BriefSourceRef;
 import com.investary.intelligence.application.BriefViews.BriefView;
 import com.investary.intelligence.application.BriefViews.Limitation;
 import com.investary.intelligence.application.BriefViews.RevisionRef;
+import com.investary.intelligence.domain.BriefJobStatus;
 import com.investary.intelligence.domain.BriefSourceRole;
 import com.investary.intelligence.domain.BriefStatus;
 import com.investary.intelligence.domain.BriefTrigger;
@@ -45,19 +49,17 @@ public class BriefService {
 
     private final BriefStore store;
     private final BriefJobQueue queue;
-    private final BriefProperties properties;
+    private final BriefSettings settings;
     private final PortfolioQueryService portfolios;
-    private final BriefPeriods periods;
     private final JsonMapper json;
     private final Clock clock;
 
-    BriefService(BriefStore store, BriefJobQueue queue, BriefProperties properties, PortfolioQueryService portfolios, JsonMapper json,
+    BriefService(BriefStore store, BriefJobQueue queue, BriefSettings settings, PortfolioQueryService portfolios, JsonMapper json,
                  Clock clock) {
         this.store = store;
         this.queue = queue;
-        this.properties = properties;
+        this.settings = settings;
         this.portfolios = portfolios;
-        this.periods = new BriefPeriods(properties.schedule().cron(), properties.schedule().zoneId());
         this.json = json;
         this.clock = clock;
     }
@@ -100,12 +102,13 @@ public class BriefService {
             portfolios.portfolio(portfolioId);
         }
         Instant now = clock.instant();
+        BriefPeriods periods = settings.periods();
         LocalDate day = date == null ? now.atZone(periods.zone()).toLocalDate() : date;
         Period period = periods.forDate(day, now);
         JobRequest request = new JobRequest(BriefTrigger.MANUAL, portfolioId, period.start(), period.end(), period.zone(),
-                period.businessDate(), period.partial(), null, properties.configVersion());
+                period.businessDate(), period.partial(), null, settings.current().configVersion());
         String key = "manual:" + (portfolioId == null ? "general" : portfolioId) + ":" + period.start() + ":" + day;
-        return job(queue.enqueue(request, key, properties.maxAttempts(), true).id());
+        return job(queue.enqueue(request, key, settings.current().maxAttempts(), true).id());
     }
 
     /** Re-runs the brief's scope and period; the result is a new revision unless the inputs are unchanged. */
@@ -113,19 +116,59 @@ public class BriefService {
         requireEnabled();
         BriefRow row = store.find(id).orElseThrow(() -> new BriefNotFoundException(id));
         JobRequest request = new JobRequest(BriefTrigger.REGENERATION, row.portfolioId(), row.periodStart(), row.periodEnd(), row.zone(),
-                row.businessDate(), row.partialPeriod(), row.id(), properties.configVersion());
-        return job(queue.enqueue(request, "regenerate:" + row.rootBriefId(), properties.maxAttempts(), true).id());
+                row.businessDate(), row.partialPeriod(), row.id(), settings.current().configVersion());
+        return job(queue.enqueue(request, "regenerate:" + row.rootBriefId(), settings.current().maxAttempts(), true).id());
+    }
+
+    /** Generation jobs created in the given business-date range (brief zone), newest first. */
+    public PageResponse<BriefJobView> jobs(BriefJobStatus status, LocalDate from, LocalDate to, int page, int size) {
+        ZoneId zone = settings.current().schedule().zoneId();
+        Instant start = from == null ? null : from.atStartOfDay(zone).toInstant();
+        Instant end = to == null ? null : to.plusDays(1).atStartOfDay(zone).toInstant();
+        long total = queue.count(status, start, end);
+        List<BriefJobView> content = queue.list(status, start, end, page, size).stream().map(this::jobView).toList();
+        return new PageResponse<>(content, page, size, total, (int) ((total + size - 1) / size));
+    }
+
+    /**
+     * Manual retry of a failed generation job. The job keeps its idempotency key, so it can only produce the
+     * brief it was created for; the daily AI brief limit bounds the model calls retries can cause.
+     */
+    public BriefJobView retryJob(UUID id) {
+        JobRow job = queue.find(id).orElseThrow(() -> new BriefJobNotFoundException(id));
+        if (!queue.resetFailed(id)) {
+            throw new BriefJobNotRetryableException(job.status().name());
+        }
+        return job(id);
+    }
+
+    /** Operational figures for the Automation Center. */
+    public BriefStats stats(Instant from, Instant to) {
+        Optional<JobRow> latest = queue.latestFinished();
+        return new BriefStats(settings.current().enabled(), queue.countFailed(from, to), queue.countActive(),
+                store.countGeneratedBetween(from, to), latest.map(JobRow::completedAt).orElse(null),
+                latest.map(j -> j.status() == BriefJobStatus.FAILED).orElse(false), store.lastGeneratedAt());
+    }
+
+    /**
+     * @param lastJobFailed the most recently finished generation job failed
+     */
+    public record BriefStats(boolean enabled, long failedJobs, long activeJobs, long briefsGenerated, Instant lastJobFinishedAt,
+                             boolean lastJobFailed, Instant lastBriefAt) {
     }
 
     public BriefJobView job(UUID id) {
-        JobRow job = queue.find(id).orElseThrow(() -> new BriefJobNotFoundException(id));
+        return jobView(queue.find(id).orElseThrow(() -> new BriefJobNotFoundException(id)));
+    }
+
+    private BriefJobView jobView(JobRow job) {
         return new BriefJobView(job.id(), job.trigger(), job.status(), job.outcome(), job.portfolioId(), job.periodStart(), job.periodEnd(),
                 job.zone(), job.businessDate(), job.partialPeriod(), job.previousBriefId(), job.attempts(), job.maxAttempts(),
                 job.nextAttemptAt(), job.briefId(), job.errorCode(), job.errorSummary(), job.createdAt(), job.startedAt(), job.completedAt());
     }
 
     private void requireEnabled() {
-        if (!properties.enabled()) {
+        if (!settings.current().enabled()) {
             throw new BriefsDisabledException();
         }
     }

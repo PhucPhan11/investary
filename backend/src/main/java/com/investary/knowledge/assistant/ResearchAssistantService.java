@@ -29,6 +29,9 @@ import com.investary.knowledge.search.SearchResult;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.investary.knowledge.usage.AiPurpose;
+import com.investary.knowledge.usage.AiUsageService;
 
 /**
  * Retrieval-augmented question answering over the knowledge base. Each question is answered on its own
@@ -54,9 +57,16 @@ public class ResearchAssistantService implements DisposableBean {
 
     public ResearchAssistantService(HybridSearchService search, ObjectProvider<ChatModel> chatModels,
                                     KnowledgeProperties properties, JsonMapper json, Clock clock, AiConcurrencyLimits limits) {
+        this(search, chatModels, properties, json, clock, limits, null);
+    }
+
+    @Autowired
+    public ResearchAssistantService(HybridSearchService search, ObjectProvider<ChatModel> chatModels,
+                                    KnowledgeProperties properties, JsonMapper json, Clock clock, AiConcurrencyLimits limits,
+                                    AiUsageService usage) {
         this.search = search;
         this.settings = properties.assistant();
-        this.chat = new ChatGateway(chatModels, settings.timeout(), limits);
+        this.chat = new ChatGateway(chatModels, settings.timeout(), limits, usage, AiPurpose.RESEARCH_ASSISTANT, settings.modelLabel());
         this.json = json;
         this.clock = clock;
     }

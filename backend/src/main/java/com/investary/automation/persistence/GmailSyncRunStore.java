@@ -92,6 +92,21 @@ public class GmailSyncRunStore {
                 new MapSqlParameterSource("accountId", accountId), GmailSyncRunStore::row).stream().findFirst();
     }
 
+    /** The latest finished run of the account with this status. */
+    public Optional<RunRow> latestWithStatus(UUID accountId, SyncRunStatus status) {
+        return jdbc.query("select " + COLUMNS + " from gmail_sync_runs where account_id = :accountId and status = :status"
+                        + " order by started_at desc, id limit 1",
+                new MapSqlParameterSource("accountId", accountId).addValue("status", status.name()), GmailSyncRunStore::row)
+                .stream().findFirst();
+    }
+
+    /** The account's most recent finished runs, newest first. */
+    public List<RunRow> recentFinished(UUID accountId, int limit) {
+        return jdbc.query("select " + COLUMNS + " from gmail_sync_runs where account_id = :accountId and status <> 'RUNNING'"
+                        + " order by started_at desc, id limit :limit",
+                new MapSqlParameterSource("accountId", accountId).addValue("limit", limit), GmailSyncRunStore::row);
+    }
+
     public List<RunRow> page(int page, int size) {
         return jdbc.query("select " + COLUMNS + " from gmail_sync_runs order by started_at desc, id limit :size offset :offset",
                 new MapSqlParameterSource("size", size).addValue("offset", (long) page * size), GmailSyncRunStore::row);

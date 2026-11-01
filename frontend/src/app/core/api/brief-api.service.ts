@@ -38,4 +38,24 @@ export class BriefApiService {
   job(id: string): Observable<BriefJob> {
     return this.http.get<BriefJob>(`${BRIEF_API}/jobs/${encodeURIComponent(id)}`);
   }
+
+  /** Generation jobs, newest first; dates are business dates in the brief time zone. */
+  jobs(status: BriefJob['status'] | '' = '', page = 0, size = 10, from = '', to = ''): Observable<Page<BriefJob>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (status) {
+      params = params.set('status', status);
+    }
+    if (from) {
+      params = params.set('from', from);
+    }
+    if (to) {
+      params = params.set('to', to);
+    }
+    return this.http.get<Page<BriefJob>>(`${BRIEF_API}/jobs`, { params });
+  }
+
+  /** Retries a failed generation job (backend checks eligibility). */
+  retryJob(id: string): Observable<BriefJob> {
+    return this.http.post<BriefJob>(`${BRIEF_API}/jobs/${encodeURIComponent(id)}/retry`, null);
+  }
 }

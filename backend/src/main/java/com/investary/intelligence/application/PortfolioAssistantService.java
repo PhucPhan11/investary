@@ -43,6 +43,9 @@ import com.investary.research.link.Keywords;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.investary.knowledge.usage.AiPurpose;
+import com.investary.knowledge.usage.AiUsageService;
 
 /**
  * Portfolio-aware questions. Combines the investor profile, goals and computed holdings with research
@@ -70,12 +73,20 @@ public class PortfolioAssistantService implements DisposableBean {
     public PortfolioAssistantService(PortfolioQueryService portfolios, InvestorQueryService investor, HybridSearchService search,
                                      IntelligenceProperties properties, KnowledgeProperties knowledge,
                                      ObjectProvider<ChatModel> chatModels, JsonMapper json, AiConcurrencyLimits limits) {
+        this(portfolios, investor, search, properties, knowledge, chatModels, json, limits, null);
+    }
+
+    @Autowired
+    public PortfolioAssistantService(PortfolioQueryService portfolios, InvestorQueryService investor, HybridSearchService search,
+                                     IntelligenceProperties properties, KnowledgeProperties knowledge,
+                                     ObjectProvider<ChatModel> chatModels, JsonMapper json, AiConcurrencyLimits limits,
+                                     AiUsageService usage) {
         this.portfolios = portfolios;
         this.investor = investor;
         this.search = search;
         this.properties = properties;
         this.settings = knowledge.assistant();
-        this.chat = new ChatGateway(chatModels, settings.timeout(), limits);
+        this.chat = new ChatGateway(chatModels, settings.timeout(), limits, usage, AiPurpose.PORTFOLIO_ASSISTANT, settings.modelLabel());
         this.json = json;
     }
 

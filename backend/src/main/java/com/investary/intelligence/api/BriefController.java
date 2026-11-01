@@ -19,6 +19,7 @@ import com.investary.intelligence.application.BriefService;
 import com.investary.intelligence.application.BriefViews.BriefJobView;
 import com.investary.intelligence.application.BriefViews.BriefListItem;
 import com.investary.intelligence.application.BriefViews.BriefView;
+import com.investary.intelligence.domain.BriefJobStatus;
 import com.investary.intelligence.domain.BriefStatus;
 
 /**
@@ -63,9 +64,27 @@ public class BriefController {
         return ResponseEntity.accepted().location(URI.create("/api/v1/briefs/jobs/" + job.id())).body(job);
     }
 
+    /**
+     * @param from first day (brief zone) of the creation date range, inclusive
+     * @param to   last day of the creation date range, inclusive
+     */
+    @GetMapping("/jobs")
+    public PageResponse<BriefJobView> jobs(@RequestParam(required = false) BriefJobStatus status,
+                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                                           @RequestParam(defaultValue = "0") int page,
+                                           @RequestParam(defaultValue = "20") int size) {
+        return briefs.jobs(status, from, to, Math.max(0, page), Math.clamp(size, 1, MAX_PAGE_SIZE));
+    }
+
     @GetMapping("/jobs/{id}")
     public BriefJobView job(@PathVariable UUID id) {
         return briefs.job(id);
+    }
+
+    @PostMapping("/jobs/{id}/retry")
+    public ResponseEntity<BriefJobView> retryJob(@PathVariable UUID id) {
+        return ResponseEntity.accepted().location(URI.create("/api/v1/briefs/jobs/" + id)).body(briefs.retryJob(id));
     }
 
     @PostMapping("/{id}/regenerate")

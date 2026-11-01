@@ -27,6 +27,8 @@ import com.investary.knowledge.embedding.EmbeddingService;
 @ConditionalOnProperty(prefix = "investary.knowledge.worker", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class KnowledgeIndexWorker implements DisposableBean {
 
+    private volatile Instant lastPollAt;
+
     private static final Logger log = LoggerFactory.getLogger(KnowledgeIndexWorker.class);
 
     private final KnowledgeIndexQueue queue;
@@ -55,6 +57,7 @@ public class KnowledgeIndexWorker implements DisposableBean {
 
     @Scheduled(fixedDelayString = "${investary.knowledge.worker.poll-interval:3s}", initialDelayString = "${investary.knowledge.worker.poll-interval:3s}")
     public void poll() {
+        lastPollAt = Instant.now();
         try {
             reconcileIfDue();
             if (!embeddings.isAvailable()) {
@@ -101,5 +104,10 @@ public class KnowledgeIndexWorker implements DisposableBean {
             // Unfinished jobs stay PROCESSING and are re-queued after their lease expires.
             executor.shutdownNow();
         }
+    }
+
+    /** When the worker last polled (health check heartbeat), or null before the first poll. */
+    public Instant lastPollAt() {
+        return lastPollAt;
     }
 }

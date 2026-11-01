@@ -142,6 +142,26 @@ public class BriefStore {
     }
 
     /** The latest revision of the chain for this scope and period, if any. */
+    /** Brief revisions generated in [from, to), skipped periods excluded. */
+    public long countGeneratedBetween(Instant from, Instant to) {
+        Long count = jdbc.queryForObject("select count(*) from briefs where generated_at >= :from and generated_at < :to and status <> 'SKIPPED'",
+                new MapSqlParameterSource("from", Timestamp.from(from)).addValue("to", Timestamp.from(to)), Long.class);
+        return count == null ? 0 : count;
+    }
+
+    /** When the latest brief was generated, or null. */
+    public Instant lastGeneratedAt() {
+        Timestamp last = jdbc.queryForObject("select max(generated_at) from briefs", new MapSqlParameterSource(), Timestamp.class);
+        return last == null ? null : last.toInstant();
+    }
+
+    /** Briefs generated since {@code since} whose model part was attempted (it answered or failed). */
+    public long countAiBriefsSince(Instant since) {
+        Long count = jdbc.queryForObject("select count(*) from briefs where generated_at >= :since and ai_status in ('COMPLETED', 'FAILED')",
+                new MapSqlParameterSource("since", Timestamp.from(since)), Long.class);
+        return count == null ? 0 : count;
+    }
+
     public Optional<BriefRow> head(UUID portfolioId, Instant periodStart, Instant periodEnd) {
         return jdbc.query("select " + COLUMNS + """
                  from briefs b

@@ -55,18 +55,18 @@ class BriefEvidenceCollector {
     private final InvestorQueryService investor;
     private final ImpactAssessmentRepository assessments;
     private final ImpactAssessmentItemRepository assessmentItems;
-    private final BriefProperties properties;
+    private final BriefSettings settings;
 
     BriefEvidenceCollector(ResearchAvailabilityService availability, ChunkLookupService chunkLookup, PortfolioQueryService portfolios,
                            InvestorQueryService investor, ImpactAssessmentRepository assessments,
-                           ImpactAssessmentItemRepository assessmentItems, BriefProperties properties) {
+                           ImpactAssessmentItemRepository assessmentItems, BriefSettings settings) {
         this.availability = availability;
         this.chunkLookup = chunkLookup;
         this.portfolios = portfolios;
         this.investor = investor;
         this.assessments = assessments;
         this.assessmentItems = assessmentItems;
-        this.properties = properties;
+        this.settings = settings;
     }
 
     BriefEvidence collect(UUID portfolioId, Instant start, Instant end, ZoneId zone, Instant cutoff) {
@@ -108,7 +108,7 @@ class BriefEvidenceCollector {
             List<String> held = tickers.stream().map(heldByTicker::get).filter(s -> s != null).distinct().toList();
             List<String> other = tickers.stream().filter(t -> !heldByTicker.containsKey(t)).toList();
             Relevance relevance = relevance(source, tickers, held, heldByTicker);
-            boolean old = source.publishedOn() != null && source.publishedOn().isBefore(periodStartDate.minusDays(properties.oldPublicationDays()));
+            boolean old = source.publishedOn() != null && source.publishedOn().isBefore(periodStartDate.minusDays(settings.current().oldPublicationDays()));
             boolean late = source.importedAt() != null && source.importedAt().isBefore(start);
             candidates.add(new Candidate(source, relevance, held, other, receivedVia.getOrDefault(source.sourceId(), List.of()), old, late));
         }
@@ -121,15 +121,15 @@ class BriefEvidenceCollector {
         List<Entry> omitted = new ArrayList<>();
         Set<String> seenText = new HashSet<>();
         int labels = 0;
-        int budget = properties.maxContextChars();
+        int budget = settings.current().maxContextChars();
         for (Candidate candidate : candidates) {
-            if (selected.size() >= properties.maxSources()) {
+            if (selected.size() >= settings.current().maxSources()) {
                 omitted.add(candidate.entry(List.of()));
                 continue;
             }
             List<String> preferred = candidate.relevance() == Relevance.OTHER ? candidate.otherTickers() : candidate.heldSymbols();
             List<LabeledHit> hits = new ArrayList<>();
-            for (SearchHit hit : availability.chunks(candidate.source().knowledgeSourceId(), preferred, properties.chunksPerSource())) {
+            for (SearchHit hit : availability.chunks(candidate.source().knowledgeSourceId(), preferred, settings.current().chunksPerSource())) {
                 String normalized = hit.content().strip();
                 if (!seenText.add(normalized)) {
                     continue; // identical text from another source is used once

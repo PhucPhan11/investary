@@ -46,6 +46,17 @@ const BADGES: Record<string, { label: string; tone: Tone }> = {
   BRIEF_PARTIAL: { label: 'Partial (no AI part)', tone: 'warning' },
   BRIEF_FAILED: { label: 'Failed', tone: 'danger' },
   BRIEF_SKIPPED: { label: 'Skipped (nothing new)', tone: 'muted' },
+  // Automation jobs (Automation Center)
+  WAITING: { label: 'Waiting', tone: 'info' },
+  // Component health (prefixed: health is not a job status)
+  HEALTH_OPERATIONAL: { label: 'Operational', tone: 'success' },
+  HEALTH_DEGRADED: { label: 'Degraded', tone: 'warning' },
+  HEALTH_DISABLED: { label: 'Disabled', tone: 'muted' },
+  HEALTH_UNAVAILABLE: { label: 'Unavailable', tone: 'danger' },
+  // Notification priority
+  NOTIF_HIGH: { label: 'High', tone: 'danger' },
+  NOTIF_NORMAL: { label: 'Normal', tone: 'info' },
+  NOTIF_LOW: { label: 'Low', tone: 'muted' },
 };
 
 /** Small coloured label for statuses and categories returned by the API. */

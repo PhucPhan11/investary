@@ -1,9 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+import { NotificationBell } from '../shared/components/notification-bell';
+
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBell],
   template: `
     <header class="topbar">
       <a routerLink="/" class="brand" aria-label="Investary home">
@@ -31,8 +33,9 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <a routerLink="/profile" routerLinkActive="nav__link--active" class="nav__link">Profile</a>
         <a routerLink="/briefs" routerLinkActive="nav__link--active" class="nav__link">Daily brief</a>
         <a routerLink="/assistant" routerLinkActive="nav__link--active" class="nav__link">Research assistant</a>
-      <a routerLink="/automation" routerLinkActive="nav__link--active" class="nav__link">Gmail sync</a>
+        <a routerLink="/automation" routerLinkActive="nav__link--active" class="nav__link">Automation</a>
       </nav>
+      <app-notification-bell />
     </header>
     <main class="content">
       <router-outlet />

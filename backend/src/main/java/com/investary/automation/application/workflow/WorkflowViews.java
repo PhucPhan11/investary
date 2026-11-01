@@ -50,10 +50,30 @@ public final class WorkflowViews {
                             Instant matchedAt) {
     }
 
+    /**
+     * @param sourceTitle        email subject or document file name; null when the source was deleted
+     * @param retryable          a manual retry is allowed now (decided by {@link RetryPolicy})
+     * @param retryBlockedReason why a failed job cannot be retried, or null
+     * @param manualRetries      manual retries requested so far
+     */
     public record JobView(UUID id, JobType type, UUID workflowId, WorkflowSourceType sourceType, UUID sourceId, UUID portfolioId,
                           JobStatus status, String outcome, int attempts, int maxAttempts, Instant nextAttemptAt, Instant startedAt,
                           Instant completedAt, String errorCode, String errorSummary, String processingVersion, Integer inputTokens,
-                          Integer outputTokens, Instant createdAt, Instant updatedAt) {
+                          Integer outputTokens, Instant createdAt, Instant updatedAt, String sourceTitle, boolean retryable,
+                          String retryBlockedReason, int manualRetries) {
+    }
+
+    /** One claim of a job and its result, or a manual retry request. */
+    public record AttemptView(int attempt, String trigger, Instant startedAt, Instant finishedAt, String result, String errorCode,
+                              String errorSummary) {
+    }
+
+    /**
+     * Job detail for the Automation Center.
+     *
+     * @param workflow the workflow of the job's source with all its stages and jobs
+     */
+    public record JobDetailView(JobView job, WorkflowView workflow, List<AttemptView> attempts) {
     }
 
     static WorkflowView workflow(WorkflowRow row, List<StageRow> stages, List<MatchRow> matches, List<JobRow> jobs) {
@@ -67,10 +87,15 @@ public final class WorkflowViews {
     }
 
     static JobView job(JobRow job, WorkflowRow workflow) {
+        return job(job, workflow, null, null, 0);
+    }
+
+    static JobView job(JobRow job, WorkflowRow workflow, String sourceTitle, String retryBlockedReason, int manualRetries) {
         return new JobView(job.id(), job.type(), job.workflowId(), workflow == null ? null : workflow.sourceType(),
                 workflow == null ? null : workflow.sourceId(), job.portfolioId(), job.status(), job.outcome(), job.attempts(),
                 job.maxAttempts(), job.nextAttemptAt(), job.startedAt(), job.completedAt(), job.errorCode(), job.errorSummary(),
-                job.processingVersion(), job.inputTokens(), job.outputTokens(), job.createdAt(), job.updatedAt());
+                job.processingVersion(), job.inputTokens(), job.outputTokens(), job.createdAt(), job.updatedAt(), sourceTitle,
+                job.status() == JobStatus.FAILED && retryBlockedReason == null, retryBlockedReason, manualRetries);
     }
 
     private static JsonNode counts(String text) {

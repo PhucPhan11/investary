@@ -59,8 +59,8 @@ class BriefGeneratorTest {
                 Duration.ofHours(12), mode, 12, 2, 14000, 7, 5, 3, Duration.ofMillis(1), timeout,
                 new BriefProperties.Worker(false, 1, Duration.ofSeconds(1), Duration.ofMinutes(15)));
         var knowledge = TestKnowledgeProperties.defaults();
-        generator = new BriefGenerator(collector, store, properties, knowledge, new IndexVersion(knowledge),
-                IntelligenceTestData.provider(model), AiConcurrencyLimits.unlimited(), json,
+        generator = new BriefGenerator(collector, store, BriefSettings.fixed(properties), knowledge, new IndexVersion(knowledge),
+                IntelligenceTestData.provider(model), AiConcurrencyLimits.unlimited(), null, null, json,
                 Clock.fixed(Instant.parse("2026-11-01T02:00:00Z"), ZoneOffset.UTC));
         return generator;
     }
@@ -188,5 +188,20 @@ class BriefGeneratorTest {
         assertThat(draft.status()).isEqualTo(BriefStatus.PARTIAL);
         assertThat(draft.aiStatus()).isEqualTo(BriefAiStatus.COMPLETED);
         assertThat(draft.limitationsJson()).contains("AI_OUTPUT_INVALID");
+    }
+
+    @Test
+    void theDailyBriefLimitSkipsTheModelCall() {
+        evidenceIs(evidence(ResearchState.NEW_RESEARCH, fptEntry()));
+        when(store.countAiBriefsSince(any())).thenReturn((long) BriefSettings.DEFAULT_MAX_AI_BRIEFS);
+        chatModel.reply(prompt -> {
+            throw new AssertionError("the model must not be called");
+        });
+        Draft draft = generator(BriefProperties.NoResearchMode.MINIMAL, chatModel, Duration.ofSeconds(5)).generate(job(1));
+
+        assertThat(draft.status()).isEqualTo(BriefStatus.PARTIAL);
+        assertThat(draft.aiStatus()).isEqualTo(BriefAiStatus.SKIPPED_LIMIT);
+        assertThat(draft.limitationsJson()).contains("AI_DAILY_LIMIT");
+        assertThat(draft.contentJson()).doesNotContain("AI_INTERPRETATION");
     }
 }

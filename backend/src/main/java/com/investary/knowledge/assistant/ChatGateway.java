@@ -23,6 +23,9 @@ import com.investary.knowledge.AiConcurrencyLimits;
 import com.investary.knowledge.AiExceptions.AiNotConfiguredException;
 import com.investary.knowledge.AiExceptions.AiProviderException;
 import com.investary.knowledge.AiExceptions.AiTimeoutException;
+import com.investary.knowledge.usage.AiOperation;
+import com.investary.knowledge.usage.AiPurpose;
+import com.investary.knowledge.usage.AiUsageService;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -39,15 +42,31 @@ public final class ChatGateway implements AutoCloseable {
     private final ObjectProvider<ChatModel> chatModels;
     private final Duration timeout;
     private final AiConcurrencyLimits limits;
+    private final AiUsageService usage;
+    private final AiPurpose purpose;
+    private final String modelLabel;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     /**
      * @param limits shared permits; a call that cannot get one within {@code timeout} fails with a timeout
      */
     public ChatGateway(ObjectProvider<ChatModel> chatModels, Duration timeout, AiConcurrencyLimits limits) {
+        this(chatModels, timeout, limits, null, AiPurpose.OTHER, null);
+    }
+
+    /**
+     * @param usage      records every provider request in the daily usage counters; null records nothing
+     * @param purpose    what the calls are for
+     * @param modelLabel model label recorded with the usage
+     */
+    public ChatGateway(ObjectProvider<ChatModel> chatModels, Duration timeout, AiConcurrencyLimits limits, AiUsageService usage,
+                       AiPurpose purpose, String modelLabel) {
         this.chatModels = chatModels;
         this.timeout = timeout;
         this.limits = limits;
+        this.usage = usage;
+        this.purpose = purpose;
+        this.modelLabel = modelLabel;
     }
 
     public boolean isAvailable() {
@@ -86,14 +105,20 @@ public final class ChatGateway implements AutoCloseable {
             long remaining = Math.max(1, deadline - System.nanoTime());
             ChatResponse response = future.get(remaining, TimeUnit.NANOSECONDS);
             String text = response == null || response.getResult() == null ? null : response.getResult().getOutput().getText();
+            Integer inputTokens = usage(response, true);
+            Integer outputTokens = usage(response, false);
             if (text == null || text.isBlank()) {
+                record(false, inputTokens, outputTokens);
                 throw new AiProviderException("The AI model returned an empty answer");
             }
-            return new Reply(text, usage(response, true), usage(response, false));
+            record(true, inputTokens, outputTokens);
+            return new Reply(text, inputTokens, outputTokens);
         } catch (TimeoutException e) {
             future.cancel(true);
+            record(false, null, null);
             throw new AiTimeoutException(timeout.toSeconds());
         } catch (ExecutionException e) {
+            record(false, null, null);
             log.warn("Chat model call failed: {}", e.getCause().toString());
             throw new AiProviderException("The AI model request failed (" + e.getCause().getClass().getSimpleName()
                     + "). Check that the provider is running and the model is available.",
@@ -103,6 +128,12 @@ public final class ChatGateway implements AutoCloseable {
             throw new AiProviderException("Interrupted while waiting for the AI model");
         } finally {
             limits.releaseChat();
+        }
+    }
+
+    private void record(boolean success, Integer inputTokens, Integer outputTokens) {
+        if (usage != null) {
+            usage.record(AiOperation.CHAT, purpose, modelLabel, success, inputTokens, outputTokens);
         }
     }
 

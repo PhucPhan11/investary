@@ -75,11 +75,12 @@ public class SourceRuleController {
             @Size(max = 500) String gmailQuery,
             Boolean enabled,
             Boolean autoImport,
-            Boolean autoPdfDownload) {
+            Boolean autoPdfDownload,
+            Boolean acknowledgeBroadRule) {
 
         SourceRuleCommand command() {
             return new SourceRuleCommand(name, senderAddresses, senderDomains, subjectKeywords, gmailQuery, enabled,
-                    autoImport, autoPdfDownload);
+                    autoImport, autoPdfDownload, acknowledgeBroadRule);
         }
     }
 }

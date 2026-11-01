@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.investary.automation.WorkflowProperties;
+import com.investary.automation.application.settings.AutomationSettings;
 import com.investary.automation.persistence.AutomationJobQueue;
 import com.investary.automation.persistence.AutomationJobQueue.ClaimedJob;
 
@@ -34,20 +35,23 @@ public class AutomationJobWorker implements DisposableBean {
     private final WorkflowJobProcessor processor;
     private final WorkflowService workflows;
     private final WorkflowProperties.Worker settings;
+    private final int concurrency;
     private final Clock clock;
     private final ExecutorService executor;
+    private volatile Instant lastPollAt;
     private final AtomicInteger inFlight = new AtomicInteger();
     private volatile Instant nextReconcile = Instant.EPOCH;
 
     public AutomationJobWorker(AutomationJobQueue queue, WorkflowJobProcessor processor, WorkflowService workflows,
-                               WorkflowProperties properties, Clock clock) {
+                               WorkflowProperties properties, AutomationSettings automationSettings, Clock clock) {
         this.queue = queue;
         this.processor = processor;
         this.workflows = workflows;
         this.settings = properties.worker();
+        this.concurrency = automationSettings.workerConcurrency();
         this.clock = clock;
         AtomicInteger threads = new AtomicInteger();
-        this.executor = Executors.newFixedThreadPool(settings.concurrency(), runnable -> {
+        this.executor = Executors.newFixedThreadPool(concurrency, runnable -> {
             Thread thread = new Thread(runnable, "workflow-worker-" + threads.incrementAndGet());
             thread.setDaemon(true);
             return thread;
@@ -56,13 +60,14 @@ public class AutomationJobWorker implements DisposableBean {
 
     @Scheduled(fixedDelayString = "${investary.workflow.worker.poll-interval:2s}", initialDelayString = "${investary.workflow.worker.poll-interval:2s}")
     public void poll() {
+        lastPollAt = clock.instant();
         try {
             reconcileIfDue();
             int recovered = queue.recoverExpired(settings.lease());
             if (recovered > 0) {
                 log.warn("Re-queued {} workflow job(s) whose lease expired", recovered);
             }
-            int free = settings.concurrency() - inFlight.get();
+            int free = concurrency - inFlight.get();
             for (ClaimedJob job : queue.claim(free)) {
                 inFlight.incrementAndGet();
                 executor.execute(() -> {
@@ -97,5 +102,10 @@ public class AutomationJobWorker implements DisposableBean {
             // Unfinished jobs stay RUNNING and are re-queued after their lease expires.
             executor.shutdownNow();
         }
+    }
+
+    /** When the worker last polled for jobs (health check heartbeat), or null before the first poll. */
+    public Instant lastPollAt() {
+        return lastPollAt;
     }
 }

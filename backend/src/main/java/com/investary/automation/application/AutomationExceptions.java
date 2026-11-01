@@ -1,5 +1,6 @@
 package com.investary.automation.application;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -69,9 +70,40 @@ public final class AutomationExceptions {
     }
 
     public static class JobNotRetryableException extends ApiException {
-        public JobNotRetryableException(String status) {
-            super(HttpStatus.CONFLICT, ErrorCode.JOB_NOT_RETRYABLE, "Job not retryable",
-                    "Only failed jobs can be retried; this job is " + status);
+        public JobNotRetryableException(String detail) {
+            super(HttpStatus.CONFLICT, ErrorCode.JOB_NOT_RETRYABLE, "Job not retryable", detail);
+        }
+    }
+
+    /** A public mailbox domain would match any sender on that service, not only a brokerage. */
+    public static class BroadSourceRuleException extends ApiException {
+
+        private final List<String> domains;
+
+        public BroadSourceRuleException(List<String> domains) {
+            super(HttpStatus.UNPROCESSABLE_CONTENT, ErrorCode.BROAD_SOURCE_RULE, "Broad source rule",
+                    "A public mailbox domain matches every sender on that service, not only your brokerage. "
+                            + "Use the brokerage's full sender address, or confirm the rule with acknowledgeBroadRule");
+            this.domains = List.copyOf(domains);
+        }
+
+        @Override
+        public Map<String, Object> getProperties() {
+            return Map.of("domains", domains);
+        }
+    }
+
+    public static class NotificationNotFoundException extends ApiException {
+        public NotificationNotFoundException(UUID id) {
+            super(HttpStatus.NOT_FOUND, ErrorCode.NOTIFICATION_NOT_FOUND, "Notification not found",
+                    "Notification " + id + " was not found");
+        }
+    }
+
+    public static class RetryLimitReachedException extends ApiException {
+        public RetryLimitReachedException(int limit) {
+            super(HttpStatus.CONFLICT, ErrorCode.RETRY_LIMIT_REACHED, "Retry limit reached",
+                    "This job was already retried manually " + limit + " times; process the source again instead");
         }
     }
 

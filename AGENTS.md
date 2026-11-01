@@ -20,7 +20,9 @@ A personal, local, single-user investment research assistant. It has three parts
   (`docs/phase-5-milestone-2.md`).
 - **Phase 5 / Milestone 3:** daily investment brief: scheduled (cron + IANA zone) and manual generation on a
   `brief_jobs` queue, deterministic source selection, validated citations, immutable revisions
-  (`docs/phase-5-milestone-3.md`). Later milestones (notifications, Automation Center) are not built.
+  (`docs/phase-5-milestone-3.md`).
+- **Phase 5 / Milestone 4:** Automation Center (overview and health, source rules, job history and safe retry,
+  runtime settings, AI usage and limits) and deterministic in-app notifications (`docs/phase-5-milestone-4.md`).
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
@@ -47,8 +49,8 @@ automation ──▶ email, research, knowledge, intelligence, document (applica
 | `com.investary.investor` | Investor profile and goals |
 | `com.investary.portfolio` | Instruments, prices, portfolios, transactions; holdings/valuation/allocation computed on read |
 | `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant, daily briefs (queue, scheduler, generation) |
-| `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows, stages, matches and the automation job queue |
-| `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS |
+| `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows, stages, matches and the automation job queue; Automation Center APIs and in-app notifications |
+| `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS, runtime settings (`RuntimeSettings`) |
 
 - `common` imports no feature module. `document` imports neither `email` nor `research`. `research`
   never imports `email`.
@@ -150,6 +152,15 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
     written only in the token-guarded completion transaction. Never update a brief's content in place.
   - Figures, dates, quotes and relevance are computed in Java; model text goes through `BriefValidator`
     (allowed labels per item, no trading instructions). Identical inputs (fingerprint) must not call the model.
+- **Automation Center / notifications:**
+  - Runtime-editable settings go through `RuntimeSettings` with a `SettingsContributor` in the owning module; read
+    them through that module's effective-settings class, never from `app_settings` directly. Validate every field
+    on the backend; never put credentials in a settings section.
+  - Notifications are decided by `NotificationRules` from stored, validated facts only (no model call, no email
+    wording). Every notification has a stable `dedup_key`; retries and re-runs must not create a second one.
+    Triggers run after commit and must never fail the work that triggered them.
+  - Keep `/api/v1/notifications` and `/api/v1/briefs/jobs` behind `LocalOnlyRequestFilter`. Usage figures are
+    provider-reported counts only; never estimate tokens or show costs without a configured pricing source.
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**
@@ -182,3 +193,4 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - Business dates vs JVM time zone → `docs/failures/0009-market-date-vs-jvm-zone.md`
 - The `.gitignore` storage rule hid the Java `storage` packages → `docs/failures/0010-gitignore-storage-hides-java-packages.md`
 - Shell heredocs dropping Java regex escapes → `docs/failures/0011-shell-heredoc-drops-java-escapes.md`
+- Angular specs that mutate plain objects do not re-render → `docs/failures/0012-angular-spec-plain-object-mutation.md`

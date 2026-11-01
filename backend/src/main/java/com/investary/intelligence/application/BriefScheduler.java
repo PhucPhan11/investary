@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -34,17 +35,15 @@ public class BriefScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(BriefScheduler.class);
 
-    private final BriefProperties properties;
+    private final BriefSettings settings;
     private final BriefJobQueue queue;
     private final PortfolioQueryService portfolios;
-    private final BriefPeriods periods;
     private final Clock clock;
 
-    BriefScheduler(BriefProperties properties, BriefJobQueue queue, PortfolioQueryService portfolios, Clock clock) {
-        this.properties = properties;
+    BriefScheduler(BriefSettings settings, BriefJobQueue queue, PortfolioQueryService portfolios, Clock clock) {
+        this.settings = settings;
         this.queue = queue;
         this.portfolios = portfolios;
-        this.periods = new BriefPeriods(properties.schedule().cron(), properties.schedule().zoneId());
         this.clock = clock;
     }
 
@@ -52,9 +51,11 @@ public class BriefScheduler {
      * @return number of jobs created by this call
      */
     public int enqueueDue() {
+        BriefProperties properties = settings.current();
         if (!properties.enabled()) {
             return 0;
         }
+        BriefPeriods periods = settings.periods();
         Instant now = clock.instant();
         ZonedDateTime fire = periods.latestFireAtOrBefore(now);
         if (fire == null || Duration.between(fire.toInstant(), now).compareTo(properties.catchUpWindow()) > 0) {
@@ -62,7 +63,9 @@ public class BriefScheduler {
         }
         Period period = periods.scheduled(fire);
         String config = properties.configVersion();
+        Optional<UUID> only = settings.defaultPortfolioId();
         List<UUID> scopes = new ArrayList<>(portfolios.portfolios().stream()
+                .filter(p -> only.isEmpty() || only.get().equals(p.id()))
                 .sorted(Comparator.comparing(PortfolioView::createdAt).thenComparing(PortfolioView::id))
                 .limit(properties.maxBriefsPerRun()).map(PortfolioView::id).toList());
         if (scopes.isEmpty()) {

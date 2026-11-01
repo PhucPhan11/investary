@@ -60,6 +60,38 @@
   }
 </section>
 
+<section class="card" data-testid="generation-status">
+  <div class="card__header">
+    <h2 class="card__title">Generation status</h2>
+    <a class="link small" routerLink="/automation/settings">Schedule and limits</a>
+  </div>
+  @if (jobsError(); as message) {
+    <app-alert kind="error">{{ message }}</app-alert>
+  } @else if (recentJobs().length === 0) {
+    <p class="muted small">No generation has run yet.</p>
+  } @else {
+    <ul class="brief-items">
+      @for (j of recentJobs(); track j.id) {
+        <li class="brief-item" [attr.data-job]="j.id">
+          <app-status-badge [value]="j.status" />
+          <span>{{ j.businessDate | date: 'mediumDate' }} · {{ j.triggerType === 'SCHEDULED' ? 'Scheduled' : j.triggerType === 'MANUAL' ? 'Manual' : 'Regeneration' }}</span>
+          <span class="muted small">
+            created {{ j.createdAt | date: 'short' }}
+            @if (j.outcome === 'UNCHANGED') { · inputs unchanged }
+            @if (j.errorSummary) { · {{ j.errorSummary }} }
+          </span>
+          @if (j.briefId && j.status === 'SUCCEEDED') {
+            <a class="link small" [routerLink]="['/briefs', j.briefId]">Open</a>
+          }
+          @if (j.status === 'FAILED') {
+            <button type="button" class="btn btn--ghost btn--small" (click)="retryJob(j)">Retry</button>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
+
 @if (error(); as message) {
   <app-alert kind="error">{{ message }}</app-alert>
 }

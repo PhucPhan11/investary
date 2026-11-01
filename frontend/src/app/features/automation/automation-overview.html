@@ -1,0 +1,208 @@
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+@if (notice(); as message) {
+  <app-alert kind="success" [dismissible]="true" (dismissed)="notice.set(null)">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Processing overview</h2>
+    <div class="tabs" role="group" aria-label="Metrics period">
+      @for (p of periods; track p) {
+        <button
+          type="button"
+          class="tabs__tab"
+          [class.tabs__tab--active]="period() === p"
+          [attr.aria-pressed]="period() === p"
+          (click)="selectPeriod(p)"
+        >
+          {{ p }}
+        </button>
+      }
+    </div>
+  </div>
+  @if (overviewLoading() && !overview()) {
+    <p class="muted" role="status">Loading metrics…</p>
+  } @else if (overviewError(); as message) {
+    <app-alert kind="error">{{ message }}</app-alert>
+  } @else if (overview(); as o) {
+    <p class="small muted" data-testid="metrics-window">
+      {{ periodLabels[o.period] }} · {{ o.from | date: 'short' }} – {{ o.to | date: 'short' }}. Pending jobs are the current backlog.
+    </p>
+    <div class="stats stats--compact">
+      <div class="stat-card"><span class="stat-card__label">Emails imported</span><span class="stat-card__value">{{ o.metrics.emailsImported }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Emails processed</span><span class="stat-card__value">{{ o.metrics.emailsProcessed }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Reports downloaded</span><span class="stat-card__value">{{ o.metrics.reportsDownloaded }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Documents indexed</span><span class="stat-card__value">{{ o.metrics.documentsIndexed }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Assessments created</span><span class="stat-card__value">{{ o.metrics.assessmentsCreated }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Briefs generated</span><span class="stat-card__value">{{ o.metrics.briefsGenerated }}</span></div>
+      <a class="stat-card stat-card--link stat-card--danger" routerLink="/automation/jobs" [queryParams]="{ status: 'FAILED' }">
+        <span class="stat-card__label">Failed jobs</span><span class="stat-card__value">{{ o.metrics.failedJobs }}</span>
+      </a>
+      <a class="stat-card stat-card--link" routerLink="/automation/jobs">
+        <span class="stat-card__label">Pending jobs (now)</span><span class="stat-card__value">{{ o.metrics.pendingJobs }}</span>
+      </a>
+    </div>
+  }
+</section>
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">System health</h2>
+    <button type="button" class="btn btn--ghost btn--small" (click)="loadOverview()">Refresh</button>
+  </div>
+  @if (health().length === 0) {
+    <p class="muted" role="status">Checking components…</p>
+  } @else {
+    <ul class="health-list">
+      @for (h of health(); track h.component) {
+        <li class="health-list__item" [attr.data-component]="h.component">
+          <div>
+            <strong>{{ componentLabels[h.component] }}</strong>
+            <span class="small muted"> · {{ h.reason }}</span>
+          </div>
+          <div class="health-list__meta">
+            @if (h.lastActivityAt) {
+              <span class="small muted">Last activity {{ h.lastActivityAt | date: 'short' }}</span>
+            }
+            <app-status-badge [value]="'HEALTH_' + h.state" />
+          </div>
+        </li>
+      }
+    </ul>
+    <p class="small muted">Computed by the backend from stored records and configuration; checked {{ health()[0].checkedAt | date: 'mediumTime' }}.</p>
+  }
+</section>
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Gmail connection</h2>
+    @if (status(); as s) {
+      @if (!s.configured) {
+        <app-status-badge value="NOT_CONFIGURED" />
+      } @else if (account(); as a) {
+        <app-status-badge [value]="a.status" />
+      } @else {
+        <app-status-badge value="DISCONNECTED" />
+      }
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="muted" role="status">Loading Gmail status…</p>
+  } @else if (status(); as s) {
+    @if (!s.configured) {
+      <p>
+        Gmail is not configured. Set <code>INVESTARY_GMAIL_CLIENT_ID</code>, <code>INVESTARY_GMAIL_CLIENT_SECRET</code>
+        and <code>INVESTARY_GMAIL_TOKEN_KEY</code> in <code>infrastructure/.env</code> and restart the backend
+        (see <code>docs/phase-5-milestone-1.md</code>).
+      </p>
+    } @else {
+      @if (account(); as a) {
+        <dl class="meta">
+          <dt>Account</dt>
+          <dd>{{ a.emailAddress }}</dd>
+          <dt>Last successful sync</dt>
+          <dd>{{ a.lastSyncSuccessAt ? (a.lastSyncSuccessAt | date: 'medium') : 'Never' }}</dd>
+          <dt>Last failed sync</dt>
+          <dd>{{ s.lastFailedSyncAt ? (s.lastFailedSyncAt | date: 'medium') : 'None' }}</dd>
+          <dt>Next scheduled sync</dt>
+          <dd data-testid="next-sync">
+            @if (s.nextScheduledSyncAt) {
+              {{ s.nextScheduledSyncAt | date: 'medium' }} (within a minute)
+            } @else if (!s.schedulerConfigured) {
+              Scheduler disabled in the configuration
+            } @else {
+              None (automatic polling is off)
+            }
+          </dd>
+          <dt>Polling interval</dt>
+          <dd>
+            @if (s.schedulerEnabled) {
+              Every {{ s.syncIntervalMinutes }} minutes
+            } @else {
+              Manual only
+            }
+            · first sync looks back {{ s.initialLookbackDays }} days ·
+            <a routerLink="/automation/settings" class="link">change</a>
+          </dd>
+          <dt>Imported from Gmail</dt>
+          <dd>{{ s.importedTotal }} email(s)</dd>
+        </dl>
+        @if (a.status === 'RECONNECT_REQUIRED') {
+          <app-alert kind="error">Google no longer accepts Investary's access ({{ a.lastError }}). Reconnect to resume syncing.</app-alert>
+        } @else if (a.lastError) {
+          <app-alert kind="error">Last sync failed: {{ a.lastError }}</app-alert>
+        }
+        @if (s.lastRun; as run) {
+          <p class="small muted" data-testid="last-run">
+            Last run {{ run.startedAt | date: 'medium' }} · {{ run.status }} · {{ run.imported }} imported,
+            {{ run.duplicates }} duplicate(s), {{ run.skipped }} skipped, {{ run.rejected }} rejected
+            @if (run.warning) {
+              · {{ run.warning }}
+            }
+          </p>
+        }
+      } @else {
+        <p>No Gmail account is connected. Investary asks Google only for read-only access to your mail.</p>
+      }
+      <div class="actions">
+        @if (connected()) {
+          <button type="button" class="btn btn--primary" (click)="syncNow()" [disabled]="busy() || running()">
+            {{ running() ? 'Syncing…' : 'Sync now' }}
+          </button>
+          <button type="button" class="btn btn--danger" (click)="disconnect()" [disabled]="busy()">Disconnect</button>
+        } @else if (account()?.status === 'RECONNECT_REQUIRED') {
+          <button type="button" class="btn btn--primary" (click)="connect()" [disabled]="busy()">Reconnect Gmail</button>
+          <button type="button" class="btn btn--ghost" (click)="disconnect()" [disabled]="busy()">Disconnect</button>
+        } @else {
+          <button type="button" class="btn btn--primary" (click)="connect()" [disabled]="busy()">Connect Gmail</button>
+        }
+      </div>
+    }
+  }
+</section>
+
+<section class="card">
+  <h2 class="card__title">Sync history</h2>
+  @if (runs().length === 0) {
+    <app-empty-state title="No syncs yet">Runs appear here after the first manual or scheduled sync.</app-empty-state>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Started</th>
+            <th>Trigger</th>
+            <th>Mode</th>
+            <th>Status</th>
+            <th class="num">Imported</th>
+            <th class="num">Duplicates</th>
+            <th class="num">Skipped</th>
+            <th class="num">Rejected</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (run of runs(); track run.id) {
+            <tr>
+              <td data-label="Started">{{ run.startedAt | date: 'short' }}</td>
+              <td data-label="Trigger">{{ run.trigger === 'MANUAL' ? 'Manual' : 'Scheduled' }}</td>
+              <td data-label="Mode">{{ run.mode ?? '—' }}</td>
+              <td data-label="Status"><app-status-badge [value]="run.status === 'PARTIAL' ? 'SYNC_PARTIAL' : run.status" /></td>
+              <td class="num" data-label="Imported">{{ run.imported }}</td>
+              <td class="num" data-label="Duplicates">{{ run.duplicates }}</td>
+              <td class="num" data-label="Skipped">{{ run.skipped }}</td>
+              <td class="num" data-label="Rejected">{{ run.rejected }}</td>
+              <td class="small">{{ run.errorMessage ?? run.warning ?? '' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (runsTotalPages() > 1) {
+      <app-pager [page]="runsPage()" [totalPages]="runsTotalPages()" (pageChange)="loadRuns($event)" />
+    }
+  }
+</section>

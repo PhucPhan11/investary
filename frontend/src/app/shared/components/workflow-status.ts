@@ -8,7 +8,7 @@ import { StatusBadge } from './status-badge';
 
 const POLL_MS = 3000;
 
-const STAGE_LABELS: Record<WorkflowStageName, string> = {
+export const STAGE_LABELS: Record<WorkflowStageName, string> = {
   EMAIL_IMPORTED: 'Email imported',
   EMAIL_PARSED: 'Email parsed',
   LINKS_CLASSIFIED: 'Links classified',
@@ -19,7 +19,7 @@ const STAGE_LABELS: Record<WorkflowStageName, string> = {
   COMPLETED: 'Finished',
 };
 
-const REASONS: Record<string, string> = {
+export const REASONS: Record<string, string> = {
   NOT_APPLICABLE: 'Not applicable to a library document.',
   NO_LINKS: 'The email has no links.',
   NO_ELIGIBLE_LINKS: 'No research report links to download.',
@@ -35,6 +35,7 @@ const REASONS: Record<string, string> = {
   NO_RELEVANT_HOLDINGS: 'No holding in your portfolios is named in this research.',
   AUTO_ASSESS_DISABLED: 'Automatic assessment is turned off.',
   DAILY_LIMIT_REACHED: 'The daily limit of automatic assessments was reached.',
+  TOKEN_BUDGET_REACHED: 'The daily AI token budget for automatic calls was used up.',
   SOME_ASSESSMENTS_FAILED: 'Some assessments failed.',
   ASSESSMENTS_FAILED: 'The assessments failed.',
   NOT_REACHED: 'Not reached because an earlier stage failed.',
@@ -42,7 +43,7 @@ const REASONS: Record<string, string> = {
 
 /**
  * Automated processing of one email or library document: stage list, matched holdings, and Process /
- * Retry actions. Polls while the workflow is running. Not a full Automation Center (Milestone 4).
+ * Retry actions. Polls while the workflow is running. The Automation Center shows all jobs.
  */
 @Component({
   selector: 'app-workflow-status',

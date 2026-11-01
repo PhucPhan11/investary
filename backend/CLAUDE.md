@@ -112,3 +112,18 @@ errors are not reported in the same response. This is expected; see `DocumentCon
   The brief worker is off in `src/test/resources/application.properties`.
 - Unit tests: `BriefPeriodsTest` (zones, DST), `BriefValidatorTest` (citations, trading text, conflicts),
   `BriefGeneratorTest` (timeouts, provider failure, SKIP mode, unchanged inputs).
+
+## Automation Center (Phase 5 / Milestone 4)
+
+- Runtime settings: `common.settings.RuntimeSettings` + one `SettingsContributor` per owning module
+  (`automation.application.settings.AutomationSettings`, `intelligence.application.BriefSettings`,
+  `knowledge.usage.AiSettings`). Consumers call the module's effective accessors (`settings.workflow()`,
+  `settings.gmailSync()`, `briefSettings.current()`); an override missing means the `@ConfigurationProperties` value.
+  Tests that write `app_settings` with SQL must call `RuntimeSettings.invalidate()` (5 s cache).
+- Notifications: `automation.application.notification` (`NotificationRules` pure, `NotificationTriggers` gathers
+  facts, `NotificationService` stores with `on conflict (dedup_key) do nothing`). Intelligence publishes
+  `BriefGeneratedEvent`, `BriefJobFailedEvent`, `ImpactAssessmentCreatedEvent` with `AfterCommit`.
+- `AutomationJobQueue` result writes are CTEs that also update `automation_job_attempts`; keep the token guard.
+- AI usage: `ChatGateway` / `EmbeddingService` record into `ai_usage_daily` through `AiUsageService` (pass a purpose).
+- `select max(...)` returns one row with null: use `queryForObject(..., Timestamp.class)`, not `query(...).stream()`.
+- Container test: `automation/AutomationCenterIntegrationTest.java`.
