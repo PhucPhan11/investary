@@ -194,6 +194,30 @@ investary:
       lease: 15m
       reconcile-interval: 1m
 
+  # Daily investment brief (Phase 5 / Milestone 3). Periods are [previous run, run) of the cron, evaluated in the zone
+  # (never the JVM zone). After downtime only the latest run within the catch-up window is generated.
+  brief:
+    enabled: ${INVESTARY_BRIEF_ENABLED:true}
+    schedule:
+      cron: "${INVESTARY_BRIEF_CRON:0 0 8 * * *}"
+      zone: ${INVESTARY_BRIEF_ZONE:Asia/Ho_Chi_Minh}
+    catch-up-window: ${INVESTARY_BRIEF_CATCH_UP_WINDOW:12h}
+    # MINIMAL: a short "no material new research" brief; SKIP: only a SKIPPED record that keeps the period.
+    no-research-mode: ${INVESTARY_BRIEF_NO_RESEARCH_MODE:MINIMAL}
+    max-sources: 12
+    chunks-per-source: 2
+    max-context-chars: 14000
+    old-publication-days: 7
+    max-briefs-per-run: 5
+    max-attempts: 3
+    retry-backoff: 1m
+    ai-timeout: ${INVESTARY_AI_TIMEOUT:120s}
+    worker:
+      enabled: ${INVESTARY_BRIEF_WORKER_ENABLED:true}
+      concurrency: 1
+      poll-interval: 30s
+      lease: 15m
+
   # Process-wide limits on concurrent AI provider calls (assistant, intelligence, indexing, workflows).
   ai:
     max-concurrent-chat: ${INVESTARY_AI_MAX_CONCURRENT_CHAT:2}

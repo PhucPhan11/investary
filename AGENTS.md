@@ -17,7 +17,10 @@ A personal, local, single-user investment research assistant. It has three parts
   source rules, and initial/incremental Gmail sync into the Phase 2 import (`docs/phase-5-milestone-1.md`).
 - **Phase 5 / Milestone 2:** research workflows: per email/library document, approved automatic PDF downloads,
   indexing, deterministic portfolio matching and capped impact assessments, on a persistent job queue
-  (`docs/phase-5-milestone-2.md`). Later milestones (briefs, notifications, Automation Center) are not built.
+  (`docs/phase-5-milestone-2.md`).
+- **Phase 5 / Milestone 3:** daily investment brief: scheduled (cron + IANA zone) and manual generation on a
+  `brief_jobs` queue, deterministic source selection, validated citations, immutable revisions
+  (`docs/phase-5-milestone-3.md`). Later milestones (notifications, Automation Center) are not built.
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
@@ -43,7 +46,7 @@ automation ──▶ email, research, knowledge, intelligence, document (applica
 | `com.investary.knowledge` | Extraction, chunking, embeddings, `knowledge_sources` jobs, hybrid search, RAG assistant, citations |
 | `com.investary.investor` | Investor profile and goals |
 | `com.investary.portfolio` | Instruments, prices, portfolios, transactions; holdings/valuation/allocation computed on read |
-| `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant |
+| `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant, daily briefs (queue, scheduler, generation) |
 | `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows, stages, matches and the automation job queue |
 | `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS |
 
@@ -139,6 +142,14 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
     unique per (portfolio, trigger source, snapshot, content) and capped per day.
   - Error summaries go through `FailureClassifier.safe` (no URLs, stack traces or secrets).
   - Tests drive workers synchronously with `WorkflowTestSupport.runAll()`; workers are off in tests.
+- **Daily briefs:**
+  - Reporting periods come from `investary.brief.schedule` (cron + zone); never use the JVM default zone.
+  - "New" means `knowledge_sources.first_indexed_at` in the period. Keep publication, email sent, import and index
+    dates apart, and never call old research received today "newly published".
+  - Scheduled jobs are inserted once per scope, period and config version; brief rows are immutable revisions,
+    written only in the token-guarded completion transaction. Never update a brief's content in place.
+  - Figures, dates, quotes and relevance are computed in Java; model text goes through `BriefValidator`
+    (allowed labels per item, no trading instructions). Identical inputs (fingerprint) must not call the model.
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**
@@ -170,3 +181,4 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - IntelliJ run configs: terminal before-launch task, lost Maven wrapper → `docs/failures/0008-intellij-run-config-terminal-before-launch.md`
 - Business dates vs JVM time zone → `docs/failures/0009-market-date-vs-jvm-zone.md`
 - The `.gitignore` storage rule hid the Java `storage` packages → `docs/failures/0010-gitignore-storage-hides-java-packages.md`
+- Shell heredocs dropping Java regex escapes → `docs/failures/0011-shell-heredoc-drops-java-escapes.md`

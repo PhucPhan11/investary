@@ -1,0 +1,137 @@
+<section class="page-header">
+  <div>
+    <h1 class="page-title">Daily brief</h1>
+    <p class="page-subtitle">
+      What research became available in each period and what it means for your portfolio. Generated every morning,
+      cited against stored sources; brokerage recommendations are third-party opinions, not advice.
+    </p>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Generate now</h2>
+  </div>
+  <form class="filters" (ngSubmit)="generate()">
+    <label class="field">
+      <span class="field__label">Portfolio</span>
+      <select class="input" name="requestPortfolio" [(ngModel)]="request.portfolioId">
+        <option value="">General brief (no portfolio)</option>
+        @for (p of portfolios(); track p.id) {
+          <option [value]="p.id">{{ p.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Brief date</span>
+      <input class="input" type="date" name="requestDate" [(ngModel)]="request.date" />
+    </label>
+    <div class="actions">
+      <button type="submit" class="btn btn--primary" [disabled]="generating()">
+        {{ generating() ? 'Generating…' : 'Generate brief' }}
+      </button>
+    </div>
+  </form>
+  <p class="muted small">
+    The period ends at the scheduled time on the chosen date (default: today); before that time it ends now and is marked partial.
+  </p>
+  @if (generateError(); as message) {
+    <app-alert kind="error">{{ message }}</app-alert>
+  }
+  @if (job(); as j) {
+    <p class="brief-job" role="status" data-testid="brief-job">
+      <app-status-badge [value]="j.status" />
+      @switch (j.status) {
+        @case ('SUCCEEDED') {
+          @if (j.outcome === 'UNCHANGED') { Nothing changed since the latest brief for this period. }
+          @else { Brief ready. }
+          @if (j.briefId) { <a class="link" [routerLink]="['/briefs', j.briefId]">Open brief</a> }
+        }
+        @case ('FAILED') {
+          Generation failed{{ j.errorSummary ? ': ' + j.errorSummary : '.' }}
+          @if (j.briefId) { <a class="link" [routerLink]="['/briefs', j.briefId]">Details</a> }
+        }
+        @default {
+          Period {{ j.periodStart | date: 'short' }} – {{ j.periodEnd | date: 'short' }} · attempt {{ j.attempts }}/{{ j.maxAttempts }}
+          @if (j.errorSummary) { · last error: {{ j.errorSummary }} }
+        }
+      }
+    </p>
+  }
+</section>
+
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Briefs</h2>
+    @if (page(); as p) {
+      <span class="muted">{{ p.totalElements }} total</span>
+    }
+  </div>
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label class="field">
+      <span class="field__label">Portfolio</span>
+      <select class="input" name="portfolioId" [(ngModel)]="filters.portfolioId" (change)="applyFilters()">
+        <option value="">All</option>
+        @for (p of portfolios(); track p.id) {
+          <option [value]="p.id">{{ p.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">From</span>
+      <input class="input" type="date" name="from" [(ngModel)]="filters.from" (change)="applyFilters()" />
+    </label>
+    <label class="field">
+      <span class="field__label">To</span>
+      <input class="input" type="date" name="to" [(ngModel)]="filters.to" (change)="applyFilters()" />
+    </label>
+  </form>
+
+  @if (loading() && !page()) {
+    <p class="muted">Loading briefs…</p>
+  } @else if (page()?.totalElements === 0) {
+    <app-empty-state title="No briefs yet">The first brief is generated at the scheduled time, or generate one above.</app-empty-state>
+  } @else if (page(); as p) {
+    <div class="table-wrap" [class.table-wrap--loading]="loading()">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Scope</th>
+            <th scope="col">Period</th>
+            <th scope="col">Research</th>
+            <th scope="col" class="num">New / pending</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="actions-col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of p.content; track b.id) {
+            <tr>
+              <td data-label="Date">
+                <a class="link-plain" [routerLink]="['/briefs', b.id]">{{ b.businessDate | date: 'mediumDate' }}</a>
+                @if (b.revision > 1) { <span class="tag">rev. {{ b.revision }}</span> }
+              </td>
+              <td data-label="Scope">{{ scope(b) }}</td>
+              <td data-label="Period" class="small">
+                {{ b.periodStart | date: 'short' }} – {{ b.periodEnd | date: 'short' }}
+                <span class="muted">({{ b.zone }}{{ b.partialPeriod ? ', partial' : '' }})</span>
+              </td>
+              <td data-label="Research">{{ b.researchState ? stateLabels[b.researchState] : '—' }}</td>
+              <td data-label="New / pending" class="num">{{ b.newSources }} / {{ b.pendingSources }}</td>
+              <td data-label="Status"><app-status-badge [value]="'BRIEF_' + b.status" /></td>
+              <td class="actions-col">
+                <a class="btn btn--small btn--ghost" [routerLink]="['/briefs', b.id]">Open</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pager [page]="p.page" [totalPages]="p.totalPages" [disabled]="loading()" (pageChange)="load($event)" />
+  }
+</section>

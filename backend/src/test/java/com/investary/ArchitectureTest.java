@@ -116,6 +116,12 @@ class ArchitectureTest {
     }
 
     @Test
+    void nothingImportsAutomation() {
+        // automation orchestrates the other modules; a reverse import would create a cycle (briefs included).
+        assertThat(dependencies).filteredOn(d -> d.target().equals("automation")).isEmpty();
+    }
+
+    @Test
     void commonDependsOnNoFeatureModule() {
         assertThat(dependencies).filteredOn(d -> d.module().equals("common")).isEmpty();
     }

@@ -19,6 +19,6 @@ describe('App', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.brand__name')?.textContent).toContain('Investary');
     const links = Array.from(el.querySelectorAll('.nav__link')).map((a) => a.textContent?.trim());
-    expect(links).toEqual(['Dashboard', 'Document library', 'Email research', 'Portfolios', 'Profile', 'Research assistant', 'Gmail sync']);
+    expect(links).toEqual(['Dashboard', 'Document library', 'Email research', 'Portfolios', 'Profile', 'Daily brief', 'Research assistant', 'Gmail sync']);
   });
 });

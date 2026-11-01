@@ -25,6 +25,11 @@ Personal, AI-ready investment research assistant.
   only), the email and its reports are indexed, research is matched to holdings by ticker, and an impact
   assessment is created for matched portfolios (daily cap). Failed steps can be retried without re-importing.
   See [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md).
+- **Phase 5 / Milestone 3:** **daily investment brief**. Every morning (08:00 Asia/Ho_Chi_Minh by default) a
+  Vietnamese brief per portfolio lists the research that became searchable in the period, what it means for
+  each holding, research to read next, differing brokerage views, follow-ups and limitations. Facts, quotes
+  and dates come from stored records; the optional model part is validated against the cited chunks.
+  See [docs/phase-5-milestone-3.md](docs/phase-5-milestone-3.md).
 
 > ⚠️ **Local, single-user only.** There is **no authentication or authorization**. Never expose the
 > backend (port 8080) or the database to a network you do not fully control.
@@ -203,6 +208,11 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_WORKFLOW_AUTO_ASSESS` / `INVESTARY_WORKFLOW_MAX_AUTO_ASSESSMENTS_PER_DAY` | `true` / `20` | Automatic impact assessments for matched portfolios, and their daily cap |
 | `INVESTARY_WORKFLOW_ASSESS_MARKET_CONTEXT` | `false` | Also assess market-wide commentary for every portfolio |
 | `INVESTARY_AI_MAX_CONCURRENT_CHAT` / `INVESTARY_AI_MAX_CONCURRENT_EMBEDDING` | `2` / `1` | Process-wide limits on concurrent model calls |
+| `INVESTARY_BRIEF_ENABLED` | `true` | Scheduled daily briefs and manual generation |
+| `INVESTARY_BRIEF_CRON` / `INVESTARY_BRIEF_ZONE` | `0 0 8 * * *` / `Asia/Ho_Chi_Minh` | When briefs run (Spring cron, seconds first) and the IANA zone of the reporting periods |
+| `INVESTARY_BRIEF_CATCH_UP_WINDOW` | `12h` | After downtime, a missed run is still generated when it is at most this old |
+| `INVESTARY_BRIEF_NO_RESEARCH_MODE` | `MINIMAL` | `MINIMAL`: a short "no material new research" brief; `SKIP`: only a SKIPPED record |
+| `INVESTARY_BRIEF_WORKER_ENABLED` | `true` | Brief scheduler and generation worker in this process |
 
 **Brokerages** are configured under `investary.research.brokerages` (defaults: TCBS `tcbs.com.vn`,
 SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains are used to:
@@ -211,7 +221,8 @@ SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains
 
 Download timeouts, redirects, retries and worker settings are under `investary.download.*`. Gmail endpoint
 URLs, timeouts, retries, the sync lock lease and the OAuth state TTL are under `investary.gmail.*`. Workflow
-wait intervals and timeouts, the lease and the reconcile interval are under `investary.workflow.*`.
+wait intervals and timeouts, the lease and the reconcile interval are under `investary.workflow.*`. Brief source
+and context limits, attempts, the model timeout and the worker are under `investary.brief.*`.
 
 Secrets live only in `infrastructure/.env` or environment variables. `.env`, `storage/`, `*.pdf` and
 `*.eml` are git-ignored; only the synthetic test fixtures under `backend/src/test/resources/eml/` are
@@ -366,6 +377,22 @@ Nothing is downloaded automatically. A user picks a link, and
 - Emails and documents imported **before** this version are processed only when you click *Process now*.
 - Failures are retried with backoff when transient; permanent ones are shown with a short reason and can be
   retried manually. Details: [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md).
+
+## Daily investment brief (Phase 5 / Milestone 3)
+
+- Open **Daily brief** (`/briefs`). A brief covers the period from the previous scheduled run to this one
+  (08:00 → 08:00 Asia/Ho_Chi_Minh by default) and contains: summary, market overview (research only, no prices),
+  updates per holding, research opportunities (reading priorities, not buy signals), risks and differing
+  brokerage views, suggested follow-ups (never trading instructions), and sources with their limitations.
+- **What counts as new:** a source that first became searchable in the period. An email received today with an
+  old report is labelled "received in this period, published on …", never "new". Reports still being indexed
+  are listed as pending; a source indexed after the period belongs to the next brief.
+- Items are labelled *Investary data*, *From source* (quoted, cited) or *AI interpretation* (validated against
+  its citations). Without a model, or when the model fails, the brief is still written without the AI part
+  (status *Partial*).
+- *Generate now* (portfolio, date) and *Regenerate* run on a job queue; a regeneration with unchanged inputs
+  reuses the latest revision without calling the model, otherwise it adds a revision (older ones are kept).
+  Details: [docs/phase-5-milestone-3.md](docs/phase-5-milestone-3.md).
 
 ## Research assistant (Phase 3)
 
@@ -587,6 +614,16 @@ Upload fields: `file` (required), `brokerageCompany` (≤200), `reportType` (`MA
 | `GET` | `/api/v1/automation/jobs/{id}` | one job · `404 AUTOMATION_JOB_NOT_FOUND` |
 | `POST` | `/api/v1/automation/jobs/{id}/retry` | `202` · `409 JOB_NOT_RETRYABLE` unless the job failed |
 
+### Daily briefs (Phase 5 / M3)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` | `/api/v1/briefs?portfolioId=&from=&to=&status=&page=&size=` | page of briefs (latest revision of each; `SKIPPED` only when asked for), newest period first |
+| `GET` | `/api/v1/briefs/{id}` | sections and items, citations (four dates, page/section, excerpt), pending/omitted sources, limitations, revisions · `404 BRIEF_NOT_FOUND` |
+| `POST` | `/api/v1/briefs/generate` | body `{portfolioId?, date?}` · `202` with the job (Location header) · `422 INVALID_BRIEF_PERIOD` · `409 BRIEFS_DISABLED` |
+| `GET` | `/api/v1/briefs/jobs/{id}` | job status, attempts, outcome (`CREATED`/`UNCHANGED`/`SKIPPED`), brief id, safe error · `404 BRIEF_JOB_NOT_FOUND` |
+| `POST` | `/api/v1/briefs/{id}/regenerate` | `202` with the job; same scope and period, new revision only when inputs changed |
+
 ### curl examples
 
 ```bash
@@ -654,6 +691,10 @@ curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-as
   watchlist, sector mapping or ETF constituents); sources imported before the upgrade are processed on request
   only. Verified with mocked services only. Details in
   [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md#known-limitations).
+- **Daily briefs:** "not yet processed" follows the knowledge index, not the workflow stages; rating conflicts are
+  detected only from explicit rating labels; missed periods older than the catch-up window are generated on
+  request only. Verified with the scripted model only, not a real LLM. Details in
+  [docs/phase-5-milestone-3.md](docs/phase-5-milestone-3.md#known-limitations).
 
 ## Next phases
 
@@ -662,7 +703,8 @@ curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-as
   impact assessments and the portfolio-aware assistant.
 - **Phase 5 / Milestone 1 — done:** Gmail connection, source rules, initial and incremental Gmail sync.
 - **Phase 5 / Milestone 2 — done:** automated research processing (downloads, indexing, matching, assessments).
+- **Phase 5 / Milestone 3 — done:** automated daily investment brief (scheduled and manual, cited, revisioned).
 - **Phase 5 — later milestones:** live-model evaluation and tuning, OCR, an instrument/ticker master list,
   corporate actions and cash, a watchlist and a decision journal linked to assessments, HNSW index.
-- Later: authentication, S3-compatible storage behind the storage ports, Drive ingestion, daily research
-  briefs, notifications and the full Automation Center.
+- Later: authentication, S3-compatible storage behind the storage ports, Drive ingestion, notifications
+  (delivery of briefs) and the full Automation Center.

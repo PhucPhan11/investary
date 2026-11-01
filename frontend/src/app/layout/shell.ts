@@ -29,6 +29,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <a routerLink="/emails" routerLinkActive="nav__link--active" class="nav__link">Email research</a>
         <a routerLink="/portfolios" routerLinkActive="nav__link--active" class="nav__link">Portfolios</a>
         <a routerLink="/profile" routerLinkActive="nav__link--active" class="nav__link">Profile</a>
+        <a routerLink="/briefs" routerLinkActive="nav__link--active" class="nav__link">Daily brief</a>
         <a routerLink="/assistant" routerLinkActive="nav__link--active" class="nav__link">Research assistant</a>
       <a routerLink="/automation" routerLinkActive="nav__link--active" class="nav__link">Gmail sync</a>
       </nav>

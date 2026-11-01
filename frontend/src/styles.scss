@@ -1321,3 +1321,35 @@ h3 {
     gap: 0.5rem;
   }
 }
+
+// Daily brief (Phase 5 / Milestone 3)
+.brief-section {
+  margin-bottom: 1rem;
+}
+
+.brief-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.brief-item {
+  line-height: 1.5;
+
+  .badge {
+    margin-right: 0.35rem;
+  }
+}
+
+.brief-item__text {
+  white-space: pre-line;
+}
+
+.brief-job {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}

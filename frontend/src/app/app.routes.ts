@@ -48,6 +48,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/investor/investor-profile').then((m) => m.InvestorProfilePage),
   },
   {
+    path: 'briefs',
+    title: 'Daily brief · Investary',
+    loadComponent: () => import('./features/briefs/brief-list').then((m) => m.BriefList),
+  },
+  {
+    path: 'briefs/:id',
+    title: 'Brief · Investary',
+    loadComponent: () => import('./features/briefs/brief-detail').then((m) => m.BriefDetail),
+  },
+  {
     path: 'automation',
     title: 'Gmail sync · Investary',
     loadComponent: () => import('./features/automation/gmail-sync').then((m) => m.GmailSync),

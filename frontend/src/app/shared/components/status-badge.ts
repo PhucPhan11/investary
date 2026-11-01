@@ -41,6 +41,11 @@ const BADGES: Record<string, { label: string; tone: Tone }> = {
   WORKFLOW_PARTIAL: { label: 'Partial', tone: 'warning' },
   WORKFLOW_FAILED: { label: 'Failed', tone: 'danger' },
   WORKFLOW_SKIPPED: { label: 'Skipped', tone: 'muted' },
+  // Daily briefs (prefixed for the same reason)
+  BRIEF_COMPLETED: { label: 'Completed', tone: 'success' },
+  BRIEF_PARTIAL: { label: 'Partial (no AI part)', tone: 'warning' },
+  BRIEF_FAILED: { label: 'Failed', tone: 'danger' },
+  BRIEF_SKIPPED: { label: 'Skipped (nothing new)', tone: 'muted' },
 };
 
 /** Small coloured label for statuses and categories returned by the API. */

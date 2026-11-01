@@ -26,7 +26,7 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
 | `common` | Phase 1 | Error handling (RFC 9457), file store, transaction helpers, CORS, shared web types |
 | `investor` | Phase 4 | Investor profile and goals (self-declared) |
 | `portfolio` | Phase 4 | Instruments, manual prices, portfolios, transactions; holdings, valuation and allocation computed on read |
-| `intelligence` | Phase 4 | Research matching, deterministic analysis, impact assessments, portfolio-aware assistant (read-only) |
+| `intelligence` | Phase 4, 5 / M3 | Research matching, deterministic analysis, impact assessments, portfolio-aware assistant (read-only); daily briefs, their job queue and scheduler (M3) |
 | `automation` | Phase 5 / M1, M2 | Gmail OAuth connection (encrypted refresh token), brokerage source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows and the automation job queue (M2) |
 
 ### Dependency direction
@@ -189,6 +189,31 @@ are retried with exponential backoff and jitter; permanent ones fail the job, wh
 
 Details: [phase-5-milestone-2.md](phase-5-milestone-2.md), [ADR 0010](adr/0010-research-workflow-orchestration.md).
 
+## Daily investment brief (Phase 5 / Milestone 3)
+
+```
+BriefJobWorker.poll (every 30s)
+  BriefScheduler.enqueueDue  - latest cron fire in the brief zone, within the catch-up window
+                             - one SCHEDULED job per portfolio, key scheduled:{scope}:{periodEnd}:{config} (insert once)
+  POST /briefs/generate | /briefs/{id}/regenerate - MANUAL / REGENERATION jobs (re-openable keys)
+  brief_jobs claim (SKIP LOCKED, claim token, lease) -> BriefJobProcessor
+    BriefGenerator (no transaction)
+      BriefEvidenceCollector  - ResearchAvailabilityService: sources first indexed in [start, end), pending sources
+                              - dedup (email folded into its new PDF), relevance to holdings, ranking, S1..Sn chunks
+                              - holdings snapshot, assessments of the period, profile and goals
+      input fingerprint       - unchanged vs latest revision -> UNCHANGED (no model call)
+      ChatGateway (optional)  - one call, shared AiConcurrencyLimits; BriefPrompts (<source> elements)
+      BriefValidator          - CitationValidator per item, allowed labels only, trading language dropped
+      BriefComposer           - deterministic sections, limitations, citations from stored chunks
+    one token-guarded transaction: briefs (new revision) + brief_sources, job SUCCEEDED
+```
+
+Briefs live in `intelligence` (ADR 0011): they need exactly its dependencies and helpers, and only read
+portfolio and investor data through `*QueryService`. The knowledge module adds `ResearchAvailabilityService`
+and `knowledge_sources.first_indexed_at`.
+
+Details: [phase-5-milestone-3.md](phase-5-milestone-3.md), [ADR 0011](adr/0011-daily-brief-in-intelligence.md).
+
 ## Database
 
 Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`. Tests use the same
@@ -218,6 +243,10 @@ checks that a Phase 1 database upgrades without data loss.
 | `research_workflows`, `workflow_stages` | One workflow per email or library document; stage status, reason and counters (V7) |
 | `automation_jobs` | Workflow job queue: type, unique idempotency key, status, attempts, wait deadline, lease, safe error, reported tokens (V7) |
 | `workflow_portfolio_matches` | Deterministic matches of a workflow's source to portfolio holdings (V7) |
+| `knowledge_sources.first_indexed_at` | When a source first became searchable; kept across reindexing (V8) |
+| `brief_jobs` | Brief generation queue: trigger, scope, period, zone, unique idempotency key, status, attempts, lease, outcome, brief id, safe error, reported tokens (V8) |
+| `briefs` | Immutable brief revisions: scope, period, zone, business date, status, research state, content (JSON sections), limitations, AI status/model, prompt/index/config versions, input fingerprint, portfolio snapshot and hash, revision chain; unique per scheduled scope + period + config and per chain revision (V8) |
+| `brief_sources` | Sources of a brief: role (cited, included, pending, omitted), label, chunk id and hash, publication / sent / import / index dates, page or section, excerpt, relevance, flags (V8) |
 
 ## Frontend
 
@@ -228,7 +257,7 @@ src/app/
   layout/     application shell
   features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
               · portfolio (list, dashboard, transaction form, research insights) · investor (profile, goals)
-              · automation (Gmail connection, sync history, brokerage sources)
+              · automation (Gmail connection, sync history, brokerage sources) · briefs (list, detail)
 ```
 
 - Standalone components with signals; no state library and no UI component library.

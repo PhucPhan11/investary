@@ -1,13 +1,13 @@
 package com.investary.automation.application.workflow;
 
 import java.time.Duration;
-import java.util.regex.Pattern;
 
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 
 import com.investary.common.error.ApiException;
+import com.investary.common.error.ErrorSummaries;
 import com.investary.knowledge.AiExceptions.AiNotConfiguredException;
 import com.investary.knowledge.AiExceptions.AiProviderException;
 import com.investary.knowledge.AiExceptions.AiTimeoutException;
@@ -19,9 +19,6 @@ import com.investary.knowledge.embedding.EmbeddingUnavailableException;
  * them into safe summaries: no stack traces, no URLs (they can carry tokens in query strings), bounded length.
  */
 public final class FailureClassifier {
-
-    private static final Pattern URL = Pattern.compile("(?i)\\b(?:https?|ftp)://\\S+");
-    private static final int MAX_SUMMARY = 300;
 
     private FailureClassifier() {
     }
@@ -53,24 +50,13 @@ public final class FailureClassifier {
         return new StageResult.Failed("INTERNAL_ERROR", "Unexpected error (" + e.getClass().getSimpleName() + ")", true);
     }
 
-    /** Removes URLs and line breaks and limits the length. */
+    /** Removes URLs and line breaks and limits the length ({@link ErrorSummaries#safe}). */
     public static String safe(String message) {
-        if (message == null || message.isBlank()) {
-            return null;
-        }
-        String text = URL.matcher(message).replaceAll("[url]").replaceAll("\\s+", " ").strip();
-        return text.length() <= MAX_SUMMARY ? text : text.substring(0, MAX_SUMMARY - 1) + "…";
+        return ErrorSummaries.safe(message);
     }
 
-    /**
-     * Exponential backoff {@code base * 2^(attempt-1)} (capped at 2^10) with ±50% jitter, so retries of many
-     * jobs that failed together do not hit a provider at the same moment.
-     *
-     * @param random a value in [0, 1)
-     */
+    /** See {@link ErrorSummaries#backoff}. */
     public static Duration backoff(Duration base, int attempt, double random) {
-        long millis = base.toMillis() * (1L << Math.min(Math.max(attempt - 1, 0), 10));
-        double factor = 0.5 + random;
-        return Duration.ofMillis(Math.max(1, Math.round(millis * factor)));
+        return ErrorSummaries.backoff(base, attempt, random);
     }
 }

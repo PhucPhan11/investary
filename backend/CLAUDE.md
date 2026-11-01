@@ -98,3 +98,17 @@ errors are not reported in the same response. This is expected; see `DocumentCon
   `AiConcurrencyLimits.unlimited()`.
 - Container tests: `automation/ResearchWorkflowIntegrationTest.java` (WireMock brokerage + fake models). Drive all
   workers with `WorkflowTestSupport.runAll()`; `investary.workflow.wait-poll` and `retry-backoff` are 1ms in tests.
+- Safe error summaries and the shared backoff live in `common.error.ErrorSummaries` (`FailureClassifier` delegates).
+
+## Daily briefs (Phase 5 / Milestone 3)
+
+- In `intelligence/application/Brief*.java`: `BriefScheduler` (due periods), `BriefJobWorker`, `BriefJobProcessor`
+  (token-guarded writes), `BriefGenerator` (no transaction), `BriefEvidenceCollector`, `BriefComposer`,
+  `BriefValidator`, `BriefPrompts`, `BriefPeriods` (cron + zone). JDBC state in `BriefJobQueue` and `BriefStore`.
+- Selection uses `knowledge.search.ResearchAvailabilityService` (`first_indexed_at` window, pending sources).
+- Array parameters are passed as text literals with `cast(:p as text[])`; do not bind Java arrays.
+- Container test: `intelligence/BriefIntegrationTest.java` uses a `@Primary` mutable test `Clock`, sets
+  `first_indexed_at` / `uploaded_at` with SQL to place sources in periods, and drives jobs with `claim` + `process`.
+  The brief worker is off in `src/test/resources/application.properties`.
+- Unit tests: `BriefPeriodsTest` (zones, DST), `BriefValidatorTest` (citations, trading text, conflicts),
+  `BriefGeneratorTest` (timeouts, provider failure, SKIP mode, unchanged inputs).
