@@ -1,0 +1,121 @@
+<a class="back-link link" [routerLink]="existing() ? ['/journal', existing()!.id] : ['/journal']">← Back</a>
+
+<section class="page-header">
+  <div>
+    <h1 class="page-title">
+      @if (!id()) { New decision } @else if (amending()) { Amend decision } @else { Edit draft }
+    </h1>
+    <p class="page-subtitle">
+      @if (amending()) {
+        This decision is finalized. Type, portfolio, instrument, date and intended figures are fixed; each amendment is
+        kept in the history with your reason.
+      } @else {
+        A draft stays editable. Finalizing it stores the portfolio and investor snapshot. Intended figures are notes,
+        never orders.
+      }
+    </p>
+  </div>
+</section>
+
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+@if (loading()) {
+  <p class="muted">Loading decision…</p>
+} @else {
+  <form class="card" (ngSubmit)="save()" data-testid="decision-form">
+    <div class="form-grid">
+      <label class="field">
+        <span class="field__label">Type</span>
+        <select class="input" name="decisionType" [(ngModel)]="model.decisionType" [disabled]="amending()">
+          @for (t of types; track t) {
+            <option [value]="t">{{ typeLabels[t] }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Portfolio</span>
+        <select class="input" name="portfolioId" [(ngModel)]="model.portfolioId" [disabled]="amending()">
+          <option value="">Watchlist (no portfolio)</option>
+          @for (p of portfolios(); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Instrument</span>
+        <select class="input" name="instrumentId" [(ngModel)]="model.instrumentId" [disabled]="amending()">
+          <option value="">{{ model.decisionType === 'REBALANCE' ? 'Whole portfolio' : 'Choose…' }}</option>
+          @for (i of instruments(); track i.id) {
+            <option [value]="i.id">{{ i.symbol }} · {{ i.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Decision date</span>
+        <input class="input" type="date" name="decisionDate" [(ngModel)]="model.decisionDate" [disabled]="amending()" />
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Title</span>
+        <input class="input" name="title" maxlength="300" required [(ngModel)]="model.title" />
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Rationale (required to finalize)</span>
+        <textarea class="input" name="rationale" rows="4" [(ngModel)]="model.rationale"></textarea>
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Expected outcome</span>
+        <textarea class="input" name="expectedOutcome" rows="2" [(ngModel)]="model.expectedOutcome"></textarea>
+      </label>
+      <label class="field">
+        <span class="field__label">Time horizon</span>
+        <input class="input" name="timeHorizon" maxlength="200" placeholder="e.g. 12 months" [(ngModel)]="model.timeHorizon" />
+      </label>
+      <label class="field">
+        <span class="field__label">Review date</span>
+        <input class="input" type="date" name="reviewDate" [(ngModel)]="model.reviewDate" />
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Main assumptions</span>
+        <textarea class="input" name="mainAssumptions" rows="2" [(ngModel)]="model.mainAssumptions"></textarea>
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Risks</span>
+        <textarea class="input" name="risks" rows="2" [(ngModel)]="model.risks"></textarea>
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">What would prove this wrong (invalidation conditions)</span>
+        <textarea class="input" name="invalidationConditions" rows="2" [(ngModel)]="model.invalidationConditions"></textarea>
+      </label>
+      <label class="field">
+        <span class="field__label">Intended quantity</span>
+        <input class="input" type="number" min="0" step="any" name="intendedQuantity" [(ngModel)]="model.intendedQuantity" [disabled]="amending()" />
+      </label>
+      <label class="field">
+        <span class="field__label">Intended allocation %</span>
+        <input class="input" type="number" min="0" max="100" step="any" name="intendedAllocationPct" [(ngModel)]="model.intendedAllocationPct" [disabled]="amending()" />
+      </label>
+      <label class="field">
+        <span class="field__label">Intended price</span>
+        <input class="input" type="number" min="0" step="any" name="intendedPrice" [(ngModel)]="model.intendedPrice" [disabled]="amending()" />
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Notes</span>
+        <textarea class="input" name="notes" rows="2" [(ngModel)]="model.notes"></textarea>
+      </label>
+      @if (amending()) {
+        <label class="field field--wide">
+          <span class="field__label">Reason for this amendment</span>
+          <input class="input" name="amendmentReason" maxlength="2000" required [(ngModel)]="model.amendmentReason" />
+        </label>
+      }
+    </div>
+    <p class="muted small">Intended quantity, allocation and price are intentions only; they are never treated as executed trades.</p>
+    <div class="actions">
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : !id() ? 'Create draft' : amending() ? 'Save amendment' : 'Save draft' }}
+      </button>
+    </div>
+  </form>
+}

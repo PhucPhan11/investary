@@ -1,0 +1,98 @@
+<section class="page-header">
+  <div>
+    <h1 class="page-title">Decision journal</h1>
+    <p class="page-subtitle">
+      Your own investment decisions with their reasoning, the evidence you relied on and the portfolio as it was when you
+      decided. Portfolio transactions stay the financial record; the journal never trades.
+    </p>
+  </div>
+  <a class="btn btn--primary" routerLink="/journal/new">New decision</a>
+</section>
+
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Decisions</h2>
+    @if (page(); as p) {
+      <span class="muted">{{ p.totalElements }} total</span>
+    }
+  </div>
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label class="field">
+      <span class="field__label">Ticker</span>
+      <input class="input" name="ticker" placeholder="e.g. FPT" [(ngModel)]="filters.ticker" />
+    </label>
+    <label class="field">
+      <span class="field__label">Portfolio</span>
+      <select class="input" name="portfolioId" [(ngModel)]="filters.portfolioId" (change)="applyFilters()">
+        <option value="">All</option>
+        @for (p of portfolios(); track p.id) {
+          <option [value]="p.id">{{ p.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Status</span>
+      <select class="input" name="status" [(ngModel)]="filters.status" (change)="applyFilters()">
+        <option value="">All</option>
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Type</span>
+      <select class="input" name="type" [(ngModel)]="filters.type" (change)="applyFilters()">
+        <option value="">All</option>
+        @for (t of types; track t) {
+          <option [value]="t">{{ typeLabels[t] }}</option>
+        }
+      </select>
+    </label>
+    <div class="actions">
+      <button type="submit" class="btn btn--ghost">Search</button>
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()">Clear</button>
+    </div>
+  </form>
+
+  @if (loading() && !page()) {
+    <p class="muted">Loading decisions…</p>
+  } @else if (page()?.totalElements === 0) {
+    <app-empty-state title="No decisions recorded">
+      Record what you decided and why. Drafts stay editable until you finalize them.
+    </app-empty-state>
+  } @else if (page(); as p) {
+    <div class="table-wrap" [class.table-wrap--loading]="loading()">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Decision</th>
+            <th scope="col">Type</th>
+            <th scope="col">Ticker</th>
+            <th scope="col">Portfolio</th>
+            <th scope="col">Review</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of p.content; track d.id) {
+            <tr [attr.data-decision]="d.id">
+              <td>{{ d.decisionDate }}</td>
+              <td><a class="link" [routerLink]="['/journal', d.id]">{{ d.title }}</a></td>
+              <td>{{ typeLabels[d.decisionType] }}</td>
+              <td>{{ d.symbol ?? '—' }}</td>
+              <td>{{ d.portfolioName ?? 'Watchlist' }}@if (d.portfolioName && !d.portfolioId) { <span class="muted small"> (deleted)</span> }</td>
+              <td>{{ d.reviewDate ?? '—' }}</td>
+              <td><app-status-badge [value]="statusBadge(d.status)" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pager [page]="p.page" [totalPages]="p.totalPages" [disabled]="loading()" (pageChange)="load($event)" />
+  }
+</section>

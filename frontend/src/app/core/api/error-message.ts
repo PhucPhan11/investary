@@ -29,6 +29,9 @@ export function errorMessage(error: unknown, fallback = 'Something went wrong. P
   if (problem?.code === 'DUPLICATE_SOURCE_RULE') {
     return 'A source with this name already exists.';
   }
+  if (problem?.code === 'DECISION_CONFLICT') {
+    return 'This decision was changed elsewhere. Reload it and try again.';
+  }
   if (problem?.errors) {
     return Object.entries(problem.errors)
       .map(([field, message]) => `${field}: ${message}`)

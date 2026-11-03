@@ -36,6 +36,12 @@ Personal, AI-ready investment research assistant.
   and AI usage. A header bell shows deterministic, de-duplicated notifications (portfolio research, risks,
   conflicting views, brief ready, sync and processing failures).
   See [docs/phase-5-milestone-4.md](docs/phase-5-milestone-4.md).
+- **Phase 6 / Milestone 1:** **investment decision journal**. Record BUY, SELL, HOLD, REBALANCE and OBSERVE
+  decisions with their rationale, expected outcome, assumptions, risks and invalidation conditions; finalizing
+  stores an immutable portfolio and investor snapshot; attach evidence (PDFs, emails, research items, stored
+  citations, impact assessments) as copies that stay visible when a source is deleted; link the real portfolio
+  transactions that executed the decision. Every change is an append-only revision; concurrent edits conflict.
+  See [docs/phase-6-milestone-1.md](docs/phase-6-milestone-1.md).
 
 > ⚠️ **Local, single-user only.** There is **no authentication or authorization**. Never expose the
 > backend (port 8080) or the database to a network you do not fully control.
@@ -56,6 +62,7 @@ investary/
 │       ├── portfolio/    Instruments, prices, portfolios, transactions, holdings/valuation/allocation
 │       ├── intelligence/ Research matching, impact assessments, portfolio-aware assistant (read-only)
 │       ├── automation/   Gmail OAuth, source rules, Gmail sync (Phase 5 / M1); research workflows and jobs (M2)
+│       ├── journal/      Investment decision journal: decisions, snapshots, evidence, transaction links, revisions
 │       └── common/       Errors (RFC 9457), file store, tx helpers, CORS, shared web types
 ├── frontend/         Angular 22 · standalone components · signals · SCSS (no UI library)
 ├── infrastructure/   docker-compose.yml (PostgreSQL 17 + pgvector), .env.example
@@ -65,7 +72,7 @@ investary/
 - **Modular monolith.** One deployable backend, organised by business capability. Dependencies point one way:
   `knowledge → email → research → document → common`; `investor` and `portfolio` depend only on `common`,
   and `intelligence` sits on top of `knowledge`, `portfolio` and `investor`; `automation` imports Gmail mail
-  through `email`'s import service. See [docs/architecture.md](docs/architecture.md).
+  through `email`'s import service; `journal` reads the other modules and is imported by none. See [docs/architecture.md](docs/architecture.md).
 - **Sources of truth.** Original files are authoritative: PDFs in the document store, `.eml` files in
   the email store, both outside the repo. PostgreSQL holds metadata and *derived* data (parsed text,
   links, research items), which can be regenerated from the originals.
@@ -426,6 +433,24 @@ Nothing is downloaded automatically. A user picks a link, and
   (deduplication key). There is no e-mail, Telegram or mobile delivery.
 - Details: [docs/phase-5-milestone-4.md](docs/phase-5-milestone-4.md), [ADR 0012](docs/adr/0012-runtime-settings-and-notifications.md).
 
+## Decision journal (Phase 6 / Milestone 1)
+
+1. **Journal → New decision:** type (BUY, SELL, HOLD, REBALANCE, OBSERVE), portfolio (or none for a watchlist
+   decision), instrument, date, title, rationale, expected outcome, horizon, assumptions, risks, invalidation
+   conditions, review date and optional intended quantity / allocation / price (notes only, never orders).
+2. Drafts stay editable. **Finalize** stores the snapshot: holdings, quantity, cost basis, weights, prices that
+   exist (missing ones are listed, never estimated), the valuation date, and your risk profile and goals.
+3. **Attach evidence** (supporting, contradicting, background): a library PDF, an imported email, a research item,
+   a stored citation (chunk id) or an impact assessment. Title, date, location and excerpt are copied; a deleted
+   source shows as *Source unavailable* with those copies.
+4. **Link transaction** connects existing portfolio transactions (several per decision). **Mark executed** needs at
+   least one linked transaction for BUY, SELL and REBALANCE; HOLD and OBSERVE need none. **Cancel** needs a reason.
+5. After finalization, **Amend** changes only the narrative fields and needs a reason; type, portfolio, instrument,
+   date and intended figures stay fixed. The **History** lists every revision with its diff.
+
+- The journal never creates, edits or infers trades and never changes holdings or valuations.
+- Details: [docs/phase-6-milestone-1.md](docs/phase-6-milestone-1.md), [ADR 0013](docs/adr/0013-decision-journal.md).
+
 ## Research assistant (Phase 3)
 
 1. Install [Ollama](https://ollama.com) and pull the models: `ollama pull bge-m3` and `ollama pull qwen3:8b`.
@@ -504,6 +529,7 @@ them on startup. Never edit an applied migration; add a new one.
 | `V7` | `workflow_settings`, `research_workflows`, `workflow_stages`, `automation_jobs`, `workflow_portfolio_matches`; trigger and version columns on `impact_assessments` |
 | `V8` | `brief_jobs`, `briefs`, `brief_sources`; `knowledge_sources.first_indexed_at` |
 | `V9` | `app_settings`, `notifications`, `automation_job_attempts`, `ai_usage_daily`; `briefs.ai_status` allows `SKIPPED_LIMIT` |
+| `V10` | `investment_decisions`, `decision_portfolio_snapshots`, `decision_evidence`, `decision_transaction_links`, `decision_revisions`; trigger keeping revisions and snapshots append-only |
 
 V2 is additive: it leaves `document` untouched and only adds foreign keys to it
 (`ON DELETE SET NULL` / `CASCADE` on association rows).
@@ -528,7 +554,8 @@ cd frontend && npm run build
 | Gmail sync (Phase 5 / M1) | `TokenCipherTest`, `OAuthStateStoreTest` (one-time state, browser binding, PKCE vector), `SenderVerifierTest`, `RuleMatcherTest`, `GmailQueryValidatorTest`, `SourceRuleServiceTest`, `GoogleClientsTest` (WireMock: code exchange, refresh, `invalid_grant`, revoke, pagination, 401 refresh, 429/403/503 retries, history 404), `LocalOnlyRequestFilterTest`, `AutomationControllersTest`, `GmailSyncIntegrationTest` (OAuth callback, initial/incremental/recovery sync, duplicates, limits, rejects, transient failures, interrupted runs, revoked grant, disconnect) |
 | Research workflows (Phase 5 / M2) | `WorkflowPoliciesTest` (status policy, failure classification, safe summaries, backoff), `AutomationJobQueueTest` (concurrent claims, idempotent enqueue, waits, lease recovery, stale tokens), `ResearchWorkflowIntegrationTest` (end to end with WireMock + fake models: auto download, manual download re-open, no links, duplicate import, failed/partial downloads, rule off, shared PDF, failed indexing + retry, failed LLM + retry, daily cap, restart recovery, deletion mid-workflow, pre-M2 sources, reconcile, library upload) |
 | Automation Center (Phase 5 / M4) | `NotificationRulesTest` (eligibility, promotional text ignored, keys), `SystemHealthTest`, `RetryPolicyTest`, `SourceRuleWarningsTest`, `AiConcurrencyLimitsTest` (resize), `BriefSettingsTest`, `GmailScheduleTest`, `BriefGeneratorTest` (daily AI limit), `AutomationCenterIntegrationTest` (settings persistence/validation/conflict/reset, resized limits, daily analysis cap and token budget enforced, usage recorded and reported, overview metrics vs records and health without workers, concurrent retries, retry cap and attempt history, job filters, brief job retry, notification creation, deduplication, read/unread) |
-| Frontend | API services, error mapping, file-size pipe, app shell and notification bell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant, briefs (generation status and retry, freshness, citation navigation), Automation Center (overview states, source rule validation and broad-rule acknowledgement, settings forms, job filters and retry, job detail polling, AI usage), notifications |
+| Decision journal (Phase 6 / M1) | `DecisionSnapshotFactoryTest` (copied figures, missing prices, watchlist, diffs), `DecisionControllerTest`, `DecisionJournalIntegrationTest` (create, draft edit, finalize, snapshot unchanged after new trades and prices, amendments and locked fields, append-only trigger, cancel, invalid transitions, HOLD/OBSERVE without transactions, evidence of every kind, missing and deleted sources, transaction link rules, changed/deleted transactions, stale and concurrent writes, list filters) |
+| Frontend | API services, error mapping, file-size pipe, app shell and notification bell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant, briefs (generation status and retry, freshness, citation navigation), Automation Center (overview states, source rule validation and broad-rule acknowledgement, settings forms, job filters and retry, job detail polling, AI usage), notifications, decision journal (list filters, create/amend form, finalize, cancel reason, snapshot, unavailable evidence, link states, history) |
 
 - Tests that need Docker are **skipped** (not failed) without a Docker daemon; check the surefire summary.
 - No test contacts a real website or a real AI provider (fake embedding and scripted chat models).
@@ -756,7 +783,9 @@ curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-as
 - **Phase 5 / Milestone 2 — done:** automated research processing (downloads, indexing, matching, assessments).
 - **Phase 5 / Milestone 3 — done:** automated daily investment brief (scheduled and manual, cited, revisioned).
 - **Phase 5 / Milestone 4 — done:** Automation Center, runtime settings, AI usage and limits, in-app notifications.
-- **Phase 5 — later milestones:** live-model evaluation and tuning, OCR, an instrument/ticker master list,
-  corporate actions and cash, a watchlist and a decision journal linked to assessments, HNSW index.
+- **Phase 6 / Milestone 1 — done:** investment decision journal (snapshots, evidence, transaction links, revisions).
+- **Phase 6 — later milestones:** thesis monitoring and scheduled reviews of decisions, decision-to-goal links.
+- **Later:** live-model evaluation and tuning, OCR, an instrument/ticker master list, corporate actions and cash,
+  HNSW index.
 - Later: authentication, S3-compatible storage behind the storage ports, Drive ingestion, and delivery of
   notifications outside the app (e-mail, push).

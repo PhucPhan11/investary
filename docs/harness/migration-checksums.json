@@ -7,5 +7,6 @@
   "V6__gmail_sync.sql": "094194bd9da8a321a7551cf6d8e18f67e0d9394e1b1b28a51546d4b36b4fee70",
   "V7__research_workflows.sql": "11cf249df27c26c81dc9b657925a460394f66bd50072ec90948894c0f3e79fdc",
   "V8__daily_briefs.sql": "b52bb010ac4e6b2499f1221cc4dccd4edd40e226151df5af5daa601ce2e6925d",
-  "V9__automation_center.sql": "480f8485167058db71467318a8cb0b40b7d1379bcbbf05775e0eade4c5f809e6"
+  "V9__automation_center.sql": "480f8485167058db71467318a8cb0b40b7d1379bcbbf05775e0eade4c5f809e6",
+  "V10__decision_journal.sql": "342c7a130a0ff9affd23085a8786c738e73cdd466f9db1537c94207a69c4e443"
 }

@@ -3,6 +3,7 @@ package com.investary.portfolio.application;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -98,6 +99,16 @@ public class PortfolioQueryService {
         Page<PortfolioTransaction> page = transactions.findByPortfolioId(portfolioId, pageable);
         Map<UUID, Instrument> byId = instrumentsById(page.getContent());
         return page.map(transaction -> view(transaction, byId.get(transaction.getInstrumentId())));
+    }
+
+    /** Transactions by id (any portfolio); ids that do not exist are missing from the result. */
+    public List<TransactionView> transactions(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<PortfolioTransaction> found = transactions.findAllById(ids);
+        Map<UUID, Instrument> byId = instrumentsById(found);
+        return found.stream().map(transaction -> view(transaction, byId.get(transaction.getInstrumentId()))).toList();
     }
 
     public PortfolioSummary summary(UUID portfolioId) {

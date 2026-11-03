@@ -1,0 +1,101 @@
+import { DecisionDetail, DecisionSummary } from '../core/models/journal.model';
+
+/** Synthetic decision journal data shared by the journal specs. */
+export const SUMMARY: DecisionSummary = {
+  id: 'd1',
+  portfolioId: 'p1',
+  portfolioName: 'Danh mục chính',
+  instrumentId: 'i1',
+  symbol: 'FPT',
+  decisionType: 'BUY',
+  status: 'DECIDED',
+  decisionDate: '2026-10-30',
+  title: 'Mua thêm FPT',
+  reviewDate: '2027-01-30',
+  version: 3,
+  createdAt: '2026-10-30T02:00:00Z',
+  updatedAt: '2026-10-30T03:00:00Z',
+};
+
+export function decision(overrides: Partial<DecisionDetail> = {}): DecisionDetail {
+  return {
+    id: 'd1',
+    portfolioId: 'p1',
+    portfolioName: 'Danh mục chính',
+    instrumentId: 'i1',
+    symbol: 'FPT',
+    decisionType: 'BUY',
+    status: 'DRAFT',
+    decisionDate: '2026-10-30',
+    title: 'Mua thêm FPT',
+    rationale: 'Luận điểm tổng hợp',
+    expectedOutcome: null,
+    timeHorizon: '12 tháng',
+    mainAssumptions: null,
+    risks: 'Rủi ro tổng hợp',
+    invalidationConditions: null,
+    reviewDate: null,
+    notes: null,
+    intendedQuantity: 20,
+    intendedAllocationPct: null,
+    intendedPrice: null,
+    finalizedAt: null,
+    executedAt: null,
+    cancelledAt: null,
+    cancelReason: null,
+    version: 0,
+    createdAt: '2026-10-30T02:00:00Z',
+    updatedAt: '2026-10-30T02:00:00Z',
+    snapshot: null,
+    evidence: [],
+    transactions: [],
+    actions: ['EDIT', 'FINALIZE', 'CANCEL', 'ATTACH_EVIDENCE', 'LINK_TRANSACTION'],
+    disclaimer: 'This journal records your own decisions.',
+    ...overrides,
+  };
+}
+
+export const SNAPSHOT: DecisionDetail['snapshot'] = {
+  takenAt: '2026-10-30T03:00:00Z',
+  valuationDate: '2026-10-30',
+  portfolio: {
+    portfolioId: 'p1',
+    name: 'Danh mục chính',
+    currency: 'VND',
+    valuationStatus: 'PARTIAL',
+    openHoldings: 2,
+    transactionCount: 2,
+    totalCostBasis: 13000000,
+    realizedPnl: 0,
+    totalMarketValue: null,
+    unrealizedPnl: null,
+    pricedMarketValue: 11000000,
+    pricedCoveragePct: 76.92,
+    oldestPriceAsOf: '2026-10-29',
+    holdings: [
+      {
+        instrumentId: 'i1', symbol: 'FPT', name: 'FPT', instrumentType: 'STOCK', quantity: 100, averageCost: 100000,
+        costBasis: 10000000, costWeightPct: 76.92, valuationStatus: 'AVAILABLE', latestPrice: 110000, priceAsOf: '2026-10-29',
+        priceSource: 'Bảng giá', marketValue: 11000000, marketWeightPct: null,
+      },
+      {
+        instrumentId: 'i2', symbol: 'VNM', name: 'VNM', instrumentType: 'STOCK', quantity: 50, averageCost: 60000,
+        costBasis: 3000000, costWeightPct: 23.08, valuationStatus: 'UNAVAILABLE', latestPrice: null, priceAsOf: null,
+        priceSource: null, marketValue: null, marketWeightPct: null,
+      },
+    ],
+    costBasisAllocation: [],
+    marketValueAllocation: null,
+    marketValueUnavailableReason: 'Not every holding has a price',
+  },
+  position: {
+    instrumentId: 'i1', symbol: 'FPT', held: true, quantity: 100, averageCost: 100000, costBasis: 10000000, costWeightPct: 76.92,
+    marketValue: 11000000, marketWeightPct: null, latestPrice: 110000, priceAsOf: '2026-10-29', priceSource: 'Bảng giá',
+  },
+  missingPrices: ['VNM'],
+  investor: {
+    configured: true, riskTolerance: 'MODERATE', investmentHorizon: 'LONG', experienceLevel: 'INTERMEDIATE', objectives: null,
+    restrictions: null, liquidityNeeds: null, goals: [],
+  },
+  limitations: ['No price observation for VNM; their market value is unknown and was not estimated.'],
+};

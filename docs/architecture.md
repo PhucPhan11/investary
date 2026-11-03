@@ -27,6 +27,7 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
 | `investor` | Phase 4 | Investor profile and goals (self-declared) |
 | `portfolio` | Phase 4 | Instruments, manual prices, portfolios, transactions; holdings, valuation and allocation computed on read |
 | `intelligence` | Phase 4, 5 / M3 | Research matching, deterministic analysis, impact assessments, portfolio-aware assistant (read-only); daily briefs, their job queue and scheduler (M3) |
+| `journal` | Phase 6 / M1 | Investment decision journal: decisions and lifecycle, immutable portfolio/investor snapshots, evidence copies, links to portfolio transactions, append-only revisions |
 | `automation` | Phase 5 / M1, M2, M4 | Gmail OAuth connection (encrypted refresh token), brokerage source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows and the automation job queue (M2); Automation Center overview, settings API, AI usage report and in-app notifications (M4) |
 
 ### Dependency direction
@@ -46,6 +47,11 @@ intelligence ──▶ knowledge ──▶ email ──▶ research ──▶ do
 - Runtime settings (M4) live in `common.settings` (`RuntimeSettings`, `SettingsStore`, `app_settings`). Each owning
   module declares its fields with a `SettingsContributor` and reads them through its own effective-settings class
   (`AutomationSettings`, `BriefSettings`, `AiSettings`) that falls back to its `@ConfigurationProperties`.
+- `journal` (Phase 6 / M1) reads `portfolio` and `investor` only through `PortfolioQueryService` /
+  `InvestorQueryService` (enforced by `ArchitectureTest`, like `intelligence`), and looks up evidence through
+  `DocumentService`, `EmailQueryService`, `ResearchQueryService`, `ChunkLookupService` and
+  `ImpactAssessmentService.view`. Nothing imports `journal`; deleted sources reach it only through
+  `ON DELETE SET NULL` foreign keys.
 - `investor` and `portfolio` depend only on `common`. `intelligence` uses `knowledge` search/assistant
   building blocks, `research.link.Keywords` for text folding, and only the **read** services
   `PortfolioQueryService` / `InvestorQueryService` (enforced by `ArchitectureTest`), so AI output can
@@ -236,6 +242,24 @@ Settings are read per use (5 s cache, dropped on write), so changes apply withou
 sizes. Notification rules are deterministic and never call a model. Details:
 [phase-5-milestone-4.md](phase-5-milestone-4.md), [ADR 0012](adr/0012-runtime-settings-and-notifications.md).
 
+## Decision journal (Phase 6 / Milestone 1)
+
+```
+Angular /journal (list, form, detail)
+  /api/v1/decisions          DecisionController -> DecisionService (writes) / DecisionQueryService (reads)
+    finalize                 DecisionSnapshotFactory <- PortfolioQueryService.snapshot + allocation + prices,
+                             InvestorQueryService.profile + goals  ->  decision_portfolio_snapshots (JSONB, once)
+    evidence                 EvidenceResolver -> DocumentService / EmailQueryService / ResearchQueryService /
+                             ChunkLookupService.chunk / ImpactAssessmentService.view  ->  decision_evidence (copies)
+    transactions             PortfolioQueryService.transactions(ids)  ->  decision_transaction_links (copies)
+    every write              expectedVersion check + JPA @Version  ->  decision_revisions (diff, append-only)
+```
+
+The journal only reads portfolio data; transactions remain the financial source of truth and are never created
+or inferred. A database trigger rejects updates and deletes of revisions and snapshots (they disappear only with
+their decision, which no API deletes). Details: [phase-6-milestone-1.md](phase-6-milestone-1.md),
+[ADR 0013](adr/0013-decision-journal.md).
+
 ## Database
 
 Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`. Tests use the same
@@ -273,6 +297,11 @@ checks that a Phase 1 database upgrades without data loss.
 | `notifications` | In-app notifications: type, priority, title, message, related entity, portfolio, unique deduplication key, read time (V9) |
 | `automation_job_attempts` | Attempt history of automation jobs: claim, result, safe error, manual retries (V9) |
 | `ai_usage_daily` | AI provider requests, failures and provider-reported tokens per day, operation, purpose and model (V9) |
+| `investment_decisions` | Decisions: type, status, dates, reasoning, intended figures (notes only), copied portfolio name and symbol, lifecycle timestamps, optimistic-lock version (V10) |
+| `decision_portfolio_snapshots` | Portfolio and investor snapshot written once at finalization (JSONB, append-only trigger) (V10) |
+| `decision_evidence` | Attached sources: kind, role, one SET NULL reference per kind, original id, copied title/publisher/date/location/excerpt, soft removal (V10) |
+| `decision_transaction_links` | Links to portfolio transactions (SET NULL) with the trade facts copied at link time, soft removal (V10) |
+| `decision_revisions` | Append-only audit trail: sequence, kind, reason, status after, JSON diff (V10) |
 
 ## Frontend
 
@@ -284,7 +313,7 @@ src/app/
   features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
               · portfolio (list, dashboard, transaction form, research insights) · investor (profile, goals)
               · automation (Automation Center: overview, sources, jobs, settings, AI usage) · briefs (list, detail)
-              · notifications
+              · notifications · journal (decision list, form, detail)
 ```
 
 - Standalone components with signals; no state library and no UI component library.

@@ -127,3 +127,17 @@ errors are not reported in the same response. This is expected; see `DocumentCon
 - AI usage: `ChatGateway` / `EmbeddingService` record into `ai_usage_daily` through `AiUsageService` (pass a purpose).
 - `select max(...)` returns one row with null: use `queryForObject(..., Timestamp.class)`, not `query(...).stream()`.
 - Container test: `automation/AutomationCenterIntegrationTest.java`.
+
+## Decision journal (Phase 6 / Milestone 1)
+
+- Module `journal`: `DecisionService` (writes: version check, `saveAndFlush` mapping
+  `ObjectOptimisticLockingFailureException` to `DECISION_CONFLICT`, then one `DecisionRevision`), `DecisionQueryService`
+  (list via JPA `Specification`, detail, history), `DecisionSnapshotFactory` (pure; copies query-service views),
+  `EvidenceResolver` (source lookups and copies; citation availability via `ChunkLookupService.currentHashes`).
+- Lookups added for it: `PortfolioQueryService.transactions(ids)`, `ResearchQueryService.researchItem(id)`,
+  `ChunkLookupService.chunk(id)`, `PromptBuilder.location(pageStart, pageEnd, section)`.
+- `decision_revisions` and `decision_portfolio_snapshots` have a trigger rejecting UPDATE/DELETE unless the parent decision
+  is already gone, so `delete from investment_decisions` (test clean-up) still cascades. Their entities are `@Immutable`.
+- Evidence reference columns are `updatable = false`: the database nulls them on source deletion.
+- Container test: `journal/DecisionJournalIntegrationTest.java` loads `SyntheticResearchCorpus` once per class (static flag)
+  for real chunks and assessments; the concurrency case calls `DecisionService.update` from two threads.

@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,6 +64,11 @@ public class ResearchQueryService {
 
     public List<ResearchItemView> researchItems(UUID messageId) {
         return items.findBySourceMessageIdOrderBySourceLocation(messageId).stream().map(this::view).toList();
+    }
+
+    /** One research item by id, e.g. to cite it as decision evidence. */
+    public Optional<ResearchItemView> researchItem(UUID id) {
+        return items.findById(id).map(this::view);
     }
 
     public List<LinkedDocumentView> documents(UUID messageId) {
