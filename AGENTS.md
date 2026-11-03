@@ -23,6 +23,9 @@ A personal, local, single-user investment research assistant. It has three parts
   (`docs/phase-5-milestone-3.md`).
 - **Phase 5 / Milestone 4:** Automation Center (overview and health, source rules, job history and safe retry,
   runtime settings, AI usage and limits) and deterministic in-app notifications (`docs/phase-5-milestone-4.md`).
+- **Phase 6 / Milestone 1:** investment decision journal: decisions with a DRAFT → DECIDED → EXECUTED / CANCELLED
+  lifecycle, an immutable portfolio/investor snapshot at finalization, evidence copies, links to existing portfolio
+  transactions and append-only revisions (`docs/phase-6-milestone-1.md`).
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
@@ -38,6 +41,7 @@ knowledge ──▶ email ──▶ research ──▶ document ──▶ common
 intelligence ──▶ knowledge, portfolio, investor, research (Keywords only)
 portfolio ──▶ common          investor ──▶ common
 automation ──▶ email, research, knowledge, intelligence, document (application services only)
+journal ──▶ portfolio, investor (*QueryService only), document, email, research, knowledge, intelligence
 ```
 
 | Module | Owns |
@@ -50,13 +54,14 @@ automation ──▶ email, research, knowledge, intelligence, document (applica
 | `com.investary.portfolio` | Instruments, prices, portfolios, transactions; holdings/valuation/allocation computed on read |
 | `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant, daily briefs (queue, scheduler, generation) |
 | `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows, stages, matches and the automation job queue; Automation Center APIs and in-app notifications |
+| `com.investary.journal` | Investment decisions, lifecycle, snapshots, evidence, transaction links, revisions |
 | `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS, runtime settings (`RuntimeSettings`) |
 
 - `common` imports no feature module. `document` imports neither `email` nor `research`. `research`
   never imports `email`.
 - Cross-module calls go to `application` services, never to another module's `persistence`, `storage` or `api`.
-- `intelligence` may only use `*QueryService` classes from `portfolio` and `investor`: AI output must never
-  change portfolio, transaction or profile data.
+- `intelligence` and `journal` may only use `*QueryService` classes from `portfolio` and `investor`: AI output and
+  journal entries must never change portfolio, transaction or profile data. Nothing imports `journal`.
 - `document` reacts to nothing; it publishes `DocumentDeletedEvent`, which `research` listens to.
 - Nothing imports `automation`; it imports Gmail mail only through `EmailImportService.importRaw` (no second parser).
   Other modules notify it only through events published after commit (`EmailImportedEvent`,
@@ -161,6 +166,15 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
     Triggers run after commit and must never fail the work that triggered them.
   - Keep `/api/v1/notifications` and `/api/v1/briefs/jobs` behind `LocalOnlyRequestFilter`. Usage figures are
     provider-reported counts only; never estimate tokens or show costs without a configured pricing source.
+- **Decision journal:**
+  - Transactions are the financial source of truth. The journal never creates, edits or infers trades; execution is an
+    explicit user action (BUY/SELL/REBALANCE need a linked transaction). Intended quantity/allocation/price are notes.
+  - The snapshot is built only from `PortfolioQueryService` / `InvestorQueryService` results, written once at finalize and
+    never updated; record missing prices, never estimate a value.
+  - Every write checks `expectedVersion` and appends a `decision_revisions` row; revisions, snapshots, evidence and links
+    are never updated in content or deleted (soft removal with a reason). After finalization only narrative fields change.
+  - Evidence copies title, date, location and excerpt; a deleted source shows unavailable (FK `ON DELETE SET NULL`) and
+    is never replaced by another source.
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**

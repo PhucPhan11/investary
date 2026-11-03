@@ -36,9 +36,13 @@ class ArchitectureTest {
             "investor", Set.of(),
             "portfolio", Set.of(),
             "intelligence", Set.of("knowledge", "portfolio", "investor", "research"),
-            "automation", Set.of("email", "research", "knowledge", "intelligence", "document"));
+            "automation", Set.of("email", "research", "knowledge", "intelligence", "document"),
+            "journal", Set.of("portfolio", "investor", "document", "email", "research", "knowledge", "intelligence"));
 
-    /** The only investor/portfolio services intelligence may use: read-only queries, so AI output can never change data. */
+    /** Modules that may read portfolio and investor data but never change it. */
+    private static final Set<String> READ_ONLY_CONSUMERS = Set.of("intelligence", "journal");
+
+    /** The only investor/portfolio services intelligence and journal may use: read-only queries, so AI output can never change data. */
     private static final Pattern READ_ONLY_SERVICE = Pattern.compile("^[A-Za-z]*QueryService$");
 
     /** Packages that are internal to their module. */
@@ -97,22 +101,30 @@ class ArchitectureTest {
     }
 
     @Test
-    void intelligenceUsesOnlyReadOnlyPortfolioAndInvestorServices() throws IOException {
+    void intelligenceAndJournalUseOnlyReadOnlyPortfolioAndInvestorServices() throws IOException {
         Pattern imported = Pattern.compile("^import\\s+com\\.investary\\.(portfolio|investor)\\.application\\.([A-Za-z]+)", Pattern.MULTILINE);
         List<String> violations = new ArrayList<>();
-        try (Stream<Path> files = Files.walk(MAIN_SOURCES.resolve("intelligence"))) {
-            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
-                Matcher matcher = imported.matcher(Files.readString(file));
-                while (matcher.find()) {
-                    String type = matcher.group(2);
-                    if (type.endsWith("Service") && !READ_ONLY_SERVICE.matcher(type).matches()
-                            || type.endsWith("Command") || type.endsWith("Commands")) {
-                        violations.add(file.getFileName() + " imports " + matcher.group(1) + "." + type);
+        for (String consumer : READ_ONLY_CONSUMERS) {
+            try (Stream<Path> files = Files.walk(MAIN_SOURCES.resolve(consumer))) {
+                for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                    Matcher matcher = imported.matcher(Files.readString(file));
+                    while (matcher.find()) {
+                        String type = matcher.group(2);
+                        if (type.endsWith("Service") && !READ_ONLY_SERVICE.matcher(type).matches()
+                                || type.endsWith("Command") || type.endsWith("Commands")) {
+                            violations.add(file.getFileName() + " imports " + matcher.group(1) + "." + type);
+                        }
                     }
                 }
             }
         }
-        assertThat(violations).as("intelligence must only read portfolio/investor data (use *QueryService)").isEmpty();
+        assertThat(violations).as("intelligence and journal must only read portfolio/investor data (use *QueryService)").isEmpty();
+    }
+
+    @Test
+    void nothingImportsJournal() {
+        // journal reads many modules; a reverse import would create a cycle.
+        assertThat(dependencies).filteredOn(d -> d.target().equals("journal")).isEmpty();
     }
 
     @Test

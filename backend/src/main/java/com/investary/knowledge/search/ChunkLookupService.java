@@ -1,9 +1,11 @@
 package com.investary.knowledge.search;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -51,6 +53,26 @@ public class ChunkLookupService {
     }
 
     /**
+     * One currently searchable chunk with the metadata stored at index time, e.g. to keep it as evidence.
+     * Empty if the chunk does not exist or is not current (deleted, reindexed or of an outdated index version).
+     */
+    public Optional<StoredChunk> chunk(UUID chunkId) {
+        return jdbc.query("""
+                select c.id, s.source_type, coalesce(s.document_id, s.source_message_id) as source_id, c.source_title, c.brokerage,
+                       c.published_on, c.page_start, c.page_end, c.section, c.content, c.content_sha256
+                from knowledge_chunks c
+                join knowledge_sources s on s.id = c.knowledge_source_id
+                where c.id = :id and s.status = 'INDEXED' and c.index_version = :version""",
+                new MapSqlParameterSource().addValue("id", chunkId).addValue("version", version.current()),
+                (rs, i) -> new StoredChunk(rs.getObject("id", UUID.class), KnowledgeSourceType.valueOf(rs.getString("source_type")),
+                        rs.getObject("source_id", UUID.class), rs.getString("source_title"), rs.getString("brokerage"),
+                        rs.getObject("published_on", LocalDate.class), (Integer) rs.getObject("page_start"),
+                        (Integer) rs.getObject("page_end"), rs.getString("section"), rs.getString("content"),
+                        rs.getString("content_sha256")))
+                .stream().findFirst();
+    }
+
+    /**
      * Tickers recognised in the searchable chunks of one source (current index version only), upper case.
      */
     public Set<String> sourceTickers(KnowledgeSourceType type, UUID sourceId) {
@@ -69,5 +91,13 @@ public class ChunkLookupService {
                     tickers.add(rs.getString(1).strip().toUpperCase(Locale.ROOT));
                 });
         return tickers;
+    }
+
+    /**
+     * A stored chunk as indexed. {@code content} is the verbatim chunk text.
+     */
+    public record StoredChunk(UUID chunkId, KnowledgeSourceType sourceType, UUID sourceId, String title, String brokerage,
+                              LocalDate publishedOn, Integer pageStart, Integer pageEnd, String section, String content,
+                              String contentSha256) {
     }
 }

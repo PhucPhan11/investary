@@ -53,6 +53,11 @@ const BADGES: Record<string, { label: string; tone: Tone }> = {
   HEALTH_DEGRADED: { label: 'Degraded', tone: 'warning' },
   HEALTH_DISABLED: { label: 'Disabled', tone: 'muted' },
   HEALTH_UNAVAILABLE: { label: 'Unavailable', tone: 'danger' },
+  // Decision journal (prefixed: CANCELLED/DRAFT are decision states)
+  DECISION_DRAFT: { label: 'Draft', tone: 'neutral' },
+  DECISION_DECIDED: { label: 'Decided', tone: 'info' },
+  DECISION_EXECUTED: { label: 'Executed', tone: 'success' },
+  DECISION_CANCELLED: { label: 'Cancelled', tone: 'muted' },
   // Notification priority
   NOTIF_HIGH: { label: 'High', tone: 'danger' },
   NOTIF_NORMAL: { label: 'Normal', tone: 'info' },

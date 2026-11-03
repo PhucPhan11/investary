@@ -1,0 +1,396 @@
+<a class="back-link link" routerLink="/journal">← Decision journal</a>
+
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+@if (loading() && !decision()) {
+  <p class="muted">Loading decision…</p>
+} @else if (decision(); as d) {
+  <section class="card">
+    <div class="detail-header">
+      <div class="detail-header__main">
+        <h1 class="page-title">{{ d.title }}</h1>
+        <p>
+          <app-status-badge [value]="statusBadge(d.status)" />
+          <span class="tag">{{ typeLabels[d.decisionType] }}</span>
+          <span class="tag">{{ d.symbol ?? 'Whole portfolio' }}</span>
+        </p>
+        <dl class="meta">
+          <div><dt>Decision date</dt><dd>{{ d.decisionDate }}</dd></div>
+          <div>
+            <dt>Portfolio</dt>
+            <dd>
+              {{ d.portfolioName ?? 'Watchlist' }}
+              @if (d.portfolioName && !d.portfolioId) { <span class="muted small">(deleted)</span> }
+            </dd>
+          </div>
+          <div><dt>Time horizon</dt><dd>{{ d.timeHorizon ?? '—' }}</dd></div>
+          <div><dt>Review date</dt><dd>{{ d.reviewDate ?? '—' }}</dd></div>
+          @if (d.intendedQuantity !== null || d.intendedPrice !== null || d.intendedAllocationPct !== null) {
+            <div>
+              <dt>Intended (not an order)</dt>
+              <dd>
+                @if (d.intendedQuantity !== null) { {{ d.intendedQuantity | number }} units }
+                @if (d.intendedPrice !== null) { @ {{ d.intendedPrice | number }} }
+                @if (d.intendedAllocationPct !== null) { · {{ d.intendedAllocationPct | number: '1.0-2' }}% }
+              </dd>
+            </div>
+          }
+          @if (d.finalizedAt) { <div><dt>Finalized</dt><dd>{{ d.finalizedAt | date: 'medium' }}</dd></div> }
+          @if (d.executedAt) { <div><dt>Executed</dt><dd>{{ d.executedAt | date: 'medium' }}</dd></div> }
+          @if (d.cancelledAt) {
+            <div><dt>Cancelled</dt><dd>{{ d.cancelledAt | date: 'medium' }} · {{ d.cancelReason }}</dd></div>
+          }
+          <div><dt>Version</dt><dd>{{ d.version }}</dd></div>
+        </dl>
+      </div>
+      <div class="detail-header__actions">
+        @if (can().has('EDIT')) {
+          <a class="btn btn--ghost" [routerLink]="['/journal', d.id, 'edit']">Edit draft</a>
+        }
+        @if (can().has('AMEND')) {
+          <a class="btn btn--ghost" [routerLink]="['/journal', d.id, 'edit']">Amend</a>
+        }
+        @if (can().has('FINALIZE')) {
+          <button type="button" class="btn btn--primary" [disabled]="busy()" (click)="finalize()">Finalize</button>
+        }
+      </div>
+    </div>
+
+    @if (can().has('EXECUTE') || can().has('CANCEL')) {
+      <div class="subform decision-actions">
+        <label class="field">
+          <span class="field__label">Reason (required to cancel, optional otherwise)</span>
+          <input class="input" name="reason" maxlength="2000" [(ngModel)]="reason" />
+        </label>
+        <div class="actions">
+          @if (can().has('EXECUTE')) {
+            <button type="button" class="btn btn--primary" [disabled]="busy()" (click)="execute()">Mark executed</button>
+          }
+          @if (can().has('CANCEL')) {
+            <button type="button" class="btn btn--danger" [disabled]="busy()" (click)="cancel()">Cancel decision</button>
+          }
+        </div>
+        @if (d.decisionType === 'BUY' || d.decisionType === 'SELL' || d.decisionType === 'REBALANCE') {
+          <p class="muted small">A {{ typeLabels[d.decisionType] | lowercase }} decision is executed only through at least one linked portfolio transaction.</p>
+        }
+      </div>
+    }
+
+    @if (actionError(); as message) {
+      <app-alert kind="error">{{ message }}</app-alert>
+    }
+    <p class="muted small">{{ d.disclaimer }}</p>
+  </section>
+
+  <section class="card">
+    <h2 class="card__title">Reasoning</h2>
+    <dl class="decision-text">
+      <dt>Rationale</dt><dd>{{ d.rationale ?? '—' }}</dd>
+      <dt>Expected outcome</dt><dd>{{ d.expectedOutcome ?? '—' }}</dd>
+      <dt>Main assumptions</dt><dd>{{ d.mainAssumptions ?? '—' }}</dd>
+      <dt>Risks</dt><dd>{{ d.risks ?? '—' }}</dd>
+      <dt>Invalidation conditions</dt><dd>{{ d.invalidationConditions ?? '—' }}</dd>
+      <dt>Notes</dt><dd>{{ d.notes ?? '—' }}</dd>
+    </dl>
+  </section>
+
+  <section class="card" data-testid="snapshot">
+    <h2 class="card__title">Snapshot at finalization</h2>
+    @if (d.snapshot; as s) {
+      <p class="muted small">Taken {{ s.takenAt | date: 'medium' }} · valuation date {{ s.valuationDate }}. Stored once; later trades and prices do not change it.</p>
+      @if (s.position; as pos) {
+        <h3 class="decision-subtitle">{{ pos.symbol }}</h3>
+        @if (pos.held) {
+          <p>
+            Held {{ pos.quantity | number }} units · cost basis {{ pos.costBasis | number }}
+            @if (pos.costWeightPct !== null) { · {{ pos.costWeightPct | number: '1.0-2' }}% of cost }
+            @if (pos.marketWeightPct !== null) { · {{ pos.marketWeightPct | number: '1.0-2' }}% of market value }
+          </p>
+        } @else {
+          <p>Not held at the snapshot.</p>
+        }
+        <p class="small">
+          @if (pos.latestPrice !== null) {
+            Latest price {{ pos.latestPrice | number }} on {{ pos.priceAsOf }} ({{ pos.priceSource }})
+          } @else {
+            <span class="muted">No price observation was available; no value was estimated.</span>
+          }
+        </p>
+      }
+      @if (s.portfolio; as p) {
+        <h3 class="decision-subtitle">{{ p.name }} ({{ p.currency }})</h3>
+        <p class="small">
+          Cost basis {{ p.totalCostBasis | number }} ·
+          @if (p.totalMarketValue !== null) { market value {{ p.totalMarketValue | number }} · }
+          @else if (p.pricedMarketValue !== null) { priced holdings {{ p.pricedMarketValue | number }} ({{ p.pricedCoveragePct | number: '1.0-2' }}% of cost) · }
+          valuation {{ p.valuationStatus }}
+        </p>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Holding</th>
+                <th scope="col" class="num">Quantity</th>
+                <th scope="col" class="num">Cost basis</th>
+                <th scope="col" class="num">Cost weight</th>
+                <th scope="col" class="num">Price</th>
+                <th scope="col" class="num">Market value</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (h of p.holdings; track h.instrumentId) {
+                <tr>
+                  <td>{{ h.symbol }}</td>
+                  <td class="num">{{ h.quantity | number }}</td>
+                  <td class="num">{{ h.costBasis | number }}</td>
+                  <td class="num">{{ h.costWeightPct === null ? '—' : (h.costWeightPct | number: '1.0-2') + '%' }}</td>
+                  <td class="num">{{ h.latestPrice === null ? 'No price' : (h.latestPrice | number) }}</td>
+                  <td class="num">{{ h.marketValue === null ? '—' : (h.marketValue | number) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @if (s.missingPrices.length > 0) {
+        <p class="small" data-testid="missing-prices">Missing prices: {{ s.missingPrices.join(', ') }}</p>
+      }
+      <h3 class="decision-subtitle">Investor</h3>
+      @if (s.investor.configured) {
+        <p class="small">
+          Risk tolerance {{ s.investor.riskTolerance ?? '—' }} · horizon {{ s.investor.investmentHorizon ?? '—' }} · experience
+          {{ s.investor.experienceLevel ?? '—' }}
+        </p>
+      } @else {
+        <p class="muted small">No investor profile was configured.</p>
+      }
+      @if (s.investor.goals.length > 0) {
+        <ul class="small">
+          @for (g of s.investor.goals; track g.id) {
+            <li>{{ g.name }} · {{ g.priority }}@if (g.targetAmount !== null) { · {{ g.targetAmount | number }} {{ g.currency }} }@if (g.targetDate) { by {{ g.targetDate }} }</li>
+          }
+        </ul>
+      }
+      @if (s.limitations.length > 0) {
+        <ul class="limitations small">
+          @for (l of s.limitations; track $index) {
+            <li>{{ l }}</li>
+          }
+        </ul>
+      }
+    } @else {
+      <p class="muted">The snapshot is stored when the decision is finalized.</p>
+    }
+  </section>
+
+  <section class="card" data-testid="evidence">
+    <div class="card__header">
+      <h2 class="card__title">Evidence</h2>
+      @if (can().has('ATTACH_EVIDENCE') && !showEvidenceForm()) {
+        <button type="button" class="btn btn--ghost btn--small" (click)="openEvidenceForm()">Attach evidence</button>
+      }
+    </div>
+    @if (showEvidenceForm()) {
+      <form class="subform form-grid" (ngSubmit)="attachEvidence()" data-testid="evidence-form">
+        <label class="field">
+          <span class="field__label">Kind</span>
+          <select class="input" name="kind" [(ngModel)]="evidenceForm.kind" (change)="loadSources()">
+            @for (k of kinds; track k) {
+              <option [value]="k">{{ kindLabels[k] }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field__label">Role</span>
+          <select class="input" name="role" [(ngModel)]="evidenceForm.role">
+            @for (r of roles; track r) {
+              <option [value]="r">{{ roleLabels[r] }}</option>
+            }
+          </select>
+        </label>
+        @if (evidenceForm.kind === 'RESEARCH_ITEM') {
+          <label class="field">
+            <span class="field__label">Email</span>
+            <select class="input" name="emailId" [(ngModel)]="evidenceForm.emailId" (change)="loadResearchItems()">
+              <option value="">Choose…</option>
+              @for (e of researchEmails(); track e.id) {
+                <option [value]="e.id">{{ e.label }}</option>
+              }
+            </select>
+          </label>
+        }
+        @if (sources().length > 0) {
+          <label class="field field--wide">
+            <span class="field__label">Source</span>
+            <select class="input" name="sourceId" [(ngModel)]="evidenceForm.sourceId">
+              <option value="">Choose…</option>
+              @for (o of sources(); track o.id) {
+                <option [value]="o.id">{{ o.label }}</option>
+              }
+            </select>
+          </label>
+        } @else {
+          <label class="field field--wide">
+            <span class="field__label">Source id{{ evidenceForm.kind === 'CITATION' ? ' (chunk id of a stored citation)' : '' }}</span>
+            <input class="input mono" name="sourceId" [(ngModel)]="evidenceForm.sourceId" />
+          </label>
+        }
+        <label class="field field--wide">
+          <span class="field__label">Note</span>
+          <input class="input" name="note" maxlength="2000" [(ngModel)]="evidenceForm.note" />
+        </label>
+        <div class="actions field--wide">
+          <button type="button" class="btn btn--ghost" (click)="showEvidenceForm.set(false)">Close</button>
+          <button type="submit" class="btn btn--primary" [disabled]="busy()">Attach</button>
+        </div>
+      </form>
+    }
+    @if (activeEvidence().length === 0) {
+      <p class="muted">No evidence attached.</p>
+    } @else {
+      <ul class="decision-list">
+        @for (e of activeEvidence(); track e.id) {
+          <li class="decision-item" [class.decision-item--unavailable]="!e.available" [attr.data-evidence]="e.id">
+            <div>
+              <span class="tag">{{ roleLabels[e.role] }}</span>
+              <span class="tag tag--plain">{{ kindLabels[e.kind] }}</span>
+              @if (e.available && e.kind === 'DOCUMENT') {
+                <a class="link" [routerLink]="['/documents', e.sourceId]">{{ e.title ?? 'Document' }}</a>
+              } @else if (e.available && e.kind === 'EMAIL') {
+                <a class="link" [routerLink]="['/emails', e.sourceId]">{{ e.title ?? 'Email' }}</a>
+              } @else {
+                <strong>{{ e.title ?? kindLabels[e.kind] }}</strong>
+              }
+              @if (!e.available) { <span class="badge badge--danger">Source unavailable</span> }
+            </div>
+            <p class="muted small">
+              {{ e.publisher ?? '' }}@if (e.publishedOn) { · {{ e.publishedOn }} }@if (e.location) { · {{ e.location }} } · attached
+              {{ e.attachedAt | date: 'short' }}
+            </p>
+            @if (e.excerpt) { <blockquote class="decision-excerpt">{{ e.excerpt }}</blockquote> }
+            @if (e.note) { <p class="small">{{ e.note }}</p> }
+            @if (can().has('ATTACH_EVIDENCE')) {
+              <button type="button" class="btn btn--ghost btn--small" [disabled]="busy()" (click)="removeEvidence(e.id)">Remove</button>
+            }
+          </li>
+        }
+      </ul>
+    }
+    @if (removedEvidence().length > 0) {
+      <details class="small">
+        <summary>Removed evidence ({{ removedEvidence().length }})</summary>
+        <ul>
+          @for (e of removedEvidence(); track e.id) {
+            <li>{{ e.title ?? kindLabels[e.kind] }} — removed {{ e.removedAt | date: 'short' }}: {{ e.removedReason }}</li>
+          }
+        </ul>
+      </details>
+    }
+  </section>
+
+  <section class="card" data-testid="transactions">
+    <div class="card__header">
+      <h2 class="card__title">Linked transactions</h2>
+      @if (can().has('LINK_TRANSACTION') && !showLinkForm()) {
+        <button type="button" class="btn btn--ghost btn--small" (click)="openLinkForm()">Link transaction</button>
+      }
+    </div>
+    <p class="muted small">Transactions are the financial record. Linking never creates or changes a trade.</p>
+    @if (showLinkForm()) {
+      <form class="subform form-grid" (ngSubmit)="linkTransaction()" data-testid="link-form">
+        <label class="field field--wide">
+          <span class="field__label">Transaction</span>
+          <select class="input" name="transactionId" [(ngModel)]="linkForm.transactionId">
+            <option value="">Choose…</option>
+            @for (t of linkableTransactions(); track t.id) {
+              <option [value]="t.id">{{ t.tradeDate }} · {{ t.type }} {{ t.symbol }} {{ t.quantity | number }} @ {{ t.price | number }}</option>
+            }
+          </select>
+        </label>
+        <label class="field field--wide">
+          <span class="field__label">Note</span>
+          <input class="input" name="linkNote" maxlength="2000" [(ngModel)]="linkForm.note" />
+        </label>
+        <div class="actions field--wide">
+          <button type="button" class="btn btn--ghost" (click)="showLinkForm.set(false)">Close</button>
+          <button type="submit" class="btn btn--primary" [disabled]="busy()">Link</button>
+        </div>
+      </form>
+    }
+    @if (d.transactions.length === 0) {
+      <p class="muted">No transactions linked.</p>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Trade date</th>
+              <th scope="col">Type</th>
+              <th scope="col">Ticker</th>
+              <th scope="col" class="num">Quantity</th>
+              <th scope="col" class="num">Price</th>
+              <th scope="col">State</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of d.transactions; track l.id) {
+              <tr [class.muted]="l.removedAt" [attr.data-link]="l.id">
+                <td>{{ l.tradeDate }}</td>
+                <td>{{ l.transactionType }}</td>
+                <td>{{ l.symbol }}</td>
+                <td class="num">{{ l.quantity | number }}</td>
+                <td class="num">{{ l.price | number }}</td>
+                <td>
+                  @if (l.removedAt) {
+                    Unlinked: {{ l.removedReason }}
+                  } @else if (l.state === 'CHANGED') {
+                    <span class="badge badge--warning">Changed since linked</span>
+                  } @else if (l.state === 'DELETED') {
+                    <span class="badge badge--danger">Transaction deleted</span>
+                  } @else {
+                    <span class="badge badge--success">Current</span>
+                  }
+                </td>
+                <td>
+                  @if (!l.removedAt && can().has('LINK_TRANSACTION')) {
+                    <button type="button" class="btn btn--ghost btn--small" [disabled]="busy()" (click)="unlink(l.id)">Unlink</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="card" data-testid="history">
+    <h2 class="card__title">History</h2>
+    @if (history().length === 0) {
+      <p class="muted">No revisions.</p>
+    } @else {
+      <ol class="decision-list">
+        @for (r of history(); track r.sequence) {
+          <li class="decision-item">
+            <div>
+              <strong>{{ revisionLabels[r.kind] }}</strong>
+              <span class="muted small"> · {{ r.createdAt | date: 'medium' }} · status {{ r.statusAfter }}</span>
+            </div>
+            @if (r.reason) { <p class="small">Reason: {{ r.reason }}</p> }
+            <ul class="decision-changes small">
+              @for (c of changeRows(r.changes); track c.field) {
+                <li>
+                  <span class="mono">{{ c.field }}</span>:
+                  @if (c.value !== undefined) { {{ c.value }} } @else { {{ c.from }} → {{ c.to }} }
+                </li>
+              }
+            </ul>
+          </li>
+        }
+      </ol>
+    }
+  </section>
+}

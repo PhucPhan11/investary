@@ -30,6 +30,7 @@ import { NotificationBell } from '../shared/components/notification-bell';
         <a routerLink="/documents" routerLinkActive="nav__link--active" class="nav__link">Document library</a>
         <a routerLink="/emails" routerLinkActive="nav__link--active" class="nav__link">Email research</a>
         <a routerLink="/portfolios" routerLinkActive="nav__link--active" class="nav__link">Portfolios</a>
+        <a routerLink="/journal" routerLinkActive="nav__link--active" class="nav__link">Journal</a>
         <a routerLink="/profile" routerLinkActive="nav__link--active" class="nav__link">Profile</a>
         <a routerLink="/briefs" routerLinkActive="nav__link--active" class="nav__link">Daily brief</a>
         <a routerLink="/assistant" routerLinkActive="nav__link--active" class="nav__link">Research assistant</a>

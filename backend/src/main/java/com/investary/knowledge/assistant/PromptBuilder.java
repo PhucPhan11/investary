@@ -84,10 +84,15 @@ public final class PromptBuilder {
     }
 
     public static String location(SearchHit hit) {
-        if (hit.pageStart() != null) {
-            return hit.pageStart().equals(hit.pageEnd()) ? "trang " + hit.pageStart() : "trang " + hit.pageStart() + "–" + hit.pageEnd();
+        return location(hit.pageStart(), hit.pageEnd(), hit.section());
+    }
+
+    /** Human readable page range, or the section when the chunk has no pages. */
+    public static String location(Integer pageStart, Integer pageEnd, String section) {
+        if (pageStart != null) {
+            return pageStart.equals(pageEnd) ? "trang " + pageStart : "trang " + pageStart + "–" + pageEnd;
         }
-        return hit.section();
+        return section;
     }
 
     /** Breaks tag-like sequences so untrusted text cannot close or open prompt elements. */

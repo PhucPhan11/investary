@@ -36,3 +36,6 @@
 - Spec helpers shared between specs live in `src/app/testing/` (importing another `*.spec.ts` runs its tests twice).
 - Automation Center: `features/automation/` (overview, sources, jobs, job detail, settings, AI usage) under the
   `AutomationCenter` route shell; the header bell is `shared/components/notification-bell.ts`.
+- Decision journal: `features/journal/` (`decision-list`, `decision-form` for `/journal/new` and `/journal/:id/edit`,
+  `decision-detail`); fixtures in `testing/journal-fixtures.ts`. Every write sends the shown `version` as
+  `expectedVersion`; a 409 `DECISION_CONFLICT` maps to a "reload" message.

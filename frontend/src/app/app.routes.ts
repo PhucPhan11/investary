@@ -94,6 +94,26 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'journal',
+    title: 'Decision journal · Investary',
+    loadComponent: () => import('./features/journal/decision-list').then((m) => m.DecisionList),
+  },
+  {
+    path: 'journal/new',
+    title: 'New decision · Investary',
+    loadComponent: () => import('./features/journal/decision-form').then((m) => m.DecisionForm),
+  },
+  {
+    path: 'journal/:id',
+    title: 'Decision · Investary',
+    loadComponent: () => import('./features/journal/decision-detail').then((m) => m.DecisionDetail),
+  },
+  {
+    path: 'journal/:id/edit',
+    title: 'Edit decision · Investary',
+    loadComponent: () => import('./features/journal/decision-form').then((m) => m.DecisionForm),
+  },
+  {
     path: 'notifications',
     title: 'Notifications · Investary',
     loadComponent: () => import('./features/notifications/notification-list').then((m) => m.NotificationList),
