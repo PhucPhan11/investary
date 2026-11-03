@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import com.investary.document.application.DocumentService;
 import com.investary.document.application.DuplicateDocumentException;
 import com.investary.document.application.PdfSignatureValidator;
 import com.investary.document.application.UploadDocumentCommand;
+import com.investary.document.application.UploadOrigin;
 import com.investary.email.EmailProperties;
 import com.investary.email.application.EmailExceptions.DuplicateEmailException;
 import com.investary.email.application.EmailExceptions.EmailTooLargeException;
@@ -73,12 +75,14 @@ public class EmailImportService {
     private final ProvenanceRepository provenance;
     private final TransactionTemplate transactions;
     private final EmailProperties properties;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public EmailImportService(EmlParser parser, ContentAnalyzer analyzer, EmailStorage storage, SourceMessageRepository messages,
                               SourceAttachmentRepository attachments, ResearchIngestionService research,
                               BrokerageRegistry brokerages, DocumentService documents, ProvenanceRepository provenance,
-                              TransactionTemplate transactions, EmailProperties properties, Clock clock) {
+                              TransactionTemplate transactions, EmailProperties properties, ApplicationEventPublisher events,
+                              Clock clock) {
         this.parser = parser;
         this.analyzer = analyzer;
         this.storage = storage;
@@ -90,6 +94,7 @@ public class EmailImportService {
         this.provenance = provenance;
         this.transactions = transactions;
         this.properties = properties;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -101,10 +106,29 @@ public class EmailImportService {
         } catch (IOException e) {
             throw new StorageException("Failed to read uploaded email", e);
         }
-        return importEml(raw, file.getOriginalFilename());
+        return importEml(raw, SourceType.EML_UPLOAD, file.getOriginalFilename());
+    }
+
+    /**
+     * Imports the original RFC 822 bytes of a message fetched by another module (e.g. Gmail sync), through
+     * the same pipeline as an upload: size limit, SHA-256 duplicate check, parsing, storage and research data.
+     *
+     * @throws DuplicateEmailException if identical bytes were imported before
+     * @throws EmailTooLargeException  if the message exceeds {@code investary.email.max-size}
+     * @throws InvalidEmailException   if the bytes are not an email
+     */
+    public UUID importRaw(byte[] raw, SourceType sourceType, String filename) {
+        if (raw.length > properties.maxSize().toBytes()) {
+            throw new EmailTooLargeException(properties.maxSize().toMegabytes());
+        }
+        return importEml(raw, sourceType, filename);
     }
 
     UUID importEml(byte[] raw, String originalFilename) {
+        return importEml(raw, SourceType.EML_UPLOAD, originalFilename);
+    }
+
+    private UUID importEml(byte[] raw, SourceType sourceType, String originalFilename) {
         if (raw.length == 0) {
             throw new InvalidEmailException("The uploaded file is empty");
         }
@@ -126,7 +150,7 @@ public class EmailImportService {
         String storageKey = storage.store(raw, now);
         UUID messageId;
         try {
-            messageId = transactions.execute(status -> persist(parsed, analysis, raw.length, sha256, storageKey,
+            messageId = transactions.execute(status -> persist(parsed, analysis, sourceType, raw.length, sha256, storageKey,
                     sanitizeFilename(originalFilename), brokerage, now));
         } catch (RuntimeException e) {
             discardStoredFile(storageKey);
@@ -138,11 +162,21 @@ public class EmailImportService {
             }
             throw e;
         }
-        log.info("Email imported emailId={} size={} parsingStatus={} links={} attachments={}",
-                messageId, raw.length, analysis.status(), analysis.content().links().size(), parsed.attachments().size());
+        log.info("Email imported emailId={} sourceType={} size={} parsingStatus={} links={} attachments={}",
+                messageId, sourceType, raw.length, analysis.status(), analysis.content().links().size(), parsed.attachments().size());
 
         importPdfAttachments(messageId, parsed.attachments(), brokerage);
+        publishImported(messageId, sourceType);
         return messageId;
+    }
+
+    private void publishImported(UUID messageId, SourceType sourceType) {
+        try {
+            events.publishEvent(new EmailImportedEvent(messageId, sourceType));
+        } catch (RuntimeException e) {
+            // The import is committed; follow-up processing has its own reconciliation.
+            log.error("Email imported event failed emailId={}", messageId, e);
+        }
     }
 
     private void validateUpload(MultipartFile file) {
@@ -186,9 +220,9 @@ public class EmailImportService {
         return new Analysis(content, status, error);
     }
 
-    private UUID persist(ParsedEmail parsed, Analysis analysis, long size, String sha256, String storageKey,
+    private UUID persist(ParsedEmail parsed, Analysis analysis, SourceType sourceType, long size, String sha256, String storageKey,
                          String originalFilename, String brokerage, Instant now) {
-        SourceMessage message = new SourceMessage(SourceType.EML_UPLOAD, storageKey, originalFilename, size, sha256,
+        SourceMessage message = new SourceMessage(sourceType, storageKey, originalFilename, size, sha256,
                 truncate(parsed.messageId(), 998), truncate(parsed.senderAddress(), 320), truncate(parsed.senderName(), 500),
                 parsed.recipients(), parsed.subject(), parsed.sentAt(), now);
         message.applyContent(brokerage, analysis.content().languages(), parsed.htmlBody(),
@@ -231,7 +265,7 @@ public class EmailImportService {
             try {
                 String name = parsed.filename() == null ? "attachment.pdf" : parsed.filename();
                 documentId = documents.upload(new UploadDocumentCommand(new ByteArrayResource(parsed.content()), name,
-                        brokerage, null, null, null)).getId();
+                        brokerage, null, null, null, UploadOrigin.EMAIL_ATTACHMENT)).getId();
             } catch (DuplicateDocumentException e) {
                 documentId = e.getExistingDocumentId();
             } catch (RuntimeException e) {

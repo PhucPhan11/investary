@@ -25,6 +25,38 @@ const BADGES: Record<string, { label: string; tone: Tone }> = {
   NAVIGATION: { label: 'Navigation', tone: 'muted' },
   PROMOTION: { label: 'Promotion', tone: 'muted' },
   OTHER: { label: 'Other', tone: 'neutral' },
+  // Gmail integration and sync runs
+  NOT_CONFIGURED: { label: 'Not configured', tone: 'muted' },
+  CONNECTED: { label: 'Connected', tone: 'success' },
+  RECONNECT_REQUIRED: { label: 'Reconnect required', tone: 'danger' },
+  DISCONNECTED: { label: 'Not connected', tone: 'neutral' },
+  RUNNING: { label: 'Running…', tone: 'warning' },
+  SUCCEEDED: { label: 'Succeeded', tone: 'success' },
+  SYNC_PARTIAL: { label: 'Partial (continues)', tone: 'warning' },
+  // Research workflows and their stages (prefixed: PARTIAL/FAILED mean something else for parsing)
+  WORKFLOW_NOT_STARTED: { label: 'Not started', tone: 'neutral' },
+  WORKFLOW_PENDING: { label: 'Waiting', tone: 'neutral' },
+  WORKFLOW_RUNNING: { label: 'Running…', tone: 'warning' },
+  WORKFLOW_COMPLETED: { label: 'Completed', tone: 'success' },
+  WORKFLOW_PARTIAL: { label: 'Partial', tone: 'warning' },
+  WORKFLOW_FAILED: { label: 'Failed', tone: 'danger' },
+  WORKFLOW_SKIPPED: { label: 'Skipped', tone: 'muted' },
+  // Daily briefs (prefixed for the same reason)
+  BRIEF_COMPLETED: { label: 'Completed', tone: 'success' },
+  BRIEF_PARTIAL: { label: 'Partial (no AI part)', tone: 'warning' },
+  BRIEF_FAILED: { label: 'Failed', tone: 'danger' },
+  BRIEF_SKIPPED: { label: 'Skipped (nothing new)', tone: 'muted' },
+  // Automation jobs (Automation Center)
+  WAITING: { label: 'Waiting', tone: 'info' },
+  // Component health (prefixed: health is not a job status)
+  HEALTH_OPERATIONAL: { label: 'Operational', tone: 'success' },
+  HEALTH_DEGRADED: { label: 'Degraded', tone: 'warning' },
+  HEALTH_DISABLED: { label: 'Disabled', tone: 'muted' },
+  HEALTH_UNAVAILABLE: { label: 'Unavailable', tone: 'danger' },
+  // Notification priority
+  NOTIF_HIGH: { label: 'High', tone: 'danger' },
+  NOTIF_NORMAL: { label: 'Normal', tone: 'info' },
+  NOTIF_LOW: { label: 'Low', tone: 'muted' },
 };
 
 /** Small coloured label for statuses and categories returned by the API. */

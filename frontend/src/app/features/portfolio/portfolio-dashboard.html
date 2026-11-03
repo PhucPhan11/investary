@@ -1,0 +1,244 @@
+<a routerLink="/portfolios" class="back-link">← Portfolios</a>
+
+@if (loading()) {
+  <p class="muted" role="status">Loading portfolio…</p>
+}
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+@if (notice(); as message) {
+  <app-alert kind="success" [dismissible]="true" (dismissed)="notice.set(null)">{{ message }}</app-alert>
+}
+
+@if (portfolio(); as p) {
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">{{ p.name }}</h1>
+      <p class="page-subtitle">{{ p.description || 'Holdings computed from your transactions (weighted average cost).' }}</p>
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <section class="stats" aria-label="Overview">
+      <div class="stat-card">
+        <span class="stat-card__label">Cost basis ({{ s.currency }})</span>
+        <span class="stat-card__value">{{ s.totalCostBasis | number: '1.0-2' }}</span>
+        <span class="muted small">{{ s.openHoldings }} open · {{ s.closedPositions }} closed</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__label">Market value ({{ s.currency }})</span>
+        @if (s.totalMarketValue !== null) {
+          <span class="stat-card__value">{{ s.totalMarketValue | number: '1.0-2' }}</span>
+        } @else {
+          <span class="stat-card__value muted" data-testid="market-value-unavailable">Not available</span>
+          @if (s.pricedMarketValue !== null) {
+            <span class="muted small">Priced holdings only: {{ s.pricedMarketValue | number: '1.0-2' }} ({{ s.pricedCoveragePct }}% of cost)</span>
+          }
+        }
+        @if (valuation(); as v) {
+          <span [class]="'badge badge--' + v.tone" [title]="v.text">{{ v.label }}</span>
+        }
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__label">Unrealized P&amp;L</span>
+        @if (s.unrealizedPnl !== null) {
+          <span [class]="'stat-card__value ' + tone(s.unrealizedPnl)">{{ s.unrealizedPnl | number: '1.0-2' }}</span>
+          <span class="muted small">{{ s.unrealizedPnlPct }}% vs cost</span>
+        } @else {
+          <span class="stat-card__value muted" data-testid="pnl-unavailable">—</span>
+          <span class="muted small">Needs a price for every holding.</span>
+        }
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__label">Realized P&amp;L</span>
+        <span [class]="'stat-card__value ' + tone(s.realizedPnl)">{{ s.realizedPnl | number: '1.0-2' }}</span>
+        <span class="muted small">Net of fees and taxes</span>
+      </div>
+    </section>
+    @if (valuation(); as v) {
+      <p class="muted small">
+        {{ v.text }} Valuation date {{ s.valuationDate }}; prices older than {{ s.priceStaleAfterDays }} days are stale.
+      </p>
+    }
+    <details class="limitations">
+      <summary class="small">Limitations of these figures</summary>
+      <ul class="small">
+        @for (l of s.limitations; track l) {
+          <li>{{ l }}</li>
+        }
+      </ul>
+    </details>
+  }
+
+  @if (allocation(); as a) {
+    <section class="card allocation" aria-label="Allocation">
+      <div class="allocation__col">
+        <h2 class="card__title">Allocation by cost basis</h2>
+        <p class="muted small">Money invested, not market value.</p>
+        @for (slice of a.costBasis.byInstrument; track slice.key) {
+          <div class="bar-row">
+            <span class="bar-row__label">{{ slice.key }}</span>
+            <span class="bar"><span class="bar__fill" [style.width.%]="slice.weightPct ?? 0"></span></span>
+            <span class="bar-row__value">{{ slice.weightPct }}%</span>
+          </div>
+        } @empty {
+          <p class="muted small">No open holdings.</p>
+        }
+        <h3 class="small allocation__sub">By instrument type</h3>
+        @for (slice of a.costBasis.byInstrumentType; track slice.key) {
+          <div class="bar-row">
+            <span class="bar-row__label">{{ slice.key }}</span>
+            <span class="bar"><span class="bar__fill bar__fill--alt" [style.width.%]="slice.weightPct ?? 0"></span></span>
+            <span class="bar-row__value">{{ slice.weightPct }}%</span>
+          </div>
+        }
+      </div>
+      <div class="allocation__col">
+        <h2 class="card__title">Allocation by market value</h2>
+        @if (marketAllocation(); as m) {
+          <p class="muted small">From your manual price observations.</p>
+          @for (slice of m.byInstrument; track slice.key) {
+            <div class="bar-row">
+              <span class="bar-row__label">{{ slice.key }}</span>
+              <span class="bar"><span class="bar__fill" [style.width.%]="slice.weightPct ?? 0"></span></span>
+              <span class="bar-row__value">{{ slice.weightPct }}%</span>
+            </div>
+          }
+        } @else {
+          <p class="muted small" data-testid="market-allocation-unavailable">{{ a.marketValueUnavailableReason }}</p>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="card" aria-label="Holdings">
+    <div class="card__header">
+      <h2 class="card__title">Holdings</h2>
+    </div>
+    @if (holdings().length === 0) {
+      <app-empty-state title="No open holdings">Add an opening position or a buy below.</app-empty-state>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Symbol</th><th class="num">Quantity</th><th class="num">Avg cost</th><th class="num">Cost basis</th>
+              <th class="num">Weight (cost)</th><th>Latest price</th><th class="num">Market value</th>
+              <th class="num">Unrealized P&amp;L</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (h of holdings(); track h.instrumentId) {
+              <tr>
+                <td data-label="Symbol"><strong>{{ h.symbol }}</strong> <span class="muted small">{{ h.instrumentType }}</span></td>
+                <td data-label="Quantity" class="num">{{ h.quantity | number: '1.0-6' }}</td>
+                <td data-label="Avg cost" class="num">{{ h.averageCost | number: '1.0-4' }}</td>
+                <td data-label="Cost basis" class="num">{{ h.costBasis | number: '1.0-2' }}</td>
+                <td data-label="Weight (cost)" class="num">{{ h.costWeightPct }}%</td>
+                <td data-label="Latest price">
+                  @if (h.latestPrice !== null) {
+                    {{ h.latestPrice | number: '1.0-4' }}
+                    <span class="muted small">{{ h.priceAsOf }} · {{ h.priceSource }}</span>
+                    @if (h.valuationStatus === 'STALE') {
+                      <span class="badge badge--warning">{{ h.priceAgeDays }} days old</span>
+                    }
+                  } @else {
+                    <span class="muted">No price</span>
+                  }
+                </td>
+                <td data-label="Market value" class="num">{{ h.marketValue === null ? '—' : (h.marketValue | number: '1.0-2') }}</td>
+                <td data-label="Unrealized P&L" [class]="'num ' + tone(h.unrealizedPnl)">
+                  {{ h.unrealizedPnl === null ? '—' : (h.unrealizedPnl | number: '1.0-2') }}
+                  @if (h.unrealizedPnlPct !== null) { <span class="small">({{ h.unrealizedPnlPct }}%)</span> }
+                </td>
+                <td class="actions-col">
+                  <button type="button" class="btn btn--ghost btn--small" (click)="startPricing(h)">Add price</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (pricing(); as h) {
+      <form class="subform form-grid" (ngSubmit)="savePrice()">
+        <legend class="field__label">Manual price for {{ h.symbol }} (where did you read it?)</legend>
+        <label class="field">
+          <span class="field__label">Price / NAV</span>
+          <input class="input" type="number" name="price" min="0" step="any" [(ngModel)]="priceDraft.price" />
+        </label>
+        <label class="field">
+          <span class="field__label">As of</span>
+          <input class="input" type="date" name="asOf" [max]="maxDate" [(ngModel)]="priceDraft.asOf" />
+        </label>
+        <label class="field">
+          <span class="field__label">Source</span>
+          <input class="input" name="source" maxlength="200" placeholder="e.g. Bảng giá HOSE" [(ngModel)]="priceDraft.source" />
+        </label>
+        <label class="field">
+          <span class="field__label">Note</span>
+          <input class="input" name="note" maxlength="1000" [(ngModel)]="priceDraft.note" />
+        </label>
+        <div class="actions">
+          <button type="button" class="btn btn--ghost btn--small" (click)="pricing.set(null)">Cancel</button>
+          <button type="submit" class="btn btn--primary btn--small"
+                  [disabled]="!priceDraft.price || priceDraft.price <= 0 || !priceDraft.source.trim() || !priceDraft.asOf">
+            Save price
+          </button>
+        </div>
+      </form>
+    }
+  </section>
+
+  <app-transaction-form
+    [portfolioId]="p.id"
+    [currency]="p.baseCurrency"
+    [instruments]="instruments()"
+    [transaction]="editing()"
+    (saved)="onSaved()"
+    (instrumentCreated)="onInstrumentCreated($event)"
+    (cancelled)="editing.set(null)"
+  />
+
+  <section class="card" aria-label="Transactions">
+    <div class="card__header">
+      <h2 class="card__title">Transactions</h2>
+      <span class="muted small">{{ p.transactionCount }} total · newest first</span>
+    </div>
+    @if (transactions().length === 0) {
+      <p class="muted small">No transactions yet.</p>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th><th>Type</th><th>Symbol</th><th class="num">Quantity</th><th class="num">Price</th>
+              <th class="num">Fees</th><th class="num">Taxes</th><th>Notes</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of transactions(); track t.id) {
+              <tr>
+                <td data-label="Date">{{ t.tradeDate | date: 'mediumDate' }}</td>
+                <td data-label="Type">{{ typeLabel(t.type) }}</td>
+                <td data-label="Symbol">{{ t.symbol }}</td>
+                <td data-label="Quantity" class="num">{{ t.quantity | number: '1.0-6' }}</td>
+                <td data-label="Price" class="num">{{ t.price | number: '1.0-4' }}</td>
+                <td data-label="Fees" class="num">{{ t.fees | number: '1.0-2' }}</td>
+                <td data-label="Taxes" class="num">{{ t.taxes | number: '1.0-2' }}</td>
+                <td data-label="Notes">{{ t.notes }}</td>
+                <td class="actions-col">
+                  <button type="button" class="btn btn--ghost btn--small" (click)="editing.set(t)">Edit</button>
+                  <button type="button" class="btn btn--danger btn--small" (click)="deleteTransaction(t)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <app-research-insights [portfolioId]="p.id" [revision]="revision()" />
+}

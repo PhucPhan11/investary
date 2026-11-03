@@ -1,0 +1,171 @@
+<header class="page-header">
+  <div>
+    <h1 class="page-title">Investor profile &amp; goals</h1>
+    <p class="page-subtitle">
+      Used as context by the portfolio-aware assistant. Investary only stores what you enter and gives no personalised advice.
+    </p>
+  </div>
+</header>
+
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+@if (notice(); as message) {
+  <app-alert kind="success" [dismissible]="true" (dismissed)="notice.set(null)">{{ message }}</app-alert>
+}
+
+@if (loading()) {
+  <p class="muted" role="status">Loading profile…</p>
+} @else {
+  <form class="card" (ngSubmit)="saveProfile()">
+    <div class="card__header">
+      <h2 class="card__title">Profile</h2>
+      @if (!configured()) {
+        <span class="badge badge--neutral">Not set yet</span>
+      }
+    </div>
+    <div class="form-grid">
+      <label class="field">
+        <span class="field__label">Experience</span>
+        <select class="input" name="experienceLevel" [(ngModel)]="profile.experienceLevel">
+          <option [ngValue]="null">Not specified</option>
+          @for (level of experienceLevels; track level) {
+            <option [ngValue]="level">{{ level }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Risk tolerance</span>
+        <select class="input" name="riskTolerance" [(ngModel)]="profile.riskTolerance">
+          <option [ngValue]="null">Not specified</option>
+          @for (level of riskLevels; track level) {
+            <option [ngValue]="level">{{ level }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Investment horizon</span>
+        <select class="input" name="investmentHorizon" [(ngModel)]="profile.investmentHorizon">
+          <option [ngValue]="null">Not specified</option>
+          @for (h of horizons; track h.value) {
+            <option [ngValue]="h.value">{{ h.label }}</option>
+          }
+        </select>
+      </label>
+      <fieldset class="field field--wide checkbox-row">
+        <legend class="field__label">Preferred instruments</legend>
+        @for (type of instrumentTypes; track type) {
+          <label class="small">
+            <input
+              type="checkbox"
+              [checked]="profile.preferredInstruments.includes(type)"
+              (change)="togglePreferred(type, $any($event.target).checked)"
+            />
+            {{ type }}
+          </label>
+        }
+      </fieldset>
+      <label class="field field--wide">
+        <span class="field__label">Objectives</span>
+        <textarea class="input" name="objectives" rows="2" maxlength="2000" [(ngModel)]="profile.objectives"></textarea>
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Restrictions (e.g. sectors or tickers you avoid)</span>
+        <textarea class="input" name="restrictions" rows="2" maxlength="2000" [(ngModel)]="profile.restrictions"></textarea>
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Liquidity needs</span>
+        <textarea class="input" name="liquidityNeeds" rows="2" maxlength="2000" [(ngModel)]="profile.liquidityNeeds"></textarea>
+      </label>
+      <label class="field field--wide">
+        <span class="field__label">Notes</span>
+        <textarea class="input" name="notes" rows="2" maxlength="4000" [(ngModel)]="profile.notes"></textarea>
+      </label>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save profile' }}</button>
+    </div>
+  </form>
+}
+
+<section class="card" aria-label="Goals">
+  <div class="card__header">
+    <h2 class="card__title">Goals</h2>
+  </div>
+  @if (goals().length === 0) {
+    <p class="muted small">No goals yet.</p>
+  } @else {
+    <table class="table">
+      <thead>
+        <tr><th>Goal</th><th>Priority</th><th class="num">Target amount</th><th>Target date</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (g of goals(); track g.id) {
+          <tr>
+            <td data-label="Goal"><strong>{{ g.name }}</strong> @if (g.description) { <span class="muted small">{{ g.description }}</span> }</td>
+            <td data-label="Priority">{{ g.priority }}</td>
+            <td data-label="Target amount" class="num">
+              {{ g.targetAmount === null ? '—' : (g.targetAmount | number: '1.0-2') + ' ' + g.currency }}
+            </td>
+            <td data-label="Target date">{{ g.targetDate ?? '—' }}</td>
+            <td class="actions-col">
+              <button type="button" class="btn btn--ghost btn--small" (click)="editGoal(g)">Edit</button>
+              <button type="button" class="btn btn--danger btn--small" (click)="deleteGoal(g)">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  <form class="subform form-grid" (ngSubmit)="saveGoal()">
+    <legend class="field__label">{{ editingGoalId() ? 'Edit goal' : 'New goal' }}</legend>
+    <label class="field">
+      <span class="field__label">Name</span>
+      <input class="input" name="goalName" maxlength="200" [(ngModel)]="goal.name" />
+    </label>
+    <label class="field">
+      <span class="field__label">Priority</span>
+      <select class="input" name="goalPriority" [(ngModel)]="goal.priority">
+        @for (p of priorities; track p) {
+          <option [value]="p">{{ p }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Target amount (optional)</span>
+      <input class="input" type="number" name="goalAmount" min="0" step="any" [(ngModel)]="goal.targetAmount" />
+    </label>
+    <label class="field">
+      <span class="field__label">Currency</span>
+      <input class="input" name="goalCurrency" maxlength="3" [(ngModel)]="goal.currency" />
+    </label>
+    <label class="field">
+      <span class="field__label">Target date (optional)</span>
+      <input class="input" type="date" name="goalDate" [(ngModel)]="goal.targetDate" />
+    </label>
+    <label class="field field--wide">
+      <span class="field__label">Description</span>
+      <input class="input" name="goalDescription" maxlength="2000" [(ngModel)]="goal.description" />
+    </label>
+    <label class="field field--wide">
+      <span class="field__label">Notes</span>
+      <input class="input" name="goalNotes" maxlength="2000" [(ngModel)]="goal.notes" />
+    </label>
+    @if (goal.name && goalProblems().length) {
+      <ul class="form-problems">
+        @for (p of goalProblems(); track p) {
+          <li>{{ p }}</li>
+        }
+      </ul>
+    }
+    <div class="actions">
+      @if (editingGoalId()) {
+        <button type="button" class="btn btn--ghost btn--small" (click)="cancelGoal()">Cancel</button>
+      }
+      <button type="submit" class="btn btn--primary btn--small" [disabled]="goalProblems().length > 0">
+        {{ editingGoalId() ? 'Save goal' : 'Add goal' }}
+      </button>
+    </div>
+  </form>
+</section>

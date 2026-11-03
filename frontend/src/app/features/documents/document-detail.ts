@@ -10,12 +10,13 @@ import { ResearchDocument } from '../../core/models/document.model';
 import { EmailSummary } from '../../core/models/email.model';
 import { Alert } from '../../shared/components/alert';
 import { IndexStatus } from '../../shared/components/index-status';
+import { WorkflowStatusPanel } from '../../shared/components/workflow-status';
 import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
 import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
 
 @Component({
   selector: 'app-document-detail',
-  imports: [DatePipe, RouterLink, Alert, IndexStatus, FileSizePipe, ReportTypeLabelPipe],
+  imports: [DatePipe, RouterLink, Alert, IndexStatus, WorkflowStatusPanel, FileSizePipe, ReportTypeLabelPipe],
   template: `
     <a routerLink="/documents" class="link back-link">← Document library</a>
     @if (error(); as message) {
@@ -40,6 +41,7 @@ import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
         </div>
       </section>
 
+      <app-workflow-status [sourceId]="d.id" />
       <app-index-status sourceType="DOCUMENT" [sourceId]="d.id" />
 
       <section class="card">

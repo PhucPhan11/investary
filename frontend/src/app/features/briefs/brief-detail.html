@@ -1,0 +1,230 @@
+<p class="small"><a class="link" routerLink="/briefs">← All briefs</a></p>
+
+@if (loading() && !brief()) {
+  <p class="muted" role="status">Loading brief…</p>
+}
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+@if (brief(); as b) {
+  <section class="page-header">
+    <div>
+      <h1 class="page-title">Daily brief · {{ b.businessDate | date: 'mediumDate' }}</h1>
+      <p class="page-subtitle">
+        {{ b.portfolioName ?? 'General brief' }} · period {{ b.periodStart | date: 'short' }} – {{ b.periodEnd | date: 'short' }}
+        ({{ b.zone }}{{ b.partialPeriod ? ', partial period' : '' }}) · generated {{ b.generatedAt | date: 'short' }}
+        · revision {{ b.revision }}
+      </p>
+    </div>
+    <div class="actions">
+      <app-status-badge [value]="'BRIEF_' + b.status" />
+      @if (b.researchState) {
+        <span class="tag">{{ stateLabels[b.researchState] }}</span>
+      }
+      <button type="button" class="btn btn--small btn--ghost" [disabled]="regenerating()" (click)="regenerate()">
+        {{ regenerating() ? 'Regenerating…' : 'Regenerate' }}
+      </button>
+    </div>
+  </section>
+
+  @if (regenerateError(); as message) {
+    <app-alert kind="error">{{ message }}</app-alert>
+  }
+  @if (job(); as j) {
+    @if (j.status === 'SUCCEEDED' && j.outcome === 'UNCHANGED') {
+      <app-alert kind="info">The inputs have not changed since this revision; no new revision was created.</app-alert>
+    } @else if (j.status === 'FAILED') {
+      <app-alert kind="error">Regeneration failed{{ j.errorSummary ? ': ' + j.errorSummary : '.' }}</app-alert>
+    } @else if (j.status !== 'SUCCEEDED') {
+      <p class="muted small" role="status">Regenerating · attempt {{ j.attempts }}/{{ j.maxAttempts }}…</p>
+    }
+  }
+  @if (b.status === 'FAILED') {
+    <app-alert kind="error">This generation failed{{ b.errorSummary ? ': ' + b.errorSummary : '.' }}</app-alert>
+  } @else if (b.errorSummary) {
+    <app-alert kind="info">The AI part is missing ({{ b.errorCode }}): {{ b.errorSummary }}</app-alert>
+  }
+
+  <section class="card brief-facts" data-testid="brief-facts">
+    <dl class="meta">
+      <dt>Reporting period</dt>
+      <dd>{{ b.periodStart | date: 'medium' }} – {{ b.periodEnd | date: 'medium' }} · {{ b.zone }}{{ b.partialPeriod ? ' · partial period' : '' }}</dd>
+      <dt>Generated</dt>
+      <dd>{{ b.generatedAt | date: 'medium' }} · sources cut off at {{ b.sourceCutoff | date: 'medium' }}</dd>
+      <dt>Source freshness</dt>
+      <dd data-testid="freshness">
+        @if (freshness().newest) {
+          {{ freshness().sources }} source(s) published {{ freshness().oldest | date: 'mediumDate' }} – {{ freshness().newest | date: 'mediumDate' }}
+        } @else {
+          No dated sources
+        }
+        @if (freshness().old) { · {{ freshness().old }} older research }
+        @if (freshness().late) { · {{ freshness().late }} late arrival(s) }
+        @if (freshness().undated) { · {{ freshness().undated }} without a publication date }
+      </dd>
+    </dl>
+    @if (b.limitations.length) {
+      <h3 class="small">Evidence limitations</h3>
+      <ul class="brief-items" data-testid="limitations">
+        @for (l of b.limitations; track $index) {
+          <li class="small">{{ l.message }}</li>
+        }
+      </ul>
+    }
+    <p class="small muted">
+      A brief summarises stored research for this period; it is not real-time market data. "From source" items are the
+      brokerage's statements; "AI interpretation" items are model text checked against the cited sources.
+    </p>
+  </section>
+
+  <div class="assistant brief">
+    <section class="assistant__chat">
+      @for (section of b.sections; track section.key) {
+        <section class="card brief-section" [attr.data-section]="section.key">
+          <div class="card__header">
+            <h2 class="card__title">{{ section.title }}</h2>
+            @if (evidence(section.evidenceStatus); as e) {
+              <span [class]="'badge badge--' + e.tone">{{ e.label }}</span>
+            }
+          </div>
+          @if (section.note) {
+            <p class="muted small">{{ section.note }}</p>
+          }
+          <ul class="brief-items">
+            @for (item of section.items; track $index) {
+              <li class="brief-item" [attr.data-kind]="item.kind">
+                <span [class]="'badge badge--' + kinds[item.kind].tone">{{ kinds[item.kind].label }}</span>
+                @if (item.kind === 'AI_INTERPRETATION' && evidence(item.evidenceStatus); as e) {
+                  <span [class]="'badge badge--' + e.tone">{{ e.label }}</span>
+                }
+                <span class="brief-item__text">
+                  @for (segment of segments(item); track $index) {
+                    @if (segment.text !== null) {<span>{{ segment.text }}</span>} @else {
+                      @for (label of segment.labels; track label) {
+                        <button
+                          type="button"
+                          class="cite"
+                          [class.cite--active]="selected() === label"
+                          [attr.aria-label]="'Show source ' + label"
+                          (click)="show(label)"
+                        >{{ label }}</button>
+                      }
+                    }
+                  }
+                </span>
+                @if (item.assessmentId && b.portfolioId) {
+                  <a class="link small" [routerLink]="['/portfolios', b.portfolioId]">Portfolio</a>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      }
+      @if (b.sections.length === 0) {
+        <p class="muted">This brief has no content.</p>
+      }
+
+      @if (b.pendingSources.length || b.omittedSources.length) {
+        <section class="card">
+          <div class="card__header"><h2 class="card__title">Sources not analysed</h2></div>
+          <ul class="brief-items">
+            @for (s of b.pendingSources; track $index) {
+              <li class="brief-item">
+                <span class="tag tag--plain">{{ s.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>
+                @if (sourceLink(s); as link) {
+                  <a class="link" [routerLink]="link">{{ s.title || '(no title)' }}</a>
+                } @else { {{ s.title || '(deleted source)' }} }
+                <span class="muted small">imported {{ s.importedAt | date: 'short' }} · {{ pendingState(s.state) }}</span>
+              </li>
+            }
+            @for (s of b.omittedSources; track $index) {
+              <li class="brief-item">
+                <span class="tag tag--plain">{{ s.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>
+                @if (sourceLink(s); as link) {
+                  <a class="link" [routerLink]="link">{{ s.title || '(no title)' }}</a>
+                } @else { {{ s.title || '(deleted source)' }} }
+                <span class="muted small">left out by the source or length limits</span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      <section class="card">
+        <div class="card__header"><h2 class="card__title">About this brief</h2></div>
+        <p class="muted small">
+          AI: {{ b.aiStatus }}{{ b.model ? ' (' + b.model + ')' : '' }}
+          @if (b.inputTokens !== null || b.outputTokens !== null) {
+            · tokens reported by the provider: {{ b.inputTokens ?? '—' }} in / {{ b.outputTokens ?? '—' }} out
+          }
+          · sources cut off at {{ b.sourceCutoff | date: 'short' }} · prompt {{ b.promptVersion }} · config {{ b.configVersion }}
+        </p>
+        @if (b.revisions.length > 1) {
+          <h3 class="small">Revisions</h3>
+          <ul class="brief-items">
+            @for (r of b.revisions; track r.id) {
+              <li>
+                @if (r.id === b.id) {
+                  <strong>Revision {{ r.revision }}</strong>
+                } @else {
+                  <a class="link" [routerLink]="['/briefs', r.id]">Revision {{ r.revision }}</a>
+                }
+                <span class="muted small">{{ r.triggerType }} · {{ r.status }} · {{ r.generatedAt | date: 'short' }}</span>
+              </li>
+            }
+          </ul>
+        }
+        <p class="turn__disclaimer">{{ b.disclaimer }}</p>
+      </section>
+    </section>
+
+    <aside class="assistant__sources card" aria-label="Sources">
+      <div class="card__header">
+        <h2 class="card__title">Sources</h2>
+        <span class="muted small">{{ b.citations.length }}</span>
+      </div>
+      @if (b.citations.length) {
+        <ol class="sources">
+          @for (c of b.citations; track c.label) {
+            <li class="source" [id]="'source-' + c.label" [class.source--active]="selected() === c.label">
+              <div class="source__head">
+                <button type="button" class="cite" (click)="show(c.label)">{{ c.label }}</button>
+                <span class="tag tag--plain">{{ c.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>
+                @if (c.brokerage) {
+                  <span class="tag">{{ c.brokerage }}</span>
+                }
+                @if (c.oldPublication) {
+                  <span class="badge badge--warning">Older research</span>
+                }
+                @if (c.lateArrival) {
+                  <span class="badge badge--muted">Late arrival</span>
+                }
+              </div>
+              @if (sourceLink(c); as link) {
+                <a class="source__title link" [routerLink]="link">{{ c.title || '(no title)' }}</a>
+              } @else {
+                <span class="source__title">{{ c.title || '(deleted source)' }}</span>
+              }
+              <p class="source__meta muted small">
+                @if (c.publishedOn) {
+                  {{ c.dateBasis === 'EMAIL_SENT' ? 'Email date' : 'Published' }} {{ c.publishedOn | date: 'mediumDate' }}
+                } @else { No publication date }
+                @if (c.location) { · {{ c.location }} }
+              </p>
+              @if (selected() === c.label) {
+                <p class="source__meta muted small">
+                  @if (c.sentAt) { Sent {{ c.sentAt | date: 'short' }} · }
+                  Imported {{ c.importedAt | date: 'short' }} · searchable since {{ c.indexedAt | date: 'short' }}
+                </p>
+                <blockquote class="source__excerpt">{{ c.excerpt }}</blockquote>
+              }
+            </li>
+          }
+        </ol>
+      } @else {
+        <p class="muted small">No new sources in this period.</p>
+      }
+    </aside>
+  </div>
+}

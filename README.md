@@ -11,6 +11,31 @@ Personal, AI-ready investment research assistant.
   extraction, chunking, embeddings in PostgreSQL + pgvector), searched with hybrid retrieval, and
   questions are answered in Vietnamese by a configurable LLM (default: local Ollama) with
   backend-validated citations. See [docs/phase-3-implementation.md](docs/phase-3-implementation.md).
+- **Phase 4:** **portfolio-aware investment intelligence**. An investor profile and goals, portfolios
+  built from transactions (weighted-average cost, manual price observations, honest valuation status),
+  research matched to holdings, saved impact assessments that go stale when holdings or evidence change,
+  and a portfolio-aware assistant mode. The AI only reads portfolio data. See
+  [docs/phase-4-implementation.md](docs/phase-4-implementation.md).
+- **Phase 5 / Milestone 1:** **Gmail integration**. Connect one Gmail account read-only (OAuth 2.0 + PKCE,
+  encrypted refresh token, never sent to the browser), define the brokerage senders to import, and let an
+  initial lookback plus incremental history sync (scheduled or *Sync now*) feed matching messages into the
+  Phase 2 import as their original bytes. See [docs/phase-5-milestone-1.md](docs/phase-5-milestone-1.md).
+- **Phase 5 / Milestone 2:** **automated research processing**. Each new email (Gmail or upload) or library
+  document runs a persistent workflow: approved PDF links are downloaded (Gmail rules with automatic download
+  only), the email and its reports are indexed, research is matched to holdings by ticker, and an impact
+  assessment is created for matched portfolios (daily cap). Failed steps can be retried without re-importing.
+  See [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md).
+- **Phase 5 / Milestone 3:** **daily investment brief**. Every morning (08:00 Asia/Ho_Chi_Minh by default) a
+  Vietnamese brief per portfolio lists the research that became searchable in the period, what it means for
+  each holding, research to read next, differing brokerage views, follow-ups and limitations. Facts, quotes
+  and dates come from stored records; the optional model part is validated against the cited chunks.
+  See [docs/phase-5-milestone-3.md](docs/phase-5-milestone-3.md).
+- **Phase 5 / Milestone 4:** **Automation Center and in-app notifications**. One place (`/automation`) for the
+  Gmail connection and sync history, record counts and component health, brokerage source rules, job history
+  with attempt history and safe retry, runtime settings (Gmail polling, processing, brief schedule, AI limits)
+  and AI usage. A header bell shows deterministic, de-duplicated notifications (portfolio research, risks,
+  conflicting views, brief ready, sync and processing failures).
+  See [docs/phase-5-milestone-4.md](docs/phase-5-milestone-4.md).
 
 > ⚠️ **Local, single-user only.** There is **no authentication or authorization**. Never expose the
 > backend (port 8080) or the database to a network you do not fully control.
@@ -27,14 +52,20 @@ investary/
 │       ├── email/        EML import: api, application, domain, persistence, parsing, storage
 │       ├── research/     Links, classification, secure downloads/jobs, research items, provenance
 │       ├── knowledge/    Extraction, chunking, embeddings, index jobs, hybrid search, RAG assistant
+│       ├── investor/     Investor profile and goals
+│       ├── portfolio/    Instruments, prices, portfolios, transactions, holdings/valuation/allocation
+│       ├── intelligence/ Research matching, impact assessments, portfolio-aware assistant (read-only)
+│       ├── automation/   Gmail OAuth, source rules, Gmail sync (Phase 5 / M1); research workflows and jobs (M2)
 │       └── common/       Errors (RFC 9457), file store, tx helpers, CORS, shared web types
 ├── frontend/         Angular 22 · standalone components · signals · SCSS (no UI library)
 ├── infrastructure/   docker-compose.yml (PostgreSQL 17 + pgvector), .env.example
-└── docs/             architecture.md, phase-2/3-implementation.md, ADRs
+└── docs/             architecture.md, phase-2/3/4-implementation.md, ADRs
 ```
 
 - **Modular monolith.** One deployable backend, organised by business capability. Dependencies point one way:
-  `knowledge → email → research → document → common`. See [docs/architecture.md](docs/architecture.md).
+  `knowledge → email → research → document → common`; `investor` and `portfolio` depend only on `common`,
+  and `intelligence` sits on top of `knowledge`, `portfolio` and `investor`; `automation` imports Gmail mail
+  through `email`'s import service. See [docs/architecture.md](docs/architecture.md).
 - **Sources of truth.** Original files are authoritative: PDFs in the document store, `.eml` files in
   the email store, both outside the repo. PostgreSQL holds metadata and *derived* data (parsed text,
   links, research items), which can be regenerated from the originals.
@@ -74,7 +105,7 @@ cd backend
 PowerShell, if your default `JAVA_HOME` is not JDK 21:
 
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot'; cd backend; .\mvnw.cmd spring-boot:run
+$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.10.7-hotspot'; cd backend; .\mvnw.cmd spring-boot:run
 ```
 
 `spring-boot:run` activates the **`dev`** profile, which:
@@ -165,13 +196,51 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_AI_TIMEOUT` | `120s` | Provider request / answer timeout |
 | `INVESTARY_KNOWLEDGE_AUTO_INDEX` | `true` | Track new and existing documents/emails for indexing |
 | `INVESTARY_KNOWLEDGE_WORKER_ENABLED` | `true` | Run the background indexing worker |
+| `INVESTARY_PRICE_STALE_AFTER_DAYS` | `7` | A manual price older than this marks the holding's valuation stale |
+| `INVESTARY_RESEARCH_FRESH_DAYS` | `90` | Matched research older than this (by publication date) is flagged outdated |
+| `INVESTARY_CONCENTRATION_THRESHOLD_PCT` | `30` | Cost-basis weight above which the analysis reports a concentration (reference only) |
+| `INVESTARY_GMAIL_CLIENT_ID` / `INVESTARY_GMAIL_CLIENT_SECRET` | — | Google OAuth client (*Web application*); Gmail stays "not configured" without them |
+| `INVESTARY_GMAIL_TOKEN_KEY` | — | Base64 32-byte AES key that encrypts the stored refresh token (changing it forces a reconnect) |
+| `INVESTARY_GMAIL_REDIRECT_URI` | `http://localhost:8080/api/v1/integrations/gmail/callback` | Must equal the redirect URI registered for the client |
+| `INVESTARY_GMAIL_UI_REDIRECT_URL` | `http://localhost:4200/automation` | Where the OAuth callback sends the browser |
+| `INVESTARY_GMAIL_SYNC_SCHEDULER_ENABLED` / `INVESTARY_GMAIL_SYNC_INTERVAL` | `true` / `30m` | Periodic Gmail sync |
+| `INVESTARY_GMAIL_INITIAL_LOOKBACK_DAYS` | `30` | Window of the first sync |
+| `INVESTARY_GMAIL_MAX_MESSAGES_PER_RUN` | `200` | Matching messages handled per run; the rest continue next run |
+| `INVESTARY_GMAIL_RECOVERY_MAX_LOOKBACK_DAYS` | `30` | Upper bound of the re-check window when Gmail's history cursor expired |
+| `INVESTARY_WORKFLOW_ENABLED` | `true` | Start research workflows automatically for new sources (manual processing always works) |
+| `INVESTARY_WORKFLOW_WORKER_ENABLED` / `INVESTARY_WORKFLOW_CONCURRENCY` | `true` / `2` | Background workflow worker and its thread count |
+| `INVESTARY_WORKFLOW_MAX_ATTEMPTS` / `INVESTARY_WORKFLOW_RETRY_BACKOFF` | `3` / `1m` | Attempts per workflow job; first retry delay (doubles, with jitter) |
+| `INVESTARY_WORKFLOW_MAX_DOWNLOADS_PER_EMAIL` / `INVESTARY_WORKFLOW_MAX_DOWNLOADS_PER_SYNC_RUN` | `5` / `20` | Automatic PDF downloads per email and per Gmail sync run |
+| `INVESTARY_WORKFLOW_AUTO_ASSESS` / `INVESTARY_WORKFLOW_MAX_AUTO_ASSESSMENTS_PER_DAY` | `true` / `20` | Automatic impact assessments for matched portfolios, and their daily cap |
+| `INVESTARY_WORKFLOW_ASSESS_MARKET_CONTEXT` | `false` | Also assess market-wide commentary for every portfolio |
+| `INVESTARY_AI_MAX_CONCURRENT_CHAT` / `INVESTARY_AI_MAX_CONCURRENT_EMBEDDING` | `2` / `1` | Process-wide limits on concurrent model calls |
+| `INVESTARY_BRIEF_ENABLED` | `true` | Scheduled daily briefs and manual generation |
+| `INVESTARY_BRIEF_CRON` / `INVESTARY_BRIEF_ZONE` | `0 0 8 * * *` / `Asia/Ho_Chi_Minh` | When briefs run (Spring cron, seconds first) and the IANA zone of the reporting periods |
+| `INVESTARY_BRIEF_CATCH_UP_WINDOW` | `12h` | After downtime, a missed run is still generated when it is at most this old |
+| `INVESTARY_BRIEF_NO_RESEARCH_MODE` | `MINIMAL` | `MINIMAL`: a short "no material new research" brief; `SKIP`: only a SKIPPED record |
+| `INVESTARY_BRIEF_WORKER_ENABLED` | `true` | Brief scheduler and generation worker in this process |
+| `INVESTARY_BRIEF_MAX_AI_PER_DAY` | `10` | Briefs per day whose AI part is generated; later ones are deterministic only |
+| `INVESTARY_GMAIL_SYNC_TICK` | `1m` | How often the scheduler checks whether the polling interval has passed |
+| `INVESTARY_WORKFLOW_MAX_MANUAL_RETRIES` | `5` | Manual retries per automation job |
+| `INVESTARY_WORKFLOW_STUCK_JOB_AFTER` | `1h` | A queued job not updated for this long marks the component health as degraded |
+
+**Runtime settings (Milestone 4).** The values above are the defaults. The Automation Center's *Settings* tab can
+override the Gmail polling switch, interval, initial window and per-run limit; automatic PDF download (global
+switch), download caps, attempts, retry backoff, automatic assessment and worker concurrency (applies after a
+restart); the brief switch, time, zone, default portfolio and no-research behaviour; and the AI limits
+(daily analyses, daily AI briefs, concurrent chat/embedding requests, daily token budget of automatic calls).
+Overrides are stored in `app_settings` and win until reset. Worker on/off switches and credentials stay
+configuration-only (ADR 0012).
 
 **Brokerages** are configured under `investary.research.brokerages` (defaults: TCBS `tcbs.com.vn`,
 SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains are used to:
 - identify the brokerage from the sender's address
 - build the **download allowlist** (sub-domains included)
 
-Download timeouts, redirects, retries and worker settings are under `investary.download.*`.
+Download timeouts, redirects, retries and worker settings are under `investary.download.*`. Gmail endpoint
+URLs, timeouts, retries, the sync lock lease and the OAuth state TTL are under `investary.gmail.*`. Workflow
+wait intervals and timeouts, the lease and the reconcile interval are under `investary.workflow.*`. Brief source
+and context limits, attempts, the model timeout and the worker are under `investary.brief.*`.
 
 Secrets live only in `infrastructure/.env` or environment variables. `.env`, `storage/`, `*.pdf` and
 `*.eml` are git-ignored; only the synthetic test fixtures under `backend/src/test/resources/eml/` are
@@ -289,6 +358,74 @@ Nothing is downloaded automatically. A user picks a link, and
   never deleted with an email**, because other emails may reference them.
 - **Deleting a document** removes its associations; links that pointed at it become `READY` again.
 
+## Gmail sync (Phase 5 / Milestone 1)
+
+1. **Google Cloud (once):** create a project, enable the Gmail API, configure the consent screen (External,
+   *Testing*, yourself as test user, scope `gmail.readonly`) and create a **Web application** OAuth client
+   with the redirect URI `http://localhost:8080/api/v1/integrations/gmail/callback`. Step by step:
+   [docs/phase-5-milestone-1.md](docs/phase-5-milestone-1.md#google-cloud-setup-manual-once).
+2. Put `INVESTARY_GMAIL_CLIENT_ID`, `INVESTARY_GMAIL_CLIENT_SECRET` and `INVESTARY_GMAIL_TOKEN_KEY`
+   (generate it with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) into
+   `infrastructure/.env` and restart the backend.
+3. Open **http://localhost:4200/automation** (use `localhost`, not `127.0.0.1`). Add a source per brokerage
+   (e.g. TCBS → `tcbs.com.vn`, SSI → `ssi.com.vn`, VNDIRECT → `vndirect.com.vn`, VCBS → `vcbs.com.vn`; these
+   are examples, not built in), then **Connect Gmail** and **Sync now**.
+
+- Only messages whose `From` address (never the display name) matches an enabled source are imported, through
+  the Phase 2 import (same parser, original bytes, SHA-256 duplicates). Messages Gmail marks `dmarc=fail` are
+  rejected. Mail that matches no source is never stored.
+- The first sync looks back 30 days; later syncs read Gmail's history every 30 minutes. If Gmail's history
+  expired, a bounded window since the last success is re-checked.
+- Tokens stay in the backend (refresh token AES-GCM encrypted). The Gmail endpoints answer only requests from
+  this computer (`403 LOCAL_ONLY` otherwise). In Google's *Testing* mode the authorization expires after 7
+  days; the page then asks you to reconnect.
+
+## Automated research processing (Phase 5 / Milestone 2)
+
+- Every new email (Gmail sync or EML upload) and every PDF uploaded to the library gets a **workflow**:
+  import → links → reports → knowledge base → holdings → impact. Its stages are shown on the email and
+  document pages ("Automated processing"), with *Process now / again* and *Retry failed steps*.
+- **Automatic PDF downloads** happen only for Gmail messages whose source rule has *automatic PDF download*
+  on, only for links classified as research PDFs, through the same secure downloader as the manual button,
+  and at most 5 per email / 20 per sync run. Uploaded EML files keep the manual Download button; a manual
+  download continues the workflow (indexing, matching, assessment).
+- Matching is deterministic (tickers already in the research vs. symbols/aliases of open holdings; ETF
+  constituents are never guessed). Only matched portfolios get an assessment, at most 20 new ones per day,
+  never twice for the same holdings and content.
+- Emails and documents imported **before** this version are processed only when you click *Process now*.
+- Failures are retried with backoff when transient; permanent ones are shown with a short reason and can be
+  retried manually. Details: [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md).
+
+## Daily investment brief (Phase 5 / Milestone 3)
+
+- Open **Daily brief** (`/briefs`). A brief covers the period from the previous scheduled run to this one
+  (08:00 → 08:00 Asia/Ho_Chi_Minh by default) and contains: summary, market overview (research only, no prices),
+  updates per holding, research opportunities (reading priorities, not buy signals), risks and differing
+  brokerage views, suggested follow-ups (never trading instructions), and sources with their limitations.
+- **What counts as new:** a source that first became searchable in the period. An email received today with an
+  old report is labelled "received in this period, published on …", never "new". Reports still being indexed
+  are listed as pending; a source indexed after the period belongs to the next brief.
+- Items are labelled *Investary data*, *From source* (quoted, cited) or *AI interpretation* (validated against
+  its citations). Without a model, or when the model fails, the brief is still written without the AI part
+  (status *Partial*).
+- *Generate now* (portfolio, date) and *Regenerate* run on a job queue; a regeneration with unchanged inputs
+  reuses the latest revision without calling the model, otherwise it adds a revision (older ones are kept).
+  Details: [docs/phase-5-milestone-3.md](docs/phase-5-milestone-3.md).
+- The list shows the latest generation jobs (failed ones can be retried); the detail shows the reporting period,
+  zone, generation time, source freshness and evidence limitations (Milestone 4).
+
+## Automation Center and notifications (Phase 5 / Milestone 4)
+
+- Open **Automation** (`/automation`): *Overview* (Gmail connection, last success and failure, next sync, sync
+  history, record counts for 24 h / 7 days / 30 days, component health), *Sources* (rules with broad-rule warnings;
+  a public mailbox domain such as `gmail.com` must be confirmed; automatic PDF download asks before it is switched
+  on), *Jobs* (filters, attempt history, retry checked by the backend), *Settings* and *AI usage* (requests,
+  failures and provider-reported tokens; no cost is computed).
+- The bell in the header shows unread notifications. They are created by deterministic rules from stored
+  matches, validated assessments, explicit brokerage rating conflicts and job states, once per fact
+  (deduplication key). There is no e-mail, Telegram or mobile delivery.
+- Details: [docs/phase-5-milestone-4.md](docs/phase-5-milestone-4.md), [ADR 0012](docs/adr/0012-runtime-settings-and-notifications.md).
+
 ## Research assistant (Phase 3)
 
 1. Install [Ollama](https://ollama.com) and pull the models: `ollama pull bge-m3` and `ollama pull qwen3:8b`.
@@ -309,6 +446,27 @@ Nothing is downloaded automatically. A user picks a link, and
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"scope":"STALE"}' http://localhost:8080/api/v1/knowledge/reindex
 ```
+
+## Portfolios and portfolio intelligence (Phase 4)
+
+1. **Profile** (optional): risk tolerance, horizon, preferred instrument types, restrictions, goals.
+2. **Portfolios → New portfolio**, then add transactions. Use **Opening position** for holdings bought
+   before you started tracking (quantity and cost per unit). Create instruments inline; add other names
+   (e.g. "Vinamilk") so research mentioning the company by name is matched.
+3. **Add price** on a holding to record a price or NAV you read somewhere, with its source and date.
+   Without prices only cost-basis figures are shown; market value and unrealized P&L appear only when
+   every holding is priced, and prices older than 7 days are flagged.
+4. **Research insights** on the portfolio page: *Find relevant research* (direct research, passing
+   mentions, market context) and *Run impact assessment* (deterministic; with an AI model also a
+   validated, cited interpretation). Saved assessments show **Stale** after holdings or evidence change.
+5. **Research assistant → Portfolio-aware:** choose the portfolio; the answer separates portfolio data,
+   cited research and the assistant's remarks.
+
+- Transactions are replayed in date order on every change; an edit or delete that would make a sell
+  exceed the holding on its date is rejected and nothing changes.
+- Weighted-average cost includes fees and taxes. Corporate actions (splits, bonus shares, dividends)
+  are not modelled: enter adjustments manually. One currency per portfolio, no FX.
+- Nothing here is investment advice or a trading signal; the AI cannot change your data.
 
 ### Upgrading an existing database to Phase 3
 
@@ -340,6 +498,12 @@ them on startup. Never edit an applied migration; add a new one.
 | `V1` | `document` (unique storage key and SHA-256, checks, indexes) |
 | `V2` | `source_messages`, `source_attachments`, `source_links`, `message_documents`, `research_items`, `download_jobs` |
 | `V3` | `vector` extension, `knowledge_sources`, `knowledge_chunks` |
+| `V4` | `investor_profile`, `investor_goals`, `instruments`, `portfolios`, `portfolio_transactions`, `instrument_prices` |
+| `V5` | `impact_assessments`, `impact_assessment_items` |
+| `V6` | `gmail_accounts`, `email_source_rules`, `gmail_sync_runs`, `gmail_messages`; `source_messages.source_type` allows `GMAIL` |
+| `V7` | `workflow_settings`, `research_workflows`, `workflow_stages`, `automation_jobs`, `workflow_portfolio_matches`; trigger and version columns on `impact_assessments` |
+| `V8` | `brief_jobs`, `briefs`, `brief_sources`; `knowledge_sources.first_indexed_at` |
+| `V9` | `app_settings`, `notifications`, `automation_job_attempts`, `ai_usage_daily`; `briefs.ai_status` allows `SKIPPED_LIMIT` |
 
 V2 is additive: it leaves `document` untouched and only adds foreign keys to it
 (`ON DELETE SET NULL` / `CASCADE` on association rows).
@@ -361,7 +525,10 @@ cd frontend && npm run build
 | Persistence | `DownloadJobQueueTest` (concurrent claims, lease recovery, stale tokens, backoff), `FlywayUpgradeTest` (Phase 1 data survives V2), `LocalFileStoreTest` |
 | End-to-end | `EmailIngestionIntegrationTest` (import → links → background download from WireMock → library → provenance across emails → delete rules → retries → PDF attachments → search/filter) |
 | Knowledge base & RAG | `PdfTextExtractorTest`, `EmailTextExtractorTest`, `TextChunkerTest`, `TickerDetectorTest`, `EmbeddingServiceTest`, `QueryAnalysisTest`, `CitationValidatorTest`, `ResearchAssistantServiceTest`, `KnowledgeControllerTest`, `ResearchControllerTest`, `KnowledgeBaseIntegrationTest`, `KnowledgeEvaluationTest` (writes `backend/target/knowledge-eval-report.md`) |
-| Frontend | API services, error mapping, file-size pipe, app shell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant |
+| Gmail sync (Phase 5 / M1) | `TokenCipherTest`, `OAuthStateStoreTest` (one-time state, browser binding, PKCE vector), `SenderVerifierTest`, `RuleMatcherTest`, `GmailQueryValidatorTest`, `SourceRuleServiceTest`, `GoogleClientsTest` (WireMock: code exchange, refresh, `invalid_grant`, revoke, pagination, 401 refresh, 429/403/503 retries, history 404), `LocalOnlyRequestFilterTest`, `AutomationControllersTest`, `GmailSyncIntegrationTest` (OAuth callback, initial/incremental/recovery sync, duplicates, limits, rejects, transient failures, interrupted runs, revoked grant, disconnect) |
+| Research workflows (Phase 5 / M2) | `WorkflowPoliciesTest` (status policy, failure classification, safe summaries, backoff), `AutomationJobQueueTest` (concurrent claims, idempotent enqueue, waits, lease recovery, stale tokens), `ResearchWorkflowIntegrationTest` (end to end with WireMock + fake models: auto download, manual download re-open, no links, duplicate import, failed/partial downloads, rule off, shared PDF, failed indexing + retry, failed LLM + retry, daily cap, restart recovery, deletion mid-workflow, pre-M2 sources, reconcile, library upload) |
+| Automation Center (Phase 5 / M4) | `NotificationRulesTest` (eligibility, promotional text ignored, keys), `SystemHealthTest`, `RetryPolicyTest`, `SourceRuleWarningsTest`, `AiConcurrencyLimitsTest` (resize), `BriefSettingsTest`, `GmailScheduleTest`, `BriefGeneratorTest` (daily AI limit), `AutomationCenterIntegrationTest` (settings persistence/validation/conflict/reset, resized limits, daily analysis cap and token budget enforced, usage recorded and reported, overview metrics vs records and health without workers, concurrent retries, retry cap and attempt history, job filters, brief job retry, notification creation, deduplication, read/unread) |
+| Frontend | API services, error mapping, file-size pipe, app shell and notification bell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant, briefs (generation status and retry, freshness, citation navigation), Automation Center (overview states, source rule validation and broad-rule acknowledgement, settings forms, job filters and retry, job detail polling, AI usage), notifications |
 
 - Tests that need Docker are **skipped** (not failed) without a Docker daemon; check the surefire summary.
 - No test contacts a real website or a real AI provider (fake embedding and scripted chat models).
@@ -397,7 +564,10 @@ Errors use RFC 9457 `application/problem+json` with a machine-readable `code`:
 `VALIDATION_FAILED`, `INVALID_DOCUMENT`, `DOCUMENT_NOT_FOUND`, `DUPLICATE_DOCUMENT`, `INVALID_EMAIL`,
 `DUPLICATE_EMAIL`, `EMAIL_NOT_FOUND`, `LINK_NOT_FOUND`, `DOWNLOAD_NOT_ALLOWED`, `PAYLOAD_TOO_LARGE`,
 `STORAGE_ERROR`, `INTERNAL_ERROR`, `KNOWLEDGE_JOB_NOT_FOUND`, `AI_NOT_CONFIGURED` (503), `AI_PROVIDER_ERROR` (502),
-`AI_TIMEOUT` (504).
+`AI_TIMEOUT` (504), `GMAIL_NOT_CONFIGURED` (503), `GMAIL_NOT_CONNECTED` (409), `GMAIL_SYNC_IN_PROGRESS` (409),
+`SYNC_RUN_NOT_FOUND`, `SOURCE_RULE_NOT_FOUND`, `DUPLICATE_SOURCE_RULE` (409), `LOCAL_ONLY` (403), `GOAL_NOT_FOUND`, `INSTRUMENT_NOT_FOUND`, `DUPLICATE_INSTRUMENT` (409), `INSTRUMENT_IN_USE` (409),
+`PRICE_NOT_FOUND`, `DUPLICATE_PRICE` (409), `PORTFOLIO_NOT_FOUND`, `DUPLICATE_PORTFOLIO` (409), `TRANSACTION_NOT_FOUND`,
+`INSUFFICIENT_HOLDINGS` (422), `CURRENCY_MISMATCH` (422), `PORTFOLIO_REQUIRED` (422), `ASSESSMENT_NOT_FOUND`.
 
 ### Documents
 
@@ -440,6 +610,71 @@ Upload fields: `file` (required), `brokerageCompany` (≤200), `reportType` (`MA
 | `POST` | `/api/v1/research/search` | hybrid search: `{query, ticker, brokerage, sourceType, from, to, maxResults}` |
 | `POST` | `/api/v1/research/ask` | `{question, …same filters}` → answer, `evidenceStatus`, citations, gaps, warnings |
 
+### Investor, portfolios and intelligence (Phase 4)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET`/`PUT` | `/api/v1/investor/profile` | self-declared profile (`configured: false` until saved) |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/investor/goals[/{id}]` | goals |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/instruments[/{id}]` | instruments (`?q=` search) |
+| `GET`/`POST`/`DELETE` | `/api/v1/instruments/{id}/prices[/{priceId}]` | manual price observations `{price, asOf, source, note}` |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/portfolios[/{id}]` | portfolios |
+| `GET` | `/api/v1/portfolios/{id}/summary` · `/holdings` · `/allocation` | computed from transactions and prices |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/portfolios/{id}/transactions[/{transactionId}]` | `BUY`/`SELL`/`OPENING_POSITION`, revalidated by full replay |
+| `POST` | `/api/v1/intelligence/portfolios/{id}/analyze` | deterministic analysis and research coverage |
+| `POST` | `/api/v1/intelligence/portfolios/{id}/relevant-research` | `{brokerage, from, to}` → matched evidence |
+| `POST`/`GET` | `/api/v1/intelligence/portfolios/{id}/impact-assessments` | create / list (with stale flags) |
+| `GET`/`DELETE` | `/api/v1/intelligence/impact-assessments/{id}` | saved assessment |
+| `POST` | `/api/v1/intelligence/ask` | `{question, portfolioId}` → facts, cited answer, warnings |
+
+### Gmail integration and source rules (Phase 5 / M1, local-only)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` | `/api/v1/integrations/gmail/status` | configured flag, account, running, last run, imported total, schedule (never tokens) |
+| `POST` | `/api/v1/integrations/gmail/connect` | `{authorizationUrl}` + HttpOnly binding cookie · `503 GMAIL_NOT_CONFIGURED` |
+| `GET` | `/api/v1/integrations/gmail/callback` | `303` to the UI with `?gmail=connected` or `?gmail=error&reason=<CODE>` |
+| `POST` | `/api/v1/integrations/gmail/disconnect` | `204` (revokes at Google, deletes tokens, keeps imported emails) |
+| `POST` | `/api/v1/integrations/gmail/sync` | `202 {runId}` · `409 GMAIL_SYNC_IN_PROGRESS` · `409 GMAIL_NOT_CONNECTED` |
+| `GET` | `/api/v1/integrations/gmail/sync-history[/{runId}]` | page of runs (counters, mode, status, error) / one run |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/v1/automation/sources[/{id}]` | brokerage source rules `{name, senderAddresses, senderDomains, subjectKeywords, gmailQuery, enabled, autoImport, autoPdfDownload, acknowledgeBroadRule?}`; responses carry `warnings` · `422 BROAD_SOURCE_RULE` for an unconfirmed public mailbox domain |
+
+### Research workflows and jobs (Phase 5 / M2, local-only)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` | `/api/v1/automation/workflows/{sourceId}` | workflow of an email or document: status, stages (status, reason, counts), matches, jobs · `NOT_STARTED` view · `404 WORKFLOW_NOT_FOUND` |
+| `POST` | `/api/v1/automation/workflows/{sourceId}/process` | `202` start, retry failed jobs, or run again |
+| `GET` | `/api/v1/automation/jobs?status=&type=&workflowId=&from=&to=&sourceType=&ruleId=&page=&size=` | page of jobs (status, attempts, safe error summary, reported tokens, source title, `retryable`, `retryBlockedReason`) |
+| `GET` | `/api/v1/automation/jobs/{id}` | job, its workflow stages, attempt history · `404 AUTOMATION_JOB_NOT_FOUND` |
+| `POST` | `/api/v1/automation/jobs/{id}/retry` | `202` · `409 JOB_NOT_RETRYABLE` unless the job failed (or its source was deleted) · `409 RETRY_LIMIT_REACHED` |
+
+### Automation Center and notifications (Phase 5 / M4, local-only)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` | `/api/v1/automation/overview?period=24h\|7d\|30d` | Gmail status, record counts for the window, component health |
+| `GET` | `/api/v1/automation/settings` | sections `gmail`, `processing`, `brief`, `ai`: value, default, bounds, overridden, read-only, applies-after-restart, version |
+| `PUT` | `/api/v1/automation/settings/{section}` | body `{version, values}` · `422 INVALID_SETTINGS` with field errors · `409 SETTINGS_CONFLICT` |
+| `DELETE` | `/api/v1/automation/settings/{section}/{field}` | reset to the configured default |
+| `GET` | `/api/v1/automation/usage?period=day\|week&days=` | AI requests, failures, provider-reported tokens, brief generations, analyses, limits and today's use |
+| `GET` | `/api/v1/briefs/jobs?status=&from=&to=&page=&size=` | brief generation jobs, newest first |
+| `POST` | `/api/v1/briefs/jobs/{id}/retry` | `202` · `409 JOB_NOT_RETRYABLE` unless the job failed |
+| `GET` | `/api/v1/notifications?unreadOnly=&type=&page=&size=` | notifications, newest first |
+| `GET` | `/api/v1/notifications/unread-count` | `{count}` |
+| `PATCH` | `/api/v1/notifications/{id}/read`, `/api/v1/notifications/{id}/unread` | read state · `404 NOTIFICATION_NOT_FOUND` |
+| `POST` | `/api/v1/notifications/read-all` | `{updated}` |
+
+### Daily briefs (Phase 5 / M3)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` | `/api/v1/briefs?portfolioId=&from=&to=&status=&page=&size=` | page of briefs (latest revision of each; `SKIPPED` only when asked for), newest period first |
+| `GET` | `/api/v1/briefs/{id}` | sections and items, citations (four dates, page/section, excerpt), pending/omitted sources, limitations, revisions · `404 BRIEF_NOT_FOUND` |
+| `POST` | `/api/v1/briefs/generate` | body `{portfolioId?, date?}` · `202` with the job (Location header) · `422 INVALID_BRIEF_PERIOD` · `409 BRIEFS_DISABLED` |
+| `GET` | `/api/v1/briefs/jobs/{id}` | job status, attempts, outcome (`CREATED`/`UNCHANGED`/`SKIPPED`), brief id, safe error · `404 BRIEF_JOB_NOT_FOUND` |
+| `POST` | `/api/v1/briefs/{id}/regenerate` | `202` with the job; same scope and period, new revision only when inputs changed |
+
 ### curl examples
 
 ```bash
@@ -463,6 +698,16 @@ curl http://localhost:8080/api/v1/knowledge/status
 curl -X POST -H "Content-Type: application/json" \
      -d '{"question":"TCBS đang khuyến nghị gì về cổ phiếu SCS?","brokerage":"TCBS"}' \
      http://localhost:8080/api/v1/research/ask
+
+# Portfolios (Phase 4)
+curl -X POST -H "Content-Type: application/json" -d '{"name":"Dài hạn"}' http://localhost:8080/api/v1/portfolios
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"symbol":"FPT","name":"FPT","instrumentType":"STOCK","exchange":"HOSE"}' http://localhost:8080/api/v1/instruments
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"instrumentId":"<instrumentId>","type":"OPENING_POSITION","tradeDate":"2026-01-02","quantity":100,"price":95000}' \
+     http://localhost:8080/api/v1/portfolios/<id>/transactions
+curl http://localhost:8080/api/v1/portfolios/<id>/summary
+curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-assessments
 ```
 
 ## Known limitations
@@ -486,12 +731,32 @@ curl -X POST -H "Content-Type: application/json" \
   heuristic; the similarity threshold is untuned; answers were only tested with fake models, not with
   a real LLM; no streaming or conversation memory. Details in
   [docs/phase-3-implementation.md](docs/phase-3-implementation.md#known-limitations).
+- **Gmail sync:** no authentication (loopback-only boundary), one account, polling instead of push, Testing-mode
+  tokens expire weekly, mail matching no rule is not recorded.
+  Verified only against a mocked Google API, not a live account. Details in
+  [docs/phase-5-milestone-1.md](docs/phase-5-milestone-1.md#known-limitations).
+- **Portfolios:** no corporate actions, cash, FX, lots or tax reports; prices are manual; instruments have
+  no master data; AI interpretations are constrained and cited but only tested with a scripted model.
+  Details in [docs/phase-4-implementation.md](docs/phase-4-implementation.md#known-limitations).
+- **Research workflows:** caps are best-effort under concurrent workers; matching is by ticker/alias only (no
+  watchlist, sector mapping or ETF constituents); sources imported before the upgrade are processed on request
+  only. Verified with mocked services only. Details in
+  [docs/phase-5-milestone-2.md](docs/phase-5-milestone-2.md#known-limitations).
+- **Daily briefs:** "not yet processed" follows the knowledge index, not the workflow stages; rating conflicts are
+  detected only from explicit rating labels; missed periods older than the catch-up window are generated on
+  request only. Verified with the scripted model only, not a real LLM. Details in
+  [docs/phase-5-milestone-3.md](docs/phase-5-milestone-3.md#known-limitations).
 
 ## Next phases
 
 - **Phase 3 — done:** knowledge base, hybrid search and RAG assistant with validated citations.
-- **Phase 4 — recommended:** live-model evaluation and tuning, OCR, cited summaries and brokerage
-  comparison views, a ticker master list, editable metadata with reindex, HNSW index (see
-  [docs/phase-3-implementation.md](docs/phase-3-implementation.md#recommended-phase-4-scope)).
-- **Phase 5 — Portfolio & decisions:** holdings, watchlist and a decision journal linked to research.
-- Later: authentication, S3-compatible storage behind the storage ports, Gmail/Drive ingestion.
+- **Phase 4 — done:** investor profile and goals, transaction-based portfolios, research matching,
+  impact assessments and the portfolio-aware assistant.
+- **Phase 5 / Milestone 1 — done:** Gmail connection, source rules, initial and incremental Gmail sync.
+- **Phase 5 / Milestone 2 — done:** automated research processing (downloads, indexing, matching, assessments).
+- **Phase 5 / Milestone 3 — done:** automated daily investment brief (scheduled and manual, cited, revisioned).
+- **Phase 5 / Milestone 4 — done:** Automation Center, runtime settings, AI usage and limits, in-app notifications.
+- **Phase 5 — later milestones:** live-model evaluation and tuning, OCR, an instrument/ticker master list,
+  corporate actions and cash, a watchlist and a decision journal linked to assessments, HNSW index.
+- Later: authentication, S3-compatible storage behind the storage ports, Drive ingestion, and delivery of
+  notifications outside the app (e-mail, push).

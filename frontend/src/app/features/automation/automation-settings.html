@@ -1,0 +1,121 @@
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+@if (notice(); as message) {
+  <app-alert kind="success" [dismissible]="true" (dismissed)="notice.set(null)">
+    {{ message }} <a class="link" routerLink="/briefs">Open Daily brief</a>
+  </app-alert>
+}
+
+<p class="small muted">
+  Values come from <code>application.yml</code> / environment variables unless you change them here. A saved value overrides
+  the default until you reset it. Every value is validated by the backend. No credentials are shown or stored here.
+</p>
+
+@if (loading()) {
+  <p class="muted" role="status">Loading settings…</p>
+}
+
+@for (s of sections(); track s.section.section) {
+  <section class="card settings-section" [attr.data-section]="s.section.section">
+    <div class="card__header">
+      <div>
+        <h2 class="card__title">{{ titles[s.section.section].title ?? s.section.section }}</h2>
+        <p class="small muted">{{ titles[s.section.section].description }}</p>
+      </div>
+    </div>
+    @if (s.message) {
+      <p class="small" role="status" data-testid="section-message">{{ s.message }}</p>
+    }
+    <form class="form-grid" (ngSubmit)="save(s)" novalidate>
+      @for (f of s.section.fields; track f.name) {
+        <div class="field" [attr.data-field]="f.name">
+          <span class="field__label">
+            {{ f.label }}
+            @if (f.overridden) {
+              <span class="badge badge--info">Changed</span>
+            }
+            @if (f.appliesAfterRestart) {
+              <span class="badge badge--warning">Applies after restart</span>
+            }
+          </span>
+          @if (f.readOnly) {
+            <span class="setting-readonly">{{ display(f, f.value) }} <span class="small muted">(set in the configuration)</span></span>
+          } @else {
+            @switch (f.type) {
+              @case ('BOOLEAN') {
+                <label class="small checkbox-row">
+                  <input type="checkbox" [name]="f.name" [(ngModel)]="s.draft[f.name]" />
+                  {{ s.draft[f.name] ? 'On' : 'Off' }}
+                </label>
+              }
+              @case ('INTEGER') {
+                <input
+                  class="input"
+                  type="number"
+                  [name]="f.name"
+                  [min]="f.min"
+                  [max]="f.max"
+                  step="1"
+                  [(ngModel)]="s.draft[f.name]"
+                  [placeholder]="f.nullable ? 'No limit' : ''"
+                />
+              }
+              @case ('TIME') {
+                <input class="input" type="time" [name]="f.name" [(ngModel)]="s.draft[f.name]" />
+              }
+              @case ('ZONE') {
+                <select class="input" [name]="f.name" [(ngModel)]="s.draft[f.name]">
+                  @for (z of zones; track z) {
+                    <option [value]="z">{{ z }}</option>
+                  }
+                </select>
+              }
+              @case ('ENUM') {
+                <select class="input" [name]="f.name" [(ngModel)]="s.draft[f.name]">
+                  @for (o of f.options; track o) {
+                    <option [value]="o">{{ o }}</option>
+                  }
+                </select>
+              }
+              @case ('UUID') {
+                <select class="input" [name]="f.name" [(ngModel)]="s.draft[f.name]">
+                  <option [ngValue]="null">Every portfolio</option>
+                  @for (p of portfolios(); track p.id) {
+                    <option [ngValue]="p.id">{{ p.name }}</option>
+                  }
+                </select>
+              }
+              @default {
+                <input class="input" [name]="f.name" [(ngModel)]="s.draft[f.name]" />
+              }
+            }
+          }
+          @if (s.errors[f.name]; as e) {
+            <span class="field__error">{{ e }}</span>
+          }
+          <span class="small muted">
+            @if (f.help) {
+              {{ f.help }}.
+            }
+            Default: {{ display(f, f.defaultValue) }}
+            @if (f.min !== null && f.max !== null) {
+              · {{ f.min }}–{{ f.max }}
+            }
+            @if (f.overridden && !f.readOnly) {
+              · <button type="button" class="link-button" (click)="reset(s, f)">Reset to default</button>
+            }
+          </span>
+        </div>
+      }
+      <div class="actions field--wide">
+        @if (s.section.section === 'brief') {
+          <button type="button" class="btn btn--ghost" (click)="generateBrief(s)">Generate a brief now</button>
+        }
+        <button type="submit" class="btn btn--primary" [disabled]="s.saving || changed(s).length === 0">
+          {{ s.saving ? 'Saving…' : 'Save ' + (titles[s.section.section].title ?? s.section.section) }}
+        </button>
+      </div>
+    </form>
+  </section>
+}

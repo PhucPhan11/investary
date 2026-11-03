@@ -133,6 +133,103 @@ investary:
       max-context-chars: 12000
       timeout: ${INVESTARY_AI_TIMEOUT:120s}
 
+  # Portfolios (Phase 4). Prices are manual observations; older ones mark the valuation STALE.
+  portfolio:
+    price-stale-after-days: ${INVESTARY_PRICE_STALE_AFTER_DAYS:7}
+
+  # Portfolio-aware intelligence (Phase 4). Reuses the knowledge-base search and assistant settings.
+  intelligence:
+    research-fresh-days: ${INVESTARY_RESEARCH_FRESH_DAYS:90}
+    concentration-threshold-pct: ${INVESTARY_CONCENTRATION_THRESHOLD_PCT:30}
+    max-holdings-in-context: 10
+    evidence-per-holding: 3
+    market-context-results: 3
+
+  # Gmail integration (Phase 5 / Milestone 1). Credentials come only from the environment (infrastructure/.env
+  # in dev). Without them the integration reports "not configured" and the rest of the app works as before.
+  gmail:
+    client-id: ${INVESTARY_GMAIL_CLIENT_ID:}
+    client-secret: ${INVESTARY_GMAIL_CLIENT_SECRET:}
+    token-key: ${INVESTARY_GMAIL_TOKEN_KEY:}
+    redirect-uri: ${INVESTARY_GMAIL_REDIRECT_URI:http://localhost:8080/api/v1/integrations/gmail/callback}
+    ui-redirect-url: ${INVESTARY_GMAIL_UI_REDIRECT_URL:http://localhost:4200/automation}
+    auth-uri: https://accounts.google.com/o/oauth2/v2/auth
+    token-uri: https://oauth2.googleapis.com/token
+    revoke-uri: https://oauth2.googleapis.com/revoke
+    api-base-url: https://gmail.googleapis.com
+    connect-timeout: 10s
+    read-timeout: 60s
+    max-retries: 4
+    retry-backoff: 1s
+    max-retry-wait: 30s
+    state-ttl: 10m
+    sync:
+      scheduler-enabled: ${INVESTARY_GMAIL_SYNC_SCHEDULER_ENABLED:true}
+      interval: ${INVESTARY_GMAIL_SYNC_INTERVAL:30m}
+      initial-delay: 2m
+      # The scheduler checks this often whether the (runtime-editable) polling interval has passed.
+      tick: ${INVESTARY_GMAIL_SYNC_TICK:1m}
+      initial-lookback-days: ${INVESTARY_GMAIL_INITIAL_LOOKBACK_DAYS:30}
+      max-messages-per-run: ${INVESTARY_GMAIL_MAX_MESSAGES_PER_RUN:200}
+      recovery-max-lookback-days: ${INVESTARY_GMAIL_RECOVERY_MAX_LOOKBACK_DAYS:30}
+      lock-lease: 10m
+      page-size: 100
+
+  # Automated research processing (Phase 5 / Milestone 2): email/document workflow from import to impact
+  # assessment. Sources imported before the feature was installed are only processed on request.
+  workflow:
+    enabled: ${INVESTARY_WORKFLOW_ENABLED:true}
+    max-attempts: ${INVESTARY_WORKFLOW_MAX_ATTEMPTS:3}
+    retry-backoff: ${INVESTARY_WORKFLOW_RETRY_BACKOFF:1m}
+    wait-poll: 15s
+    download-wait-timeout: 2h
+    index-wait-timeout: 6h
+    max-downloads-per-email: ${INVESTARY_WORKFLOW_MAX_DOWNLOADS_PER_EMAIL:5}
+    max-downloads-per-sync-run: ${INVESTARY_WORKFLOW_MAX_DOWNLOADS_PER_SYNC_RUN:20}
+    auto-assess: ${INVESTARY_WORKFLOW_AUTO_ASSESS:true}
+    max-auto-assessments-per-day: ${INVESTARY_WORKFLOW_MAX_AUTO_ASSESSMENTS_PER_DAY:20}
+    assess-market-context: ${INVESTARY_WORKFLOW_ASSESS_MARKET_CONTEXT:false}
+    # Phase 5 / Milestone 4: manual retries per job; a pending job older than this degrades the health check.
+    max-manual-retries: ${INVESTARY_WORKFLOW_MAX_MANUAL_RETRIES:5}
+    stuck-job-after: ${INVESTARY_WORKFLOW_STUCK_JOB_AFTER:1h}
+    worker:
+      enabled: ${INVESTARY_WORKFLOW_WORKER_ENABLED:true}
+      concurrency: ${INVESTARY_WORKFLOW_CONCURRENCY:2}
+      poll-interval: 2s
+      lease: 15m
+      reconcile-interval: 1m
+
+  # Daily investment brief (Phase 5 / Milestone 3). Periods are [previous run, run) of the cron, evaluated in the zone
+  # (never the JVM zone). After downtime only the latest run within the catch-up window is generated.
+  brief:
+    enabled: ${INVESTARY_BRIEF_ENABLED:true}
+    schedule:
+      cron: "${INVESTARY_BRIEF_CRON:0 0 8 * * *}"
+      zone: ${INVESTARY_BRIEF_ZONE:Asia/Ho_Chi_Minh}
+    catch-up-window: ${INVESTARY_BRIEF_CATCH_UP_WINDOW:12h}
+    # MINIMAL: a short "no material new research" brief; SKIP: only a SKIPPED record that keeps the period.
+    no-research-mode: ${INVESTARY_BRIEF_NO_RESEARCH_MODE:MINIMAL}
+    # Briefs per day whose AI part may be generated; later ones are deterministic only (Milestone 4).
+    max-ai-briefs-per-day: ${INVESTARY_BRIEF_MAX_AI_PER_DAY:10}
+    max-sources: 12
+    chunks-per-source: 2
+    max-context-chars: 14000
+    old-publication-days: 7
+    max-briefs-per-run: 5
+    max-attempts: 3
+    retry-backoff: 1m
+    ai-timeout: ${INVESTARY_AI_TIMEOUT:120s}
+    worker:
+      enabled: ${INVESTARY_BRIEF_WORKER_ENABLED:true}
+      concurrency: 1
+      poll-interval: 30s
+      lease: 15m
+
+  # Process-wide limits on concurrent AI provider calls (assistant, intelligence, indexing, workflows).
+  ai:
+    max-concurrent-chat: ${INVESTARY_AI_MAX_CONCURRENT_CHAT:2}
+    max-concurrent-embedding: ${INVESTARY_AI_MAX_CONCURRENT_EMBEDDING:1}
+
 management:
   endpoints:
     web:

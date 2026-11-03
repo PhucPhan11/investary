@@ -1,0 +1,107 @@
+<form class="card" (ngSubmit)="submit()">
+  <div class="card__header">
+    <h2 class="card__title">{{ editing() ? 'Edit transaction' : 'Add transaction' }}</h2>
+    @if (editing()) {
+      <button type="button" class="btn btn--ghost btn--small" (click)="cancelled.emit()">Cancel</button>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <app-alert kind="error">{{ message }}</app-alert>
+  }
+
+  <div class="form-grid">
+    <label class="field">
+      <span class="field__label">Instrument</span>
+      <select class="input" name="instrumentId" [(ngModel)]="draft.instrumentId">
+        <option value="">Choose…</option>
+        @for (i of instruments(); track i.id) {
+          <option [value]="i.id">{{ i.symbol }} · {{ i.name }}</option>
+        }
+      </select>
+      <button type="button" class="link-button small" (click)="addingInstrument.set(!addingInstrument())">
+        {{ addingInstrument() ? 'Close new instrument' : 'New instrument…' }}
+      </button>
+    </label>
+    <label class="field">
+      <span class="field__label">Type</span>
+      <select class="input" name="type" [(ngModel)]="draft.type">
+        @for (t of types; track t.value) {
+          <option [value]="t.value">{{ t.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Trade date</span>
+      <input class="input" type="date" name="tradeDate" [max]="maxDate" [(ngModel)]="draft.tradeDate" />
+    </label>
+    <label class="field">
+      <span class="field__label">Quantity</span>
+      <input class="input" type="number" name="quantity" min="0" step="any" [(ngModel)]="draft.quantity" />
+    </label>
+    <label class="field">
+      <span class="field__label">{{ priceLabel() }}</span>
+      <input class="input" type="number" name="price" min="0" step="any" [(ngModel)]="draft.price" />
+    </label>
+    <label class="field">
+      <span class="field__label">Fees</span>
+      <input class="input" type="number" name="fees" min="0" step="any" [(ngModel)]="draft.fees" />
+    </label>
+    <label class="field">
+      <span class="field__label">Taxes</span>
+      <input class="input" type="number" name="taxes" min="0" step="any" [(ngModel)]="draft.taxes" />
+    </label>
+    <label class="field field--wide">
+      <span class="field__label">Notes</span>
+      <input class="input" name="notes" maxlength="2000" [(ngModel)]="draft.notes" />
+    </label>
+  </div>
+
+  @if (addingInstrument()) {
+    <fieldset class="subform form-grid">
+      <legend class="field__label">New instrument (no master data: enter it as you know it)</legend>
+      <label class="field">
+        <span class="field__label">Symbol</span>
+        <input class="input" name="newSymbol" maxlength="20" [(ngModel)]="newInstrument.symbol" />
+      </label>
+      <label class="field">
+        <span class="field__label">Name</span>
+        <input class="input" name="newName" maxlength="300" [(ngModel)]="newInstrument.name" />
+      </label>
+      <label class="field">
+        <span class="field__label">Type</span>
+        <select class="input" name="newType" [(ngModel)]="newInstrument.instrumentType">
+          @for (t of instrumentTypes; track t) {
+            <option [value]="t">{{ t }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Other names (comma separated)</span>
+        <input class="input" name="newAliases" [(ngModel)]="newInstrument.aliases" />
+      </label>
+      <div class="actions">
+        <button type="button" class="btn btn--small" [disabled]="!newInstrument.symbol.trim() || !newInstrument.name.trim()" (click)="createInstrument()">
+          Create instrument
+        </button>
+      </div>
+    </fieldset>
+  }
+
+  @if (problems().length && draft.instrumentId) {
+    <ul class="form-problems">
+      @for (p of problems(); track p) {
+        <li>{{ p }}</li>
+      }
+    </ul>
+  }
+  @if (draft.type === 'OPENING_POSITION') {
+    <p class="muted small">An opening position records holdings bought before you started tracking; it is costed like a buy.</p>
+  }
+
+  <div class="actions">
+    <button type="submit" class="btn btn--primary" [disabled]="saving() || problems().length > 0">
+      {{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Add transaction' }}
+    </button>
+  </div>
+</form>

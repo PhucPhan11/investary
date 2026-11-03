@@ -204,7 +204,7 @@ public class HybridSearchService {
     }
 
     /** Joins the email row only for the sender shown in citations. */
-    private static final String SELECT = """
+    static final String SELECT = """
             select c.id, c.knowledge_source_id, s.source_type, coalesce(s.document_id, s.source_message_id) as source_id,
                    c.source_title, c.brokerage, c.published_on, c.date_basis, c.page_start, c.page_end, c.section,
                    c.chunk_index, c.content, c.tickers, c.source_ticker, m.sender_name, m.sender_address, m.sent_at,
@@ -213,7 +213,7 @@ public class HybridSearchService {
             join knowledge_sources s on s.id = c.knowledge_source_id
             left join source_messages m on m.id = s.source_message_id""";
 
-    private static SearchHit map(ResultSet rs, int row) throws SQLException {
+    static SearchHit map(ResultSet rs, int row) throws SQLException {
         Date published = rs.getDate("published_on");
         Timestamp sent = rs.getTimestamp("sent_at");
         Array tickers = rs.getArray("tickers");

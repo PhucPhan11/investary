@@ -171,7 +171,7 @@ public class KnowledgeIndexQueue {
         return jdbc.update("""
                 update knowledge_sources
                 set status = 'INDEXED', status_reason = null, claim_token = null, last_error = null,
-                    completed_at = now(), updated_at = now()
+                    completed_at = now(), first_indexed_at = coalesce(first_indexed_at, now()), updated_at = now()
                 where id = :id and claim_token = :token and status = 'PROCESSING'""",
                 tokenParams(job)) == 1;
     }

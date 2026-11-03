@@ -21,6 +21,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
+import com.investary.knowledge.AiConcurrencyLimits;
 import com.investary.knowledge.AiExceptions.AiNotConfiguredException;
 import com.investary.knowledge.AiExceptions.AiProviderException;
 import com.investary.knowledge.KnowledgeSourceType;
@@ -148,7 +149,7 @@ class ResearchAssistantServiceTest {
     }
 
     private ResearchAssistantService service(ObjectProvider<ChatModel> provider) {
-        return new ResearchAssistantService(search, provider, TestKnowledgeProperties.defaults(), JsonMapper.builder().build(), clock);
+        return new ResearchAssistantService(search, provider, TestKnowledgeProperties.defaults(), JsonMapper.builder().build(), clock, AiConcurrencyLimits.unlimited());
     }
 
     private static ObjectProvider<ChatModel> provider(ChatModel model) {

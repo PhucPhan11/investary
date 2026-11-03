@@ -1,5 +1,6 @@
 package com.investary.research.download;
 
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +20,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnProperty(prefix = "investary.download.worker", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class DownloadJobWorker implements DisposableBean {
+
+    private volatile Instant lastPollAt;
 
     private static final Logger log = LoggerFactory.getLogger(DownloadJobWorker.class);
 
@@ -42,6 +45,7 @@ public class DownloadJobWorker implements DisposableBean {
 
     @Scheduled(fixedDelayString = "${investary.download.worker.poll-interval:2s}", initialDelayString = "${investary.download.worker.poll-interval:2s}")
     public void poll() {
+        lastPollAt = Instant.now();
         try {
             int recovered = queue.recoverExpired(settings.lease());
             if (recovered > 0) {
@@ -70,5 +74,10 @@ public class DownloadJobWorker implements DisposableBean {
             // Unfinished jobs stay RUNNING and are re-queued after their lease expires.
             executor.shutdownNow();
         }
+    }
+
+    /** When the worker last polled (health check heartbeat), or null before the first poll. */
+    public Instant lastPollAt() {
+        return lastPollAt;
     }
 }

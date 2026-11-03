@@ -58,7 +58,72 @@ Older examples on the web will not compile here. Use:
 - Java text blocks strip trailing spaces: never end a text block with `where ` and concatenate a condition
   (see `docs/failures/0007-text-block-sql-trailing-space.md`).
 
+## Portfolios and intelligence (Phase 4)
+
+- `text[]` columns map as `String[]` with `@JdbcTypeCode(SqlTypes.ARRAY)` and `columnDefinition = "text[]"`
+  (see `portfolio/domain/Instrument.java`).
+- Money: `BigDecimal` with `HoldingCalculator.MC` (`DECIMAL128`); round only in `Money`. Avoid
+  `BigDecimal.divide` without a `MathContext` (non-terminating expansions throw), also in tests.
+- "Today" for trades and prices is the Asia/Ho_Chi_Minh date (`PortfolioQueryService.today()`); do not use
+  `@PastOrPresent` for those dates, it uses the JVM zone.
+- Model calls outside the knowledge assistant go through `knowledge.assistant.ChatGateway`; never call a
+  `ChatModel` inside a database transaction (`ImpactAssessmentService` saves with `TransactionTemplate`).
+- Intelligence tests: `IntelligenceTestData` for unit tests; `IntelligenceIntegrationTest` indexes the
+  synthetic corpus and scripts the model from the prompt's `<holding>` / `<source>` elements.
+
 ## Validation gotcha
 
 `@ModelAttribute` records stop at the first binding failure. An invalid enum means the other field
 errors are not reported in the same response. This is expected; see `DocumentControllerTest`.
+
+## Gmail integration (Phase 5 / Milestone 1)
+
+- Module `automation`: Google HTTP clients in `automation/google/` (`GoogleHttp` = `RestClient` over the JDK client),
+  token encryption and OAuth state in `automation/security/`, sync engine in `automation/application/GmailSyncRunner.java`.
+- Gmail state uses JDBC stores (`GmailAccountStore`, `GmailSyncRunStore`, `GmailMessageStore`); only source rules
+  are a JPA entity. Cursor and status writes of a running sync must keep the `sync_lock_token = :token` guard.
+- Container tests: `automation/GmailSyncIntegrationTest.java` points `investary.gmail.*-uri` / `api-base-url` at
+  WireMock. Static `WireMock.get` and `WireMock.post` clash with MockMvc's; call them as `WireMock.get(...)`.
+- Tests that enable the Gmail scheduler need `@DirtiesContext`; it is off in `src/test/resources/application.properties`.
+
+## Research workflows (Phase 5 / Milestone 2)
+
+- Engine in `automation/application/workflow/`: one `StageHandler` per `JobType`, `WorkflowJobProcessor`
+  applies results (token-guarded), `WorkflowService` starts/re-opens workflows and listens to
+  `EmailImportedEvent`, `DocumentUploadedEvent` and `ReportDownloadedEvent`. State in `WorkflowStore` and
+  `AutomationJobQueue` (JDBC).
+- A handler returns `Done`, `Wait` (waiting on another worker; uses no attempt) or `Failed`; it must not open a
+  transaction or write job state itself.
+- `ChatGateway` and `EmbeddingService` take the shared `AiConcurrencyLimits`; unit tests pass
+  `AiConcurrencyLimits.unlimited()`.
+- Container tests: `automation/ResearchWorkflowIntegrationTest.java` (WireMock brokerage + fake models). Drive all
+  workers with `WorkflowTestSupport.runAll()`; `investary.workflow.wait-poll` and `retry-backoff` are 1ms in tests.
+- Safe error summaries and the shared backoff live in `common.error.ErrorSummaries` (`FailureClassifier` delegates).
+
+## Daily briefs (Phase 5 / Milestone 3)
+
+- In `intelligence/application/Brief*.java`: `BriefScheduler` (due periods), `BriefJobWorker`, `BriefJobProcessor`
+  (token-guarded writes), `BriefGenerator` (no transaction), `BriefEvidenceCollector`, `BriefComposer`,
+  `BriefValidator`, `BriefPrompts`, `BriefPeriods` (cron + zone). JDBC state in `BriefJobQueue` and `BriefStore`.
+- Selection uses `knowledge.search.ResearchAvailabilityService` (`first_indexed_at` window, pending sources).
+- Array parameters are passed as text literals with `cast(:p as text[])`; do not bind Java arrays.
+- Container test: `intelligence/BriefIntegrationTest.java` uses a `@Primary` mutable test `Clock`, sets
+  `first_indexed_at` / `uploaded_at` with SQL to place sources in periods, and drives jobs with `claim` + `process`.
+  The brief worker is off in `src/test/resources/application.properties`.
+- Unit tests: `BriefPeriodsTest` (zones, DST), `BriefValidatorTest` (citations, trading text, conflicts),
+  `BriefGeneratorTest` (timeouts, provider failure, SKIP mode, unchanged inputs).
+
+## Automation Center (Phase 5 / Milestone 4)
+
+- Runtime settings: `common.settings.RuntimeSettings` + one `SettingsContributor` per owning module
+  (`automation.application.settings.AutomationSettings`, `intelligence.application.BriefSettings`,
+  `knowledge.usage.AiSettings`). Consumers call the module's effective accessors (`settings.workflow()`,
+  `settings.gmailSync()`, `briefSettings.current()`); an override missing means the `@ConfigurationProperties` value.
+  Tests that write `app_settings` with SQL must call `RuntimeSettings.invalidate()` (5 s cache).
+- Notifications: `automation.application.notification` (`NotificationRules` pure, `NotificationTriggers` gathers
+  facts, `NotificationService` stores with `on conflict (dedup_key) do nothing`). Intelligence publishes
+  `BriefGeneratedEvent`, `BriefJobFailedEvent`, `ImpactAssessmentCreatedEvent` with `AfterCommit`.
+- `AutomationJobQueue` result writes are CTEs that also update `automation_job_attempts`; keep the token guard.
+- AI usage: `ChatGateway` / `EmbeddingService` record into `ai_usage_daily` through `AiUsageService` (pass a purpose).
+- `select max(...)` returns one row with null: use `queryForObject(..., Timestamp.class)`, not `query(...).stream()`.
+- Container test: `automation/AutomationCenterIntegrationTest.java`.

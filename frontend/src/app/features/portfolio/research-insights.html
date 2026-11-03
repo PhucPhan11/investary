@@ -1,0 +1,149 @@
+<section class="card insights" aria-label="Research insights">
+  <div class="card__header">
+    <h2 class="card__title">Research insights</h2>
+    <div class="actions">
+      <button type="button" class="btn btn--small" [disabled]="busy() !== null" (click)="findResearch()">
+        {{ busy() === 'research' ? 'Matching…' : 'Find relevant research' }}
+      </button>
+      <button type="button" class="btn btn--primary btn--small" [disabled]="busy() !== null" (click)="runAssessment()">
+        {{ busy() === 'assessment' ? 'Assessing…' : 'Run impact assessment' }}
+      </button>
+    </div>
+  </div>
+  <p class="muted small">
+    Matching is deterministic (ticker, name, publication date). An AI interpretation is added only when a chat model is
+    configured, and only with citations to the matched evidence. Nothing here is a trading signal.
+  </p>
+
+  @if (error(); as message) {
+    <app-alert kind="error">{{ message }}</app-alert>
+  }
+
+  @if (research(); as r) {
+    <h3 class="insights__heading">Relevant research</h3>
+    @if (r.searchMode === 'LEXICAL_ONLY') {
+      <p class="muted small">No embedding model configured: matched by text and ticker only.</p>
+    }
+    <ul class="insights__list">
+      @for (h of r.holdings; track h.instrumentId) {
+        <li class="insight">
+          <div class="insight__head">
+            <strong>{{ h.symbol }}</strong>
+            <span class="muted small">{{ h.direct.length }} direct · {{ h.mentions.length }} mentions</span>
+            @if (h.newestEvidenceDate) {
+              <span class="muted small">newest {{ h.newestEvidenceDate | date: 'mediumDate' }}</span>
+            }
+          </div>
+          @if (!h.direct.length && !h.mentions.length) {
+            <p class="muted small">No research in the library mentions {{ h.symbol }}.</p>
+          }
+          <ul class="evidence">
+            @for (e of h.direct.concat(h.mentions); track e.chunkId) {
+              <li>
+                <span class="tag">{{ e.matchKind === 'DIRECT' ? 'Direct' : 'Mention' }}</span>
+                <a class="link" [routerLink]="link(e)">{{ e.title }}</a>
+                <span class="muted small">
+                  {{ e.publisher }}
+                  @if (e.publishedAt) { · {{ e.dateBasis === 'EMAIL_SENT' ? 'email' : 'published' }} {{ e.publishedAt | date: 'mediumDate' }} }
+                  @if (e.location) { · {{ e.location }} }
+                </span>
+                @if (e.outdated) {
+                  <span class="badge badge--warning">Older than {{ r.freshDays }} days</span>
+                }
+              </li>
+            }
+          </ul>
+        </li>
+      }
+    </ul>
+    @if (r.marketContext.length) {
+      <h4 class="insights__subheading">Market context</h4>
+      <ul class="evidence">
+        @for (e of r.marketContext; track e.chunkId) {
+          <li>
+            <a class="link" [routerLink]="link(e)">{{ e.title }}</a>
+            <span class="muted small">{{ e.publisher }} @if (e.publishedAt) { · {{ e.publishedAt | date: 'mediumDate' }} }</span>
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  <h3 class="insights__heading">Impact assessments</h3>
+  @if (assessments().length === 0) {
+    <p class="muted small">No saved assessments yet.</p>
+  } @else {
+    <ul class="assessment-list">
+      @for (a of assessments(); track a.id) {
+        <li>
+          <button type="button" class="link-button" (click)="open(a.id)">{{ a.createdAt | date: 'medium' }}</button>
+          <span class="muted small">{{ a.itemCount }} holdings · {{ a.aiStatus === 'COMPLETED' ? 'with AI interpretation' : 'matching only' }}</span>
+          @if (a.stale) {
+            <span class="badge badge--warning" [title]="staleText(a.staleReasons)">Stale: {{ staleText(a.staleReasons) }}</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (selected(); as a) {
+    <div class="assessment">
+      <div class="insight__head">
+        <strong>Assessment of {{ a.createdAt | date: 'medium' }}</strong>
+        @if (a.stale) {
+          <span class="badge badge--warning">Stale: {{ staleText(a.staleReasons) }}</span>
+        }
+      </div>
+      @if (a.aiStatus === 'NOT_CONFIGURED') {
+        <p class="muted small">No AI model is configured; categories come from deterministic matching only.</p>
+      }
+      @if (a.overallSummary) {
+        <p class="assessment__overall"><span class="tag tag--plain">AI interpretation</span> {{ a.overallSummary }}</p>
+      }
+      <table class="table">
+        <thead>
+          <tr><th>Holding</th><th>Category</th><th>Summary</th><th>Evidence</th></tr>
+        </thead>
+        <tbody>
+          @for (item of a.items; track item.instrumentId) {
+            <tr>
+              <td data-label="Holding"><strong>{{ item.symbol }}</strong></td>
+              <td data-label="Category">
+                <span [class]="'badge badge--' + category(item.category).tone">{{ category(item.category).label }}</span>
+                @if (item.category !== item.deterministicCategory) {
+                  <span class="muted small">(matching: {{ category(item.deterministicCategory).label }})</span>
+                }
+              </td>
+              <td data-label="Summary">
+                @if (item.aiInterpretation) {
+                  <span class="tag tag--plain">AI</span>
+                }
+                {{ item.summary }}
+                @if (item.evidenceStatus === 'PARTIAL') {
+                  <span class="badge badge--warning">Partially supported</span>
+                }
+              </td>
+              <td data-label="Evidence">
+                @for (e of item.evidence; track e.chunkId) {
+                  <a class="link small evidence-link" [routerLink]="link(e)" [title]="e.excerpt">
+                    {{ e.label ?? '' }} {{ e.publisher }} {{ e.publishedAt }}
+                  </a>
+                } @empty {
+                  <span class="muted small">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (a.warnings.length) {
+        <ul class="turn__warnings">
+          @for (w of a.warnings; track $index) {
+            <li>{{ w }}</li>
+          }
+        </ul>
+      }
+      <p class="turn__disclaimer">{{ a.disclaimer }}</p>
+    </div>
+  }
+</section>

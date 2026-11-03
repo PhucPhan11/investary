@@ -1,9 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+import { NotificationBell } from '../shared/components/notification-bell';
+
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBell],
   template: `
     <header class="topbar">
       <a routerLink="/" class="brand" aria-label="Investary home">
@@ -27,13 +29,18 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <a routerLink="/dashboard" routerLinkActive="nav__link--active" class="nav__link">Dashboard</a>
         <a routerLink="/documents" routerLinkActive="nav__link--active" class="nav__link">Document library</a>
         <a routerLink="/emails" routerLinkActive="nav__link--active" class="nav__link">Email research</a>
+        <a routerLink="/portfolios" routerLinkActive="nav__link--active" class="nav__link">Portfolios</a>
+        <a routerLink="/profile" routerLinkActive="nav__link--active" class="nav__link">Profile</a>
+        <a routerLink="/briefs" routerLinkActive="nav__link--active" class="nav__link">Daily brief</a>
         <a routerLink="/assistant" routerLinkActive="nav__link--active" class="nav__link">Research assistant</a>
+        <a routerLink="/automation" routerLinkActive="nav__link--active" class="nav__link">Automation</a>
       </nav>
+      <app-notification-bell />
     </header>
     <main class="content">
       <router-outlet />
     </main>
-    <footer class="footer">Investary · Phase 3 · local single-user mode, no authentication</footer>
+    <footer class="footer">Investary · Phase 5 · local single-user mode, no authentication · not investment advice</footer>
   `,
 })
 export class Shell {

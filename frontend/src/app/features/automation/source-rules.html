@@ -1,0 +1,134 @@
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <h2 class="card__title">Brokerage sources</h2>
+  <p class="small muted">
+    A message is imported only if the address in its <em>From</em> header (never the display name) matches an enabled
+    source. Domains include their sub-domains. Brokerage ratings in imported emails are the brokerage's statements, not
+    Investary advice.
+  </p>
+
+  @if (loading()) {
+    <p class="muted" role="status">Loading sources…</p>
+  } @else if (rules().length === 0) {
+    <app-empty-state title="No sources yet">
+      Add a brokerage, e.g. TCBS with domain <code>tcbs.com.vn</code>. Nothing is imported until a source exists.
+    </app-empty-state>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Senders</th>
+            <th>Subject filter</th>
+            <th>Options</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (rule of rules(); track rule.id) {
+            <tr [attr.data-rule]="rule.name">
+              <td data-label="Name">{{ rule.name }}</td>
+              <td class="small" data-label="Senders">{{ senders(rule) }}</td>
+              <td class="small" data-label="Subject filter">
+                {{ rule.subjectKeywords.join(', ') || (rule.gmailQuery ? 'Gmail search: ' + rule.gmailQuery : 'Any subject') }}
+              </td>
+              <td data-label="Options">
+                <span class="badge" [class.badge--success]="rule.enabled" [class.badge--muted]="!rule.enabled">
+                  {{ rule.enabled ? 'Enabled' : 'Disabled' }}
+                </span>
+                <span class="badge" [class.badge--info]="rule.autoImport" [class.badge--warning]="!rule.autoImport">
+                  {{ rule.autoImport ? 'Auto import' : 'Record only' }}
+                </span>
+                @if (rule.autoPdfDownload) {
+                  <span class="badge badge--info">Auto PDF download</span>
+                }
+                @for (w of rule.warnings; track w) {
+                  <span class="badge badge--warning" [title]="warningText[w] ?? w">⚠ {{ w === 'PUBLIC_MAIL_DOMAIN' ? 'Public mailbox' : w === 'MANY_DOMAINS' ? 'Many domains' : 'No subject filter' }}</span>
+                }
+              </td>
+              <td class="actions-col">
+                <button type="button" class="btn btn--ghost btn--small" (click)="toggleEnabled(rule)">
+                  {{ rule.enabled ? 'Disable' : 'Enable' }}
+                </button>
+                <button type="button" class="btn btn--ghost btn--small" (click)="edit(rule)">Edit</button>
+                <button type="button" class="btn btn--danger btn--small" (click)="remove(rule)">Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+<section class="card">
+  <form class="form-grid" (ngSubmit)="save()" novalidate>
+    <h3 class="card__title field--wide">{{ editingId() ? 'Edit source' : 'Add source' }}</h3>
+    <label class="field">
+      <span class="field__label">Name</span>
+      <input class="input" name="name" maxlength="100" [(ngModel)]="draft.name" placeholder="TCBS" />
+      @if (errors()['name']; as e) {
+        <span class="field__error">{{ e }}</span>
+      }
+    </label>
+    <label class="field">
+      <span class="field__label">Gmail search (optional)</span>
+      <input class="input" name="gmailQuery" maxlength="500" [(ngModel)]="draft.gmailQuery" placeholder="-category:promotions" />
+      @if (errors()['gmailQuery']; as e) {
+        <span class="field__error">{{ e }}</span>
+      }
+    </label>
+    <label class="field">
+      <span class="field__label">Sender addresses (one per line)</span>
+      <textarea class="input" name="senderAddresses" rows="3" [(ngModel)]="draft.senderAddresses" placeholder="research@tcbs.com.vn"></textarea>
+      @if (errors()['senderAddresses']; as e) {
+        <span class="field__error">{{ e }}</span>
+      }
+    </label>
+    <label class="field">
+      <span class="field__label">Sender domains (one per line)</span>
+      <textarea class="input" name="senderDomains" rows="3" [(ngModel)]="draft.senderDomains" placeholder="tcbs.com.vn"></textarea>
+      @if (errors()['senderDomains']; as e) {
+        <span class="field__error">{{ e }}</span>
+      }
+    </label>
+    <label class="field field--wide">
+      <span class="field__label">Subject keywords (optional, any of them)</span>
+      <textarea class="input" name="subjectKeywords" rows="2" [(ngModel)]="draft.subjectKeywords" placeholder="Bản tin"></textarea>
+      @if (errors()['subjectKeywords']; as e) {
+        <span class="field__error">{{ e }}</span>
+      }
+    </label>
+    @if (publicDomains().length > 0 || broadDomains()) {
+      <div class="field field--wide broad-warning" role="alert" data-testid="broad-warning">
+        <p>
+          <strong>Broad rule:</strong> {{ (broadDomains() ?? publicDomains()).join(', ') }} is a public mailbox service. The rule
+          would import mail from anyone using it, not only the brokerage. Prefer the brokerage's full sender address.
+        </p>
+        <label class="small">
+          <input type="checkbox" name="acknowledged" [(ngModel)]="acknowledged" /> I understand; import from this domain anyway
+        </label>
+      </div>
+    }
+    <div class="field field--wide checkbox-row">
+      <label class="small"><input type="checkbox" name="enabled" [(ngModel)]="draft.enabled" /> Enabled</label>
+      <label class="small"><input type="checkbox" name="autoImport" [(ngModel)]="draft.autoImport" /> Import automatically</label>
+      <label class="small">
+        <input type="checkbox" name="autoPdfDownload" [checked]="draft.autoPdfDownload" (change)="toggleAutoPdf($event)" />
+        Download linked PDF reports automatically
+      </label>
+    </div>
+    <div class="actions field--wide">
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        {{ editingId() ? 'Save source' : 'Add source' }}
+      </button>
+      @if (editingId()) {
+        <button type="button" class="btn btn--ghost" (click)="cancel()">Cancel</button>
+      }
+    </div>
+  </form>
+</section>

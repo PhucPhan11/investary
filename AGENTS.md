@@ -11,6 +11,18 @@ A personal, local, single-user investment research assistant. It has three parts
   linked reports, and deterministic research items.
 - **Phase 3:** a research knowledge base (PDF/email text extraction, chunks, pgvector embeddings,
   hybrid search) and a RAG assistant with backend-validated citations (`docs/phase-3-implementation.md`).
+- **Phase 4:** investor profile and goals, transaction-based portfolios with manual prices, research
+  matching, impact assessments and a portfolio-aware assistant (`docs/phase-4-implementation.md`).
+- **Phase 5 / Milestone 1:** read-only Gmail connection (OAuth + PKCE, encrypted refresh token), brokerage
+  source rules, and initial/incremental Gmail sync into the Phase 2 import (`docs/phase-5-milestone-1.md`).
+- **Phase 5 / Milestone 2:** research workflows: per email/library document, approved automatic PDF downloads,
+  indexing, deterministic portfolio matching and capped impact assessments, on a persistent job queue
+  (`docs/phase-5-milestone-2.md`).
+- **Phase 5 / Milestone 3:** daily investment brief: scheduled (cron + IANA zone) and manual generation on a
+  `brief_jobs` queue, deterministic source selection, validated citations, immutable revisions
+  (`docs/phase-5-milestone-3.md`).
+- **Phase 5 / Milestone 4:** Automation Center (overview and health, source rules, job history and safe retry,
+  runtime settings, AI usage and limits) and deterministic in-app notifications (`docs/phase-5-milestone-4.md`).
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
@@ -23,6 +35,9 @@ A personal, local, single-user investment research assistant. It has three parts
 
 ```
 knowledge ──▶ email ──▶ research ──▶ document ──▶ common
+intelligence ──▶ knowledge, portfolio, investor, research (Keywords only)
+portfolio ──▶ common          investor ──▶ common
+automation ──▶ email, research, knowledge, intelligence, document (application services only)
 ```
 
 | Module | Owns |
@@ -31,13 +46,23 @@ knowledge ──▶ email ──▶ research ──▶ document ──▶ common
 | `com.investary.email` | EML import, parsing, sanitizing, original files |
 | `com.investary.research` | Links, classification, downloads/jobs, research items, `message_documents` provenance |
 | `com.investary.knowledge` | Extraction, chunking, embeddings, `knowledge_sources` jobs, hybrid search, RAG assistant, citations |
-| `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS |
+| `com.investary.investor` | Investor profile and goals |
+| `com.investary.portfolio` | Instruments, prices, portfolios, transactions; holdings/valuation/allocation computed on read |
+| `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant, daily briefs (queue, scheduler, generation) |
+| `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows, stages, matches and the automation job queue; Automation Center APIs and in-app notifications |
+| `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS, runtime settings (`RuntimeSettings`) |
 
 - `common` imports no feature module. `document` imports neither `email` nor `research`. `research`
   never imports `email`.
 - Cross-module calls go to `application` services, never to another module's `persistence`, `storage` or `api`.
+- `intelligence` may only use `*QueryService` classes from `portfolio` and `investor`: AI output must never
+  change portfolio, transaction or profile data.
 - `document` reacts to nothing; it publishes `DocumentDeletedEvent`, which `research` listens to.
-- Inside a module, use the layers `api / application / domain / persistence / storage` (`email` also has `parsing`).
+- Nothing imports `automation`; it imports Gmail mail only through `EmailImportService.importRaw` (no second parser).
+  Other modules notify it only through events published after commit (`EmailImportedEvent`,
+  `DocumentUploadedEvent`, `ReportDownloadedEvent`).
+- Inside a module, use the layers `api / application / domain / persistence / storage` (`email` also has `parsing`;
+  `automation` also has `google` for the Google HTTP clients and `security` for token encryption and OAuth state).
 
 ## Sources of truth
 
@@ -51,7 +76,7 @@ knowledge ──▶ email ──▶ research ──▶ document ──▶ common
 ## Commands
 
 Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 first:
-`export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.9.10-hotspot"` (bash), or the
+`export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.10.7-hotspot"` (bash), or the
 `$env:JAVA_HOME` equivalent in PowerShell.
 
 | Purpose | Command (from repo root unless noted) |
@@ -95,6 +120,47 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
     different models or dimensions.
   - Tests must not call a real AI provider: use `FakeAiConfiguration` + `classpath:fake-ai.properties`.
   - Never present a brokerage rating as Investary's recommendation.
+- **Portfolios:**
+  - Holdings are computed from transactions by `HoldingCalculator` (weighted-average cost, BigDecimal
+    `DECIMAL128`, chronological replay). Never store derived holdings; round only for display (`Money`).
+  - Every transaction change must replay the full history under the portfolio lock and reject oversells.
+  - Never show or compute market value or unrealized P&L without a real price observation; label
+    cost-basis and market-value allocation separately.
+  - Never present a portfolio-intelligence category as a trading signal or recommendation.
+- **Gmail / credentials:**
+  - Never return, log or store in plain text OAuth tokens, client secrets or `INVESTARY_GMAIL_TOKEN_KEY`; tokens stay
+    in the backend (`TokenCipher`, `GmailAccessTokens`). Request only `gmail.readonly`.
+  - Keep `/api/v1/integrations/**` and `/api/v1/automation/**` behind `LocalOnlyRequestFilter`.
+  - Match source rules on the verified `From` addr-spec, never the display name. The Gmail cursor may only
+    advance after the messages before it are recorded in `gmail_messages`.
+  - Tests use WireMock for Google (`GmailSyncIntegrationTest`); never a real Google account or token.
+- **Research workflows:**
+  - Orchestrate only: call the owning modules' services, never re-implement parsing, downloading, indexing or
+    matching. Downloads go only through `DownloadRequestService` (and so `UrlPolicy` / `ReportDownloader`).
+  - Download automatically only for Gmail mail whose enabled rule has `auto_pdf_download`; never for uploads.
+  - Stage handlers run with no transaction open; job writes keep the `claim_token` guard. Every job has a unique
+    idempotency key; handlers must be safe to run again.
+  - Match deterministically before any model call; never infer ETF constituents. Automatic assessments are
+    unique per (portfolio, trigger source, snapshot, content) and capped per day.
+  - Error summaries go through `FailureClassifier.safe` (no URLs, stack traces or secrets).
+  - Tests drive workers synchronously with `WorkflowTestSupport.runAll()`; workers are off in tests.
+- **Daily briefs:**
+  - Reporting periods come from `investary.brief.schedule` (cron + zone); never use the JVM default zone.
+  - "New" means `knowledge_sources.first_indexed_at` in the period. Keep publication, email sent, import and index
+    dates apart, and never call old research received today "newly published".
+  - Scheduled jobs are inserted once per scope, period and config version; brief rows are immutable revisions,
+    written only in the token-guarded completion transaction. Never update a brief's content in place.
+  - Figures, dates, quotes and relevance are computed in Java; model text goes through `BriefValidator`
+    (allowed labels per item, no trading instructions). Identical inputs (fingerprint) must not call the model.
+- **Automation Center / notifications:**
+  - Runtime-editable settings go through `RuntimeSettings` with a `SettingsContributor` in the owning module; read
+    them through that module's effective-settings class, never from `app_settings` directly. Validate every field
+    on the backend; never put credentials in a settings section.
+  - Notifications are decided by `NotificationRules` from stored, validated facts only (no model call, no email
+    wording). Every notification has a stable `dedup_key`; retries and re-runs must not create a second one.
+    Triggers run after commit and must never fail the work that triggered them.
+  - Keep `/api/v1/notifications` and `/api/v1/briefs/jobs` behind `LocalOnlyRequestFilter`. Usage figures are
+    provider-reported counts only; never estimate tokens or show costs without a configured pricing source.
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**
@@ -124,3 +190,7 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - Claude browser pane blocks iframes → `docs/failures/0006-embedded-browser-iframe.md`
 - Java text-block SQL losing trailing spaces → `docs/failures/0007-text-block-sql-trailing-space.md`
 - IntelliJ run configs: terminal before-launch task, lost Maven wrapper → `docs/failures/0008-intellij-run-config-terminal-before-launch.md`
+- Business dates vs JVM time zone → `docs/failures/0009-market-date-vs-jvm-zone.md`
+- The `.gitignore` storage rule hid the Java `storage` packages → `docs/failures/0010-gitignore-storage-hides-java-packages.md`
+- Shell heredocs dropping Java regex escapes → `docs/failures/0011-shell-heredoc-drops-java-escapes.md`
+- Angular specs that mutate plain objects do not re-render → `docs/failures/0012-angular-spec-plain-object-mutation.md`

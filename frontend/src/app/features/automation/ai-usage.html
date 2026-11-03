@@ -1,0 +1,133 @@
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+@if (usage(); as u) {
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">Today's use against the limits</h2>
+      <a class="link small" routerLink="/automation/settings">Change limits</a>
+    </div>
+    <ul class="limit-list">
+      <li>
+        <span>Automatic analyses</span>
+        <span class="limit-bar"><span class="limit-bar__fill" [style.width.%]="percent(u.limits.automaticAssessmentsToday, u.limits.maxAutoAssessmentsPerDay)"></span></span>
+        <span class="small" data-testid="limit-analyses">{{ u.limits.automaticAssessmentsToday }} / {{ u.limits.maxAutoAssessmentsPerDay }}</span>
+      </li>
+      <li>
+        <span>AI brief generations</span>
+        <span class="limit-bar"><span class="limit-bar__fill" [style.width.%]="percent(u.limits.aiBriefsToday, u.limits.maxAiBriefsPerDay)"></span></span>
+        <span class="small">{{ u.limits.aiBriefsToday }} / {{ u.limits.maxAiBriefsPerDay }}</span>
+      </li>
+      <li>
+        <span>Tokens of automatic calls</span>
+        <span class="limit-bar"><span class="limit-bar__fill" [style.width.%]="percent(u.limits.automaticTokensToday, u.limits.dailyTokenBudget)"></span></span>
+        <span class="small">
+          {{ u.limits.automaticTokensToday | number }} /
+          {{ u.limits.dailyTokenBudget === null ? 'no budget' : (u.limits.dailyTokenBudget | number) }}
+        </span>
+      </li>
+    </ul>
+    <p class="small muted">
+      Concurrent requests: {{ u.limits.maxConcurrentChat }} chat, {{ u.limits.maxConcurrentEmbedding }} embedding. Limits are enforced
+      by the backend; a limit reached skips the automatic AI step (briefs keep their deterministic part).
+    </p>
+  </section>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">AI usage</h2>
+    <div class="tabs" role="group" aria-label="Usage period">
+      <button type="button" class="tabs__tab" [class.tabs__tab--active]="period() === 'day'" (click)="select('day')">Daily (14 days)</button>
+      <button type="button" class="tabs__tab" [class.tabs__tab--active]="period() === 'week'" (click)="select('week')">Weekly (8 weeks)</button>
+    </div>
+  </div>
+  @if (loading() && !usage()) {
+    <p class="muted" role="status">Loading usage…</p>
+  } @else if (usage(); as u) {
+    <p class="small muted" data-testid="usage-note">
+      Counts of provider requests and the tokens the provider reported (Asia/Ho_Chi_Minh days).
+      @if (u.trackingSince) {
+        Request counting started on {{ u.trackingSince | date: 'mediumDate' }}; earlier days show only briefs and analyses.
+      } @else {
+        No AI request has been recorded yet.
+      }
+      No monetary cost is shown: no pricing source is configured.
+    </p>
+    <div class="stats stats--compact">
+      <div class="stat-card"><span class="stat-card__label">LLM requests</span><span class="stat-card__value">{{ totals().chatRequests }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Embedding requests</span><span class="stat-card__value">{{ totals().embeddingRequests }}</span></div>
+      <div class="stat-card stat-card--danger"><span class="stat-card__label">Failed requests</span><span class="stat-card__value">{{ totals().chatFailures + totals().embeddingFailures }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Tokens (reported)</span><span class="stat-card__value">{{ totals().tokens | number }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Brief generations</span><span class="stat-card__value">{{ totals().briefs }}</span></div>
+      <div class="stat-card"><span class="stat-card__label">Research analyses</span><span class="stat-card__value">{{ totals().analyses }}</span></div>
+    </div>
+    <div class="table-wrap">
+      <table class="table usage-table">
+        <thead>
+          <tr>
+            <th>{{ u.period === 'week' ? 'Week of' : 'Day' }}</th>
+            <th>Requests</th>
+            <th class="num">LLM</th>
+            <th class="num">Embedding</th>
+            <th class="num">Failures</th>
+            <th class="num">Tokens in / out</th>
+            <th class="num">Briefs (AI)</th>
+            <th class="num">Analyses (auto)</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of u.buckets; track b.start) {
+            <tr>
+              <td data-label="Period">{{ b.start | date: 'mediumDate' }}</td>
+              <td class="usage-table__bar"><span class="usage-bar" [style.width]="width(b)"></span></td>
+              <td class="num" data-label="LLM">{{ b.chatRequests }}</td>
+              <td class="num" data-label="Embedding">{{ b.embeddingRequests }}</td>
+              <td class="num" data-label="Failures">{{ b.chatFailures + b.embeddingFailures }}</td>
+              <td class="num" data-label="Tokens">{{ b.inputTokens | number }} / {{ b.outputTokens | number }}</td>
+              <td class="num" data-label="Briefs">{{ b.briefGenerations }} ({{ b.aiBriefGenerations }})</td>
+              <td class="num" data-label="Analyses">{{ b.analyses }} ({{ b.automaticAnalyses }})</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (usage(); as u) {
+  <section class="card">
+    <h2 class="card__title">By purpose and model</h2>
+    @if (u.byPurpose.length === 0) {
+      <app-empty-state title="No AI requests recorded">Requests appear here after the first model call.</app-empty-state>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Kind</th>
+              <th>Purpose</th>
+              <th>Model</th>
+              <th class="num">Requests</th>
+              <th class="num">Failures</th>
+              <th class="num">Tokens in / out</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of u.byPurpose; track p.operation + p.purpose + p.model) {
+              <tr>
+                <td data-label="Kind">{{ p.operation === 'CHAT' ? 'LLM' : 'Embedding' }}</td>
+                <td data-label="Purpose">{{ purposeLabels[p.purpose] ?? p.purpose }}</td>
+                <td class="small mono" data-label="Model">{{ p.model }}</td>
+                <td class="num" data-label="Requests">{{ p.requests }}</td>
+                <td class="num" data-label="Failures">{{ p.failures }}</td>
+                <td class="num" data-label="Tokens">{{ p.inputTokens | number }} / {{ p.outputTokens | number }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

@@ -19,6 +19,7 @@ import com.investary.knowledge.KnowledgeProperties;
 import com.investary.knowledge.chunking.Chunk;
 import com.investary.knowledge.chunking.TextChunker;
 import com.investary.knowledge.embedding.EmbeddingDimensionMismatchException;
+import com.investary.knowledge.embedding.EmbeddingException;
 import com.investary.knowledge.embedding.EmbeddingService;
 import com.investary.knowledge.extraction.ExtractedText;
 import com.investary.knowledge.extraction.ExtractionException;
@@ -103,6 +104,13 @@ public class KnowledgeIndexProcessor {
         } catch (ExtractionException | EmbeddingDimensionMismatchException e) {
             queue.fail(job, truncate(e.getMessage()));
             log.warn("Indexing failed permanently knowledgeSourceId={}: {}", job.id(), e.getMessage());
+        } catch (EmbeddingException e) {
+            if (e.isPermanent()) {
+                queue.fail(job, truncate(e.getMessage()));
+                log.warn("Indexing failed permanently knowledgeSourceId={}: {}", job.id(), e.getMessage());
+            } else {
+                handleRetryable(job, e);
+            }
         } catch (RuntimeException e) {
             handleRetryable(job, e);
         }

@@ -44,7 +44,7 @@ public final class PromptBuilder {
             "unsupportedPoints": ["<phần câu hỏi không có bằng chứng>"]}
             SUPPORTED: mọi ý chính đều có nguồn. PARTIAL: chỉ một phần có nguồn. INSUFFICIENT: nguồn không đủ.""";
 
-    private static final Pattern TAG_LIKE = Pattern.compile("(?i)</?\\s*(source|sources|system|instructions?)\\b");
+    private static final Pattern TAG_LIKE = Pattern.compile("(?i)</?\\s*(source|sources|system|instructions?|portfolio_facts|investor_profile|goals|holdings?)\\b");
 
     private PromptBuilder() {
     }
@@ -52,7 +52,17 @@ public final class PromptBuilder {
     public static Prompt build(String question, List<LabeledHit> sources, LocalDate today) {
         StringBuilder user = new StringBuilder();
         user.append("Hôm nay là ").append(today).append(". Các nguồn có thể đã cũ; hãy dựa vào ngày của từng nguồn.\n\n");
-        user.append("<sources>\n");
+        user.append(sources(sources)).append('\n');
+        user.append("Câu hỏi: ").append(neutralise(question));
+        return new Prompt(List.of(new SystemMessage(SYSTEM), new UserMessage(user.toString())));
+    }
+
+    /**
+     * Renders labelled evidence as a {@code <sources>} element of {@code <source>} elements with neutralised
+     * text. Reused by other prompts (portfolio intelligence) so every source is presented the same way.
+     */
+    public static String sources(List<LabeledHit> sources) {
+        StringBuilder user = new StringBuilder("<sources>\n");
         for (LabeledHit source : sources) {
             SearchHit hit = source.hit();
             user.append("<source id=\"").append(source.label()).append("\"")
@@ -70,19 +80,18 @@ public final class PromptBuilder {
             }
             user.append(">\n").append(neutralise(hit.content())).append("\n</source>\n");
         }
-        user.append("</sources>\n\n");
-        user.append("Câu hỏi: ").append(neutralise(question));
-        return new Prompt(List.of(new SystemMessage(SYSTEM), new UserMessage(user.toString())));
+        return user.append("</sources>\n").toString();
     }
 
-    static String location(SearchHit hit) {
+    public static String location(SearchHit hit) {
         if (hit.pageStart() != null) {
             return hit.pageStart().equals(hit.pageEnd()) ? "trang " + hit.pageStart() : "trang " + hit.pageStart() + "–" + hit.pageEnd();
         }
         return hit.section();
     }
 
-    static String neutralise(String text) {
+    /** Breaks tag-like sequences so untrusted text cannot close or open prompt elements. */
+    public static String neutralise(String text) {
         return TAG_LIKE.matcher(text).replaceAll(match -> "‹" + match.group().substring(1).replace("/", ""));
     }
 

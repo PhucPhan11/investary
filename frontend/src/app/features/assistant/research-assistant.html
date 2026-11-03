@@ -33,6 +33,39 @@
 <div class="assistant">
   <section class="assistant__chat">
     <form class="card assistant__form" (ngSubmit)="ask()">
+      <div class="mode-switch" role="radiogroup" aria-label="Assistant mode">
+        <label class="mode-switch__option">
+          <input type="radio" name="mode" value="GENERAL" [checked]="mode() === 'GENERAL'" (change)="mode.set('GENERAL')" />
+          General research
+        </label>
+        <label class="mode-switch__option">
+          <input type="radio" name="mode" value="PORTFOLIO" [checked]="mode() === 'PORTFOLIO'" (change)="mode.set('PORTFOLIO')" />
+          Portfolio-aware
+        </label>
+      </div>
+      @if (mode() === 'PORTFOLIO') {
+        @if (portfoliosError(); as message) {
+          <app-alert kind="error">{{ message }}</app-alert>
+        } @else if (portfolios().length === 0) {
+          <app-alert kind="info">Create a portfolio first (<a class="link" routerLink="/portfolios">Portfolios</a>).</app-alert>
+        } @else {
+          <label class="field">
+            <span class="field__label">Portfolio</span>
+            <select class="input" name="portfolioId" [(ngModel)]="portfolioId">
+              <option value="">Choose a portfolio…</option>
+              @for (p of portfolios(); track p.id) {
+                <option [value]="p.id">{{ p.name }}</option>
+              }
+            </select>
+          </label>
+          @if (!portfolioId) {
+            <p class="muted small" data-testid="choose-portfolio">Choose which portfolio the question is about.</p>
+          }
+          <p class="muted small">
+            Uses your profile, goals and computed holdings with the research library. The assistant only reads your data.
+          </p>
+        }
+      }
       <label class="field">
         <span class="field__label">Question</span>
         <textarea
@@ -46,6 +79,7 @@
         ></textarea>
       </label>
 
+      @if (mode() === 'GENERAL') {
       <fieldset class="assistant__filters">
         <legend class="field__label">Filters (optional)</legend>
         <label class="field">
@@ -78,9 +112,10 @@
           <input class="input" type="date" name="to" [(ngModel)]="filters.to" />
         </label>
       </fieldset>
+      }
 
       <div class="actions">
-        <button type="submit" class="btn btn--primary" [disabled]="asking() || question.trim().length < 3">
+        <button type="submit" class="btn btn--primary" [disabled]="!canAsk()">
           {{ asking() ? 'Asking…' : 'Ask' }}
         </button>
         <button type="button" class="btn btn--ghost btn--small" (click)="clearFilters()">Clear filters</button>
@@ -104,6 +139,9 @@
         <li class="turn" [class.turn--selected]="selectedTurn()?.id === turn.id">
           <div class="turn__question">
             <strong>{{ turn.question }}</strong>
+            @if (turn.portfolio; as p) {
+              <span class="muted small">Portfolio: {{ p.name }}</span>
+            }
             @if (hasFilters(turn.filters)) {
               <span class="muted small">{{ describeFilters(turn.filters) }}</span>
             }
@@ -118,6 +156,12 @@
             @case ('done') {
               @if (turn.answer; as a) {
                 <div class="turn__answer">
+                  @if (turn.portfolio; as p) {
+                    <details class="portfolio-facts">
+                      <summary class="small">Portfolio data used (computed by Investary, not AI)</summary>
+                      <pre class="portfolio-facts__text">{{ p.facts }}</pre>
+                    </details>
+                  }
                   <span [class]="'badge badge--' + evidence(a.evidenceStatus).tone">{{ evidence(a.evidenceStatus).label }}</span>
                   <p class="turn__text">
                     @for (segment of turn.segments; track $index) {

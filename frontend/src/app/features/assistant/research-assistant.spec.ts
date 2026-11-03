@@ -3,7 +3,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
+import { PortfolioAnswer } from '../../core/models/intelligence.model';
 import { AssistantAnswer, KnowledgeStatus } from '../../core/models/knowledge.model';
+import { Portfolio } from '../../core/models/portfolio.model';
 import { ResearchAssistant } from './research-assistant';
 
 const status: KnowledgeStatus = {
@@ -63,13 +65,86 @@ describe('ResearchAssistant', () => {
 
   afterEach(() => http.verify());
 
-  function render() {
+  function render(portfolios: Portfolio[] = []) {
     const fixture = TestBed.createComponent(ResearchAssistant);
     fixture.detectChanges();
     http.expectOne('/api/v1/knowledge/status').flush(status);
+    http.expectOne('/api/v1/portfolios').flush(portfolios);
     fixture.detectChanges();
     return fixture;
   }
+
+  function portfolio(id: string, name: string): Portfolio {
+    return { id, name, description: null, baseCurrency: 'VND', transactionCount: 1, createdAt: '', updatedAt: '' };
+  }
+
+  function switchToPortfolioMode(el: HTMLElement): void {
+    const radio = el.querySelector<HTMLInputElement>('input[value="PORTFOLIO"]')!;
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change'));
+  }
+
+  it('never picks a portfolio when there are several', async () => {
+    const fixture = render([portfolio('p1', 'Dài hạn'), portfolio('p2', 'Lướt sóng')]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    switchToPortfolioMode(el);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.querySelector('[data-testid="choose-portfolio"]')).not.toBeNull();
+    expect(el.querySelectorAll('select[name="portfolioId"] option').length).toBe(3);
+    const textarea = el.querySelector<HTMLTextAreaElement>('textarea[name="question"]')!;
+    textarea.value = 'Danh mục của tôi có rủi ro gì?';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(el.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(true);
+    expect(el.querySelector('.assistant__filters')).toBeNull();
+  });
+
+  it('asks a portfolio-aware question and shows the portfolio facts apart from the cited answer', async () => {
+    const fixture = render([portfolio('p1', 'Dài hạn')]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    switchToPortfolioMode(el);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(el.querySelector('[data-testid="choose-portfolio"]')).toBeNull();
+
+    const textarea = el.querySelector<HTMLTextAreaElement>('textarea[name="question"]')!;
+    textarea.value = 'SCS ảnh hưởng thế nào?';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+
+    const request = http.expectOne('/api/v1/intelligence/ask');
+    expect(request.request.body).toEqual({ question: 'SCS ảnh hưởng thế nào?', portfolioId: 'p1' });
+    const reply: PortfolioAnswer = {
+      portfolioId: 'p1',
+      portfolioName: 'Dài hạn',
+      portfolioSummary: {} as PortfolioAnswer['portfolioSummary'],
+      holdings: [],
+      portfolioFacts: 'Danh mục: Dài hạn (tiền tệ VND)\n- SCS: số lượng 1000',
+      profileConfigured: false,
+      goalCount: 0,
+      focusSymbols: ['SCS'],
+      answer: answer.answer,
+      evidenceStatus: 'SUPPORTED',
+      citations: answer.citations,
+      retrievedSourceIds: ['e1'],
+      warnings: [],
+      newestEvidenceDate: '2026-10-28',
+      model: 'ollama:qwen3:8b',
+      disclaimer: 'Không phải lời khuyên đầu tư.',
+    };
+    request.flush(reply);
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Portfolio: Dài hạn');
+    expect(el.querySelector('.portfolio-facts__text')!.textContent).toContain('SCS: số lượng 1000');
+    expect(el.querySelector('.turn__text')!.textContent).toContain('Theo TCBS');
+    expect(el.textContent).toContain('Supported by sources');
+  });
 
   it('reports a missing AI provider and knowledge base counts', () => {
     const el = render().nativeElement as HTMLElement;

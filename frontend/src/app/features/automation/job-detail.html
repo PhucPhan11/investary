@@ -1,0 +1,108 @@
+<a class="back-link" routerLink="/automation/jobs">← All jobs</a>
+
+@if (error(); as message) {
+  <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
+}
+
+@if (loading()) {
+  <p class="muted" role="status">Loading job…</p>
+} @else if (detail(); as d) {
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">{{ typeLabels[d.job.type] }} job</h2>
+      <app-status-badge [value]="d.job.status" />
+    </div>
+    <dl class="meta">
+      <dt>Job id</dt>
+      <dd class="mono small">{{ d.job.id }}</dd>
+      <dt>Source</dt>
+      <dd>
+        @if (sourceLink(); as link) {
+          <a class="link" [routerLink]="link">{{ d.job.sourceTitle }}</a>
+          ({{ d.job.sourceType === 'DOCUMENT' ? 'library document' : 'email' }})
+        } @else {
+          <span class="muted">The source was deleted.</span>
+        }
+      </dd>
+      <dt>Created</dt>
+      <dd>{{ d.job.createdAt | date: 'medium' }}</dd>
+      <dt>Started / completed</dt>
+      <dd>{{ d.job.startedAt ? (d.job.startedAt | date: 'medium') : '—' }} / {{ d.job.completedAt ? (d.job.completedAt | date: 'medium') : '—' }}</dd>
+      <dt>Attempts</dt>
+      <dd>{{ d.job.attempts }} of {{ d.job.maxAttempts }} · {{ d.job.manualRetries ?? 0 }} manual retr{{ d.job.manualRetries === 1 ? 'y' : 'ies' }}</dd>
+      @if (d.job.inputTokens !== null || d.job.outputTokens !== null) {
+        <dt>Tokens (provider-reported)</dt>
+        <dd>{{ d.job.inputTokens ?? 0 }} in · {{ d.job.outputTokens ?? 0 }} out</dd>
+      }
+    </dl>
+    @if (d.job.errorCode) {
+      <app-alert kind="error">{{ d.job.errorCode }}: {{ d.job.errorSummary }}</app-alert>
+    }
+    <div class="actions">
+      @if (d.job.retryable) {
+        <button type="button" class="btn btn--primary" [disabled]="retrying()" (click)="retry()">
+          {{ retrying() ? 'Retrying…' : 'Retry this step' }}
+        </button>
+      } @else if (d.job.status === 'FAILED' && d.job.retryBlockedReason) {
+        <p class="small muted">{{ blockedText[d.job.retryBlockedReason] ?? d.job.retryBlockedReason }}</p>
+      } @else if (d.job.status === 'PENDING' || d.job.status === 'RUNNING' || d.job.status === 'WAITING') {
+        <p class="small muted" role="status">The job is in progress; this page refreshes until it finishes.</p>
+      }
+    </div>
+    <p class="small muted">A retry reruns only this step. Completed steps, the imported email and downloaded reports are reused.</p>
+  </section>
+
+  @if (d.workflow; as w) {
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">Workflow stages</h2>
+        <app-status-badge [value]="'WORKFLOW_' + w.status" />
+      </div>
+      <ol class="workflow-stages">
+        @for (s of stages(); track s.stage) {
+          <li [attr.data-stage]="s.stage">
+            <span>{{ stageLabels[s.stage] }}</span>
+            <app-status-badge [value]="'WORKFLOW_' + s.status" />
+            @if (s.reason) {
+              <span class="small muted">{{ reasons[s.reason] ?? s.reason }}</span>
+            }
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
+  <section class="card">
+    <h2 class="card__title">Attempt history</h2>
+    @if (d.attempts.length === 0) {
+      <p class="small muted">No attempts recorded (jobs created before Milestone 4 keep only their latest state).</p>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Attempt</th>
+              <th>Trigger</th>
+              <th>Started</th>
+              <th>Finished</th>
+              <th>Result</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of d.attempts; track $index) {
+              <tr>
+                <td data-label="Attempt">{{ a.trigger === 'MANUAL_RETRY' ? '—' : a.attempt }}</td>
+                <td data-label="Trigger">{{ a.trigger === 'MANUAL_RETRY' ? 'Manual retry' : a.trigger === 'AUTO' ? 'Automatic' : 'Lease recovery' }}</td>
+                <td data-label="Started">{{ a.startedAt | date: 'medium' }}</td>
+                <td data-label="Finished">{{ a.finishedAt ? (a.finishedAt | date: 'medium') : '—' }}</td>
+                <td data-label="Result">{{ a.result }}</td>
+                <td class="small" data-label="Error">{{ a.errorCode ? a.errorCode + ': ' + (a.errorSummary ?? '') : '' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}
