@@ -1,0 +1,2132 @@
+{
+  "backend/mvnw": {
+    "mtime": 1716279120.0,
+    "seen": 1793351713.4155579,
+    "ast_hash": "2fe09837c0b4dfabab4c4b206bcd0850",
+    "semantic_hash": "2fe09837c0b4dfabab4c4b206bcd0850"
+  },
+  "backend/pom.xml": {
+    "mtime": 1793323791.7508948,
+    "seen": 1793351713.415583,
+    "ast_hash": "4909b1153b419405e8259ca120e140e9",
+    "semantic_hash": "4909b1153b419405e8259ca120e140e9"
+  },
+  "backend/src/main/java/com/investary/InvestaryApplication.java": {
+    "mtime": 1793248020.1250165,
+    "seen": 1793351713.4155931,
+    "ast_hash": "a47d8ba7f57871893629bc5487939317",
+    "semantic_hash": "a47d8ba7f57871893629bc5487939317"
+  },
+  "backend/src/main/java/com/investary/common/config/CorsProperties.java": {
+    "mtime": 1793248195.8202932,
+    "seen": 1793351713.4155993,
+    "ast_hash": "724f01d8ac58e53f28e0ae01f81ec1ca",
+    "semantic_hash": "724f01d8ac58e53f28e0ae01f81ec1ca"
+  },
+  "backend/src/main/java/com/investary/common/config/WebConfig.java": {
+    "mtime": 1793248197.2559688,
+    "seen": 1793351713.4156055,
+    "ast_hash": "f8516e45c6e67043a6b39fe12f92a9e4",
+    "semantic_hash": "f8516e45c6e67043a6b39fe12f92a9e4"
+  },
+  "backend/src/main/java/com/investary/common/error/ApiException.java": {
+    "mtime": 1793253346.4415348,
+    "seen": 1793351713.4156106,
+    "ast_hash": "8b26f80d7ed38e46b71efee1e16c0936",
+    "semantic_hash": "8b26f80d7ed38e46b71efee1e16c0936"
+  },
+  "backend/src/main/java/com/investary/common/error/ErrorCode.java": {
+    "mtime": 1793331326.8376079,
+    "seen": 1793351713.4156165,
+    "ast_hash": "e559e241b13dc30afe1eee573b1e177d",
+    "semantic_hash": "e559e241b13dc30afe1eee573b1e177d"
+  },
+  "backend/src/main/java/com/investary/common/error/GlobalExceptionHandler.java": {
+    "mtime": 1793253345.8434558,
+    "seen": 1793351713.415622,
+    "ast_hash": "541d6f0d6e88dfe94200ad54f67aadab",
+    "semantic_hash": "541d6f0d6e88dfe94200ad54f67aadab"
+  },
+  "backend/src/main/java/com/investary/common/tx/AfterCommit.java": {
+    "mtime": 1793253374.1919882,
+    "seen": 1793351713.4156275,
+    "ast_hash": "3a8e4f501018b5909a9e4d998297d7bb",
+    "semantic_hash": "3a8e4f501018b5909a9e4d998297d7bb"
+  },
+  "backend/src/main/java/com/investary/common/util/Hashing.java": {
+    "mtime": 1793254665.6917531,
+    "seen": 1793351713.415633,
+    "ast_hash": "d0af9180d09ccdadf9436e1ec4f42965",
+    "semantic_hash": "d0af9180d09ccdadf9436e1ec4f42965"
+  },
+  "backend/src/main/java/com/investary/common/web/PageResponse.java": {
+    "mtime": 1793254754.9806063,
+    "seen": 1793351713.4156382,
+    "ast_hash": "c91c6e742abbdb3f57c23e3cae458fe9",
+    "semantic_hash": "c91c6e742abbdb3f57c23e3cae458fe9"
+  },
+  "backend/src/main/java/com/investary/common/web/UrlCodec.java": {
+    "mtime": 1793254066.0158284,
+    "seen": 1793351713.4156444,
+    "ast_hash": "99553b1b6190c61a371c82cbabbca6d4",
+    "semantic_hash": "99553b1b6190c61a371c82cbabbca6d4"
+  },
+  "backend/src/main/java/com/investary/document/api/DocumentController.java": {
+    "mtime": 1793254755.2117155,
+    "seen": 1793351713.4156497,
+    "ast_hash": "1c1d7d51f1b4f055b8680883b585d4c2",
+    "semantic_hash": "1c1d7d51f1b4f055b8680883b585d4c2"
+  },
+  "backend/src/main/java/com/investary/document/api/DocumentResponse.java": {
+    "mtime": 1793248189.7072036,
+    "seen": 1793351713.4156551,
+    "ast_hash": "d54b23ceebc35f53be451d87dbc7b265",
+    "semantic_hash": "d54b23ceebc35f53be451d87dbc7b265"
+  },
+  "backend/src/main/java/com/investary/document/api/UploadMetadataRequest.java": {
+    "mtime": 1793248193.1557283,
+    "seen": 1793351713.4156609,
+    "ast_hash": "2fb3bf69f1acbd1195ef61cb4665b338",
+    "semantic_hash": "2fb3bf69f1acbd1195ef61cb4665b338"
+  },
+  "backend/src/main/java/com/investary/document/application/DocumentDeletedEvent.java": {
+    "mtime": 1793253375.4491432,
+    "seen": 1793351713.415666,
+    "ast_hash": "a8c919187277cd47eedcb0e6ac3983d0",
+    "semantic_hash": "a8c919187277cd47eedcb0e6ac3983d0"
+  },
+  "backend/src/main/java/com/investary/document/application/DocumentDownload.java": {
+    "mtime": 1793248126.4294002,
+    "seen": 1793351713.4156718,
+    "ast_hash": "bc7e868be4e4eeac3338ab2259a5faf5",
+    "semantic_hash": "bc7e868be4e4eeac3338ab2259a5faf5"
+  },
+  "backend/src/main/java/com/investary/document/application/DocumentNotFoundException.java": {
+    "mtime": 1793253348.2787173,
+    "seen": 1793351713.4156768,
+    "ast_hash": "911c8efa7bdbab88ab182e0b78242bb6",
+    "semantic_hash": "911c8efa7bdbab88ab182e0b78242bb6"
+  },
+  "backend/src/main/java/com/investary/document/application/DocumentService.java": {
+    "mtime": 1793253391.4512947,
+    "seen": 1793351713.4156823,
+    "ast_hash": "3a641f9cca4ee59a9f39071e3f504194",
+    "semantic_hash": "3a641f9cca4ee59a9f39071e3f504194"
+  },
+  "backend/src/main/java/com/investary/document/application/DuplicateDocumentException.java": {
+    "mtime": 1793253348.9421105,
+    "seen": 1793351713.4156873,
+    "ast_hash": "ba983d72fc4981c40191be7d3728c325",
+    "semantic_hash": "ba983d72fc4981c40191be7d3728c325"
+  },
+  "backend/src/main/java/com/investary/document/application/InvalidDocumentException.java": {
+    "mtime": 1793253349.6396463,
+    "seen": 1793351713.4156928,
+    "ast_hash": "4fb62ff79c2b54440cdf74e8df990adf",
+    "semantic_hash": "4fb62ff79c2b54440cdf74e8df990adf"
+  },
+  "backend/src/main/java/com/investary/document/application/PdfSignatureValidator.java": {
+    "mtime": 1793248121.3716078,
+    "seen": 1793351713.4156976,
+    "ast_hash": "e28dc86ec3c5de7a8cfa743a5ffd27ea",
+    "semantic_hash": "e28dc86ec3c5de7a8cfa743a5ffd27ea"
+  },
+  "backend/src/main/java/com/investary/document/application/UploadDocumentCommand.java": {
+    "mtime": 1793248125.2558675,
+    "seen": 1793351713.4157047,
+    "ast_hash": "59ed2bf8759609154840e49f394f26ac",
+    "semantic_hash": "59ed2bf8759609154840e49f394f26ac"
+  },
+  "backend/src/main/java/com/investary/document/domain/Document.java": {
+    "mtime": 1793248041.008175,
+    "seen": 1793351713.41571,
+    "ast_hash": "3d2d3d49636b399ea8e35094007eb032",
+    "semantic_hash": "3d2d3d49636b399ea8e35094007eb032"
+  },
+  "backend/src/main/java/com/investary/document/domain/ReportType.java": {
+    "mtime": 1793248021.4583383,
+    "seen": 1793351713.4157147,
+    "ast_hash": "85f116ff3eb684ea61ef379f166c3371",
+    "semantic_hash": "85f116ff3eb684ea61ef379f166c3371"
+  },
+  "backend/src/main/java/com/investary/document/persistence/DocumentRepository.java": {
+    "mtime": 1793248023.317037,
+    "seen": 1793351713.41572,
+    "ast_hash": "4add6064a4a8a64322f88eddc84cc2c9",
+    "semantic_hash": "4add6064a4a8a64322f88eddc84cc2c9"
+  },
+  "backend/src/main/java/com/investary/email/EmailProperties.java": {
+    "mtime": 1793254616.1143727,
+    "seen": 1793351713.4157255,
+    "ast_hash": "234538210ffd58906430192d126f8606",
+    "semantic_hash": "234538210ffd58906430192d126f8606"
+  },
+  "backend/src/main/java/com/investary/email/api/EmailController.java": {
+    "mtime": 1793254762.9651875,
+    "seen": 1793351713.4157307,
+    "ast_hash": "aca01b268abf7176be47e875351912ac",
+    "semantic_hash": "aca01b268abf7176be47e875351912ac"
+  },
+  "backend/src/main/java/com/investary/email/application/EmailDeletionService.java": {
+    "mtime": 1793254761.31094,
+    "seen": 1793351713.415736,
+    "ast_hash": "8382d564d478ea807efaf9551b2ce509",
+    "semantic_hash": "8382d564d478ea807efaf9551b2ce509"
+  },
+  "backend/src/main/java/com/investary/email/application/EmailExceptions.java": {
+    "mtime": 1793254618.5602446,
+    "seen": 1793351713.4157412,
+    "ast_hash": "60b1f95aa1e1c4ceb5b1e596be14a063",
+    "semantic_hash": "60b1f95aa1e1c4ceb5b1e596be14a063"
+  },
+  "backend/src/main/java/com/investary/email/application/EmailImportService.java": {
+    "mtime": 1793254668.9221697,
+    "seen": 1793351713.4157462,
+    "ast_hash": "20ec69cb4122320e9303c6ab337e57b0",
+    "semantic_hash": "20ec69cb4122320e9303c6ab337e57b0"
+  },
+  "backend/src/main/java/com/investary/email/application/EmailQueryService.java": {
+    "mtime": 1793323791.7601874,
+    "seen": 1793351713.4160056,
+    "ast_hash": "4324f65d8523f1695f5d95bbe8d94794",
+    "semantic_hash": "4324f65d8523f1695f5d95bbe8d94794"
+  },
+  "backend/src/main/java/com/investary/email/application/EmailViews.java": {
+    "mtime": 1793323791.763441,
+    "seen": 1793351713.416022,
+    "ast_hash": "0986e11df250aa8e7e22dfa910c2535b",
+    "semantic_hash": "0986e11df250aa8e7e22dfa910c2535b"
+  },
+  "backend/src/main/java/com/investary/email/domain/ParsingStatus.java": {
+    "mtime": 1793254596.0339131,
+    "seen": 1793351713.4160304,
+    "ast_hash": "92ae45a82bf585ab83892e2135788e27",
+    "semantic_hash": "92ae45a82bf585ab83892e2135788e27"
+  },
+  "backend/src/main/java/com/investary/email/domain/SourceAttachment.java": {
+    "mtime": 1793254598.7601247,
+    "seen": 1793351713.416038,
+    "ast_hash": "a9f726ab1d0295aad4f186cce5212e87",
+    "semantic_hash": "a9f726ab1d0295aad4f186cce5212e87"
+  },
+  "backend/src/main/java/com/investary/email/domain/SourceMessage.java": {
+    "mtime": 1793254597.4696608,
+    "seen": 1793351713.416046,
+    "ast_hash": "ddda8740bea04ff98c21f997e7ad7078",
+    "semantic_hash": "ddda8740bea04ff98c21f997e7ad7078"
+  },
+  "backend/src/main/java/com/investary/email/domain/SourceType.java": {
+    "mtime": 1793254596.5347908,
+    "seen": 1793351713.416054,
+    "ast_hash": "6b50234d9312134878b78a8212b8a709",
+    "semantic_hash": "6b50234d9312134878b78a8212b8a709"
+  },
+  "backend/src/main/java/com/investary/email/parsing/AnalyzedContent.java": {
+    "mtime": 1793254004.742232,
+    "seen": 1793351713.41606,
+    "ast_hash": "165568e1c791179f33c2dd19dc7d8ffc",
+    "semantic_hash": "165568e1c791179f33c2dd19dc7d8ffc"
+  },
+  "backend/src/main/java/com/investary/email/parsing/ContentAnalyzer.java": {
+    "mtime": 1793254003.8810356,
+    "seen": 1793351713.4160645,
+    "ast_hash": "1db08ad4c3dd85e75b0365b9efcb4f58",
+    "semantic_hash": "1db08ad4c3dd85e75b0365b9efcb4f58"
+  },
+  "backend/src/main/java/com/investary/email/parsing/ContentBlock.java": {
+    "mtime": 1793253651.0385063,
+    "seen": 1793351713.4160686,
+    "ast_hash": "234880dea664ccd3f55546dd69ab71d6",
+    "semantic_hash": "234880dea664ccd3f55546dd69ab71d6"
+  },
+  "backend/src/main/java/com/investary/email/parsing/EmlParser.java": {
+    "mtime": 1793254669.69674,
+    "seen": 1793351713.416074,
+    "ast_hash": "c73564b27cd64df0ad026363e99025f8",
+    "semantic_hash": "c73564b27cd64df0ad026363e99025f8"
+  },
+  "backend/src/main/java/com/investary/email/parsing/ExtractedLink.java": {
+    "mtime": 1793253651.761655,
+    "seen": 1793351713.4160786,
+    "ast_hash": "8283bbaf22a5068625201ce75ce54560",
+    "semantic_hash": "8283bbaf22a5068625201ce75ce54560"
+  },
+  "backend/src/main/java/com/investary/email/parsing/HtmlSanitizer.java": {
+    "mtime": 1793256739.318839,
+    "seen": 1793351713.4160836,
+    "ast_hash": "daaf743bddfd0d02d85da025492cc779",
+    "semantic_hash": "daaf743bddfd0d02d85da025492cc779"
+  },
+  "backend/src/main/java/com/investary/email/parsing/LanguageDetector.java": {
+    "mtime": 1793253648.666051,
+    "seen": 1793351713.4160943,
+    "ast_hash": "ce315a0ef824119bf0bb18e1f40ec5fb",
+    "semantic_hash": "ce315a0ef824119bf0bb18e1f40ec5fb"
+  },
+  "backend/src/main/java/com/investary/email/parsing/MalformedEmailException.java": {
+    "mtime": 1793253614.2251892,
+    "seen": 1793351713.4160986,
+    "ast_hash": "a2963d2142c1071b13ceb540c4b16dec",
+    "semantic_hash": "a2963d2142c1071b13ceb540c4b16dec"
+  },
+  "backend/src/main/java/com/investary/email/parsing/ParsedAttachment.java": {
+    "mtime": 1793253613.3690367,
+    "seen": 1793351713.4161034,
+    "ast_hash": "a78e1bd07cb7fe97a7708c3401fac2ac",
+    "semantic_hash": "a78e1bd07cb7fe97a7708c3401fac2ac"
+  },
+  "backend/src/main/java/com/investary/email/parsing/ParsedEmail.java": {
+    "mtime": 1793253612.9560401,
+    "seen": 1793351713.4161074,
+    "ast_hash": "aa805d12af1cf8473bcfb1b6b87808a7",
+    "semantic_hash": "aa805d12af1cf8473bcfb1b6b87808a7"
+  },
+  "backend/src/main/java/com/investary/email/parsing/TextCleaner.java": {
+    "mtime": 1793256738.4313593,
+    "seen": 1793351713.4161122,
+    "ast_hash": "9d968cba18940392b0ed05ed5aa79009",
+    "semantic_hash": "9d968cba18940392b0ed05ed5aa79009"
+  },
+  "backend/src/main/java/com/investary/email/parsing/TrackingLinkUnwrapper.java": {
+    "mtime": 1793254069.3795846,
+    "seen": 1793351713.4161172,
+    "ast_hash": "f58190de92377a541f42a0efac22dd9b",
+    "semantic_hash": "f58190de92377a541f42a0efac22dd9b"
+  },
+  "backend/src/main/java/com/investary/email/persistence/SourceAttachmentRepository.java": {
+    "mtime": 1793254600.2203653,
+    "seen": 1793351713.4161222,
+    "ast_hash": "41649165122b6114904857459c66dfcd",
+    "semantic_hash": "41649165122b6114904857459c66dfcd"
+  },
+  "backend/src/main/java/com/investary/email/persistence/SourceMessageRepository.java": {
+    "mtime": 1793254599.4305675,
+    "seen": 1793351713.4161267,
+    "ast_hash": "93fd053795f8bdd23fa3f0ed17879abe",
+    "semantic_hash": "93fd053795f8bdd23fa3f0ed17879abe"
+  },
+  "backend/src/main/java/com/investary/email/persistence/SourceMessageSpecifications.java": {
+    "mtime": 1793254600.9682457,
+    "seen": 1793351713.416131,
+    "ast_hash": "fa7858f0274f0e91da53d9a16b04138f",
+    "semantic_hash": "fa7858f0274f0e91da53d9a16b04138f"
+  },
+  "backend/src/main/java/com/investary/intelligence/api/IntelligenceController.java": {
+    "mtime": 1793332144.9812486,
+    "seen": 1793351713.4161358,
+    "ast_hash": "946f80221eddd6b7954e770dc3133b2e",
+    "semantic_hash": "946f80221eddd6b7954e770dc3133b2e"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/ImpactAssessmentService.java": {
+    "mtime": 1793332220.5964367,
+    "seen": 1793351713.416141,
+    "ast_hash": "814d8ab1a558e812bc51433a5964caab",
+    "semantic_hash": "814d8ab1a558e812bc51433a5964caab"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/IntelligenceExceptions.java": {
+    "mtime": 1793331791.737221,
+    "seen": 1793351713.4161463,
+    "ast_hash": "978b2975171ef5c3ab40d713bca96900",
+    "semantic_hash": "978b2975171ef5c3ab40d713bca96900"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/IntelligencePrompts.java": {
+    "mtime": 1793331957.3746834,
+    "seen": 1793351713.4161508,
+    "ast_hash": "16bfb09c0234a1fe1c7318760426a0b7",
+    "semantic_hash": "16bfb09c0234a1fe1c7318760426a0b7"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/IntelligenceProperties.java": {
+    "mtime": 1793331791.3207786,
+    "seen": 1793351713.4161558,
+    "ast_hash": "7eea16290a45f057cd1bf791092e447c",
+    "semantic_hash": "7eea16290a45f057cd1bf791092e447c"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/IntelligenceViews.java": {
+    "mtime": 1793331882.3643084,
+    "seen": 1793351713.4161623,
+    "ast_hash": "2c1c0a080ed6a5408052e3587eff1022",
+    "semantic_hash": "2c1c0a080ed6a5408052e3587eff1022"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/PortfolioAnalysisService.java": {
+    "mtime": 1793331914.545262,
+    "seen": 1793351713.4161677,
+    "ast_hash": "b13a3c92238fe7981a2265caeb84348e",
+    "semantic_hash": "b13a3c92238fe7981a2265caeb84348e"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/PortfolioAssistantService.java": {
+    "mtime": 1793332127.5135303,
+    "seen": 1793351713.4161727,
+    "ast_hash": "2b049e6a8d3c5dfd754ff478103b2036",
+    "semantic_hash": "2b049e6a8d3c5dfd754ff478103b2036"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/PortfolioContext.java": {
+    "mtime": 1793331856.7808075,
+    "seen": 1793351713.4161777,
+    "ast_hash": "3c79bb3e16292b6e5f12a5128567c2af",
+    "semantic_hash": "3c79bb3e16292b6e5f12a5128567c2af"
+  },
+  "backend/src/main/java/com/investary/intelligence/application/ResearchMatcher.java": {
+    "mtime": 1793331839.3110046,
+    "seen": 1793351713.4161823,
+    "ast_hash": "5d8613988d6e7680fd443f265571b4d9",
+    "semantic_hash": "5d8613988d6e7680fd443f265571b4d9"
+  },
+  "backend/src/main/java/com/investary/intelligence/domain/AiStatus.java": {
+    "mtime": 1793331772.1273127,
+    "seen": 1793351713.4161878,
+    "ast_hash": "898123f40856f8582a9b66888a3514b9",
+    "semantic_hash": "898123f40856f8582a9b66888a3514b9"
+  },
+  "backend/src/main/java/com/investary/intelligence/domain/ImpactAssessment.java": {
+    "mtime": 1793331772.6163878,
+    "seen": 1793351713.4161923,
+    "ast_hash": "7f3d4987d9551e53348d128e09804ebe",
+    "semantic_hash": "7f3d4987d9551e53348d128e09804ebe"
+  },
+  "backend/src/main/java/com/investary/intelligence/domain/ImpactAssessmentItem.java": {
+    "mtime": 1793332057.210735,
+    "seen": 1793351713.416197,
+    "ast_hash": "898f609c2c5cd0d699693f3fb09b18f9",
+    "semantic_hash": "898f609c2c5cd0d699693f3fb09b18f9"
+  },
+  "backend/src/main/java/com/investary/intelligence/domain/ImpactCategory.java": {
+    "mtime": 1793331771.7702458,
+    "seen": 1793351713.416202,
+    "ast_hash": "5b4804b0a58fdee0538f1dbce0474b59",
+    "semantic_hash": "5b4804b0a58fdee0538f1dbce0474b59"
+  },
+  "backend/src/main/java/com/investary/intelligence/persistence/ImpactAssessmentItemRepository.java": {
+    "mtime": 1793331774.4555404,
+    "seen": 1793351713.4162078,
+    "ast_hash": "9088f67db0cb939223ca32b96804d7fd",
+    "semantic_hash": "9088f67db0cb939223ca32b96804d7fd"
+  },
+  "backend/src/main/java/com/investary/intelligence/persistence/ImpactAssessmentRepository.java": {
+    "mtime": 1793331773.8205926,
+    "seen": 1793351713.416213,
+    "ast_hash": "6095b763b4f585ce351be64ff8c72e8e",
+    "semantic_hash": "6095b763b4f585ce351be64ff8c72e8e"
+  },
+  "backend/src/main/java/com/investary/investor/api/InvestorController.java": {
+    "mtime": 1793331151.577656,
+    "seen": 1793351713.416218,
+    "ast_hash": "80757eddad3e4454cb263c18de0001d6",
+    "semantic_hash": "80757eddad3e4454cb263c18de0001d6"
+  },
+  "backend/src/main/java/com/investary/investor/application/GoalCommand.java": {
+    "mtime": 1793331123.227304,
+    "seen": 1793351713.4162226,
+    "ast_hash": "a12a6985c760776ed875dff79cd44b47",
+    "semantic_hash": "a12a6985c760776ed875dff79cd44b47"
+  },
+  "backend/src/main/java/com/investary/investor/application/GoalNotFoundException.java": {
+    "mtime": 1793331113.3576682,
+    "seen": 1793351713.4162273,
+    "ast_hash": "164fe6b1aa761dac5fcdfaaab28977a4",
+    "semantic_hash": "164fe6b1aa761dac5fcdfaaab28977a4"
+  },
+  "backend/src/main/java/com/investary/investor/application/GoalView.java": {
+    "mtime": 1793331119.5938838,
+    "seen": 1793351713.4162319,
+    "ast_hash": "d8c45c401bfe772ba3c6e08041ff4cce",
+    "semantic_hash": "d8c45c401bfe772ba3c6e08041ff4cce"
+  },
+  "backend/src/main/java/com/investary/investor/application/InvestorProfileService.java": {
+    "mtime": 1793331136.9326067,
+    "seen": 1793351713.4162369,
+    "ast_hash": "e002360418a845e15b2c2609861d0e6a",
+    "semantic_hash": "e002360418a845e15b2c2609861d0e6a"
+  },
+  "backend/src/main/java/com/investary/investor/application/InvestorQueryService.java": {
+    "mtime": 1793331127.897756,
+    "seen": 1793351713.4162416,
+    "ast_hash": "48a440e80210527956e53be996205a0c",
+    "semantic_hash": "48a440e80210527956e53be996205a0c"
+  },
+  "backend/src/main/java/com/investary/investor/application/ProfileCommand.java": {
+    "mtime": 1793331121.7392223,
+    "seen": 1793351713.4162462,
+    "ast_hash": "54198cf93c206ee1cbaab946a884437a",
+    "semantic_hash": "54198cf93c206ee1cbaab946a884437a"
+  },
+  "backend/src/main/java/com/investary/investor/application/ProfileView.java": {
+    "mtime": 1793331117.0006201,
+    "seen": 1793351713.4162512,
+    "ast_hash": "cd96654b3ce7f75343b7e998ec58bc67",
+    "semantic_hash": "cd96654b3ce7f75343b7e998ec58bc67"
+  },
+  "backend/src/main/java/com/investary/investor/domain/ExperienceLevel.java": {
+    "mtime": 1793330916.7023368,
+    "seen": 1793351713.4162567,
+    "ast_hash": "3b5f14b71ad54e2a9cd7dd51029b5861",
+    "semantic_hash": "3b5f14b71ad54e2a9cd7dd51029b5861"
+  },
+  "backend/src/main/java/com/investary/investor/domain/GoalPriority.java": {
+    "mtime": 1793330916.7135143,
+    "seen": 1793351713.4162617,
+    "ast_hash": "3845d2dbf04f4f4f14433bb723f28750",
+    "semantic_hash": "3845d2dbf04f4f4f14433bb723f28750"
+  },
+  "backend/src/main/java/com/investary/investor/domain/InvestmentHorizon.java": {
+    "mtime": 1793330916.7099886,
+    "seen": 1793351713.416266,
+    "ast_hash": "4b270216f35688336a8cf2f6ec0e3097",
+    "semantic_hash": "4b270216f35688336a8cf2f6ec0e3097"
+  },
+  "backend/src/main/java/com/investary/investor/domain/InvestorGoal.java": {
+    "mtime": 1793330935.2982292,
+    "seen": 1793351713.4162705,
+    "ast_hash": "224eb6c16ec7ad7b0a40e4dc587b00e9",
+    "semantic_hash": "224eb6c16ec7ad7b0a40e4dc587b00e9"
+  },
+  "backend/src/main/java/com/investary/investor/domain/InvestorProfile.java": {
+    "mtime": 1793330928.5983107,
+    "seen": 1793351713.4162757,
+    "ast_hash": "273d70740cebb8d445974640e0d7d86c",
+    "semantic_hash": "273d70740cebb8d445974640e0d7d86c"
+  },
+  "backend/src/main/java/com/investary/investor/domain/RiskTolerance.java": {
+    "mtime": 1793330916.6993427,
+    "seen": 1793351713.4162805,
+    "ast_hash": "6b899127e9001a6ec6860c21470f3bf9",
+    "semantic_hash": "6b899127e9001a6ec6860c21470f3bf9"
+  },
+  "backend/src/main/java/com/investary/investor/persistence/InvestorGoalRepository.java": {
+    "mtime": 1793331111.614098,
+    "seen": 1793351713.4162853,
+    "ast_hash": "32cc6e0e116eaf41b5ab1fd963b7563e",
+    "semantic_hash": "32cc6e0e116eaf41b5ab1fd963b7563e"
+  },
+  "backend/src/main/java/com/investary/investor/persistence/InvestorProfileRepository.java": {
+    "mtime": 1793331110.2833555,
+    "seen": 1793351713.4162903,
+    "ast_hash": "6a3e7d91a21e60af11062c696dc60dde",
+    "semantic_hash": "6a3e7d91a21e60af11062c696dc60dde"
+  },
+  "backend/src/main/java/com/investary/knowledge/AiExceptions.java": {
+    "mtime": 1793323791.766724,
+    "seen": 1793351713.4162955,
+    "ast_hash": "e5769be61563dbe81c3ea664a2b55636",
+    "semantic_hash": "e5769be61563dbe81c3ea664a2b55636"
+  },
+  "backend/src/main/java/com/investary/knowledge/IndexVersion.java": {
+    "mtime": 1793323791.7700748,
+    "seen": 1793351713.4163,
+    "ast_hash": "d5a23951dcb806808135695679a57b01",
+    "semantic_hash": "d5a23951dcb806808135695679a57b01"
+  },
+  "backend/src/main/java/com/investary/knowledge/KnowledgeProperties.java": {
+    "mtime": 1793323791.778228,
+    "seen": 1793351713.4163089,
+    "ast_hash": "9bb0e544fadc307e5af43023cf35f918",
+    "semantic_hash": "9bb0e544fadc307e5af43023cf35f918"
+  },
+  "backend/src/main/java/com/investary/knowledge/KnowledgeSourceType.java": {
+    "mtime": 1793323791.7802284,
+    "seen": 1793351713.4163144,
+    "ast_hash": "fbc934c2699c26592d244ef68217b60c",
+    "semantic_hash": "fbc934c2699c26592d244ef68217b60c"
+  },
+  "backend/src/main/java/com/investary/knowledge/api/KnowledgeController.java": {
+    "mtime": 1793323791.784469,
+    "seen": 1793351713.4163194,
+    "ast_hash": "8ebab4146fb4a66a78fda199794b055a",
+    "semantic_hash": "8ebab4146fb4a66a78fda199794b055a"
+  },
+  "backend/src/main/java/com/investary/knowledge/api/ResearchController.java": {
+    "mtime": 1793323791.7879064,
+    "seen": 1793351713.416325,
+    "ast_hash": "d25f6bab3af8f0ebbe85fd573a5b615f",
+    "semantic_hash": "d25f6bab3af8f0ebbe85fd573a5b615f"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/AssistantAnswer.java": {
+    "mtime": 1793323791.7914932,
+    "seen": 1793351713.41633,
+    "ast_hash": "a1ea30dc0d636baa402e7040bb2d7320",
+    "semantic_hash": "a1ea30dc0d636baa402e7040bb2d7320"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/ChatGateway.java": {
+    "mtime": 1793331579.4911034,
+    "seen": 1793351713.4163349,
+    "ast_hash": "718a4df06361b9daa64e9a53197ca9de",
+    "semantic_hash": "718a4df06361b9daa64e9a53197ca9de"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/Citation.java": {
+    "mtime": 1793323791.7938023,
+    "seen": 1793351713.4163396,
+    "ast_hash": "be2b48371a6ec7d94dce04ed5cd89033",
+    "semantic_hash": "be2b48371a6ec7d94dce04ed5cd89033"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/CitationValidator.java": {
+    "mtime": 1793323791.7975552,
+    "seen": 1793351713.4163451,
+    "ast_hash": "b17d00231b8a6b52a732836cb88660e5",
+    "semantic_hash": "b17d00231b8a6b52a732836cb88660e5"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/Citations.java": {
+    "mtime": 1793331619.8281777,
+    "seen": 1793351713.4163496,
+    "ast_hash": "d12486c1231d9762e20ac1cd989d0f04",
+    "semantic_hash": "d12486c1231d9762e20ac1cd989d0f04"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/EvidenceStatus.java": {
+    "mtime": 1793323791.799031,
+    "seen": 1793351713.416354,
+    "ast_hash": "752a5bc826b591663858657789f5e9f2",
+    "semantic_hash": "752a5bc826b591663858657789f5e9f2"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/Excerpts.java": {
+    "mtime": 1793323791.8013527,
+    "seen": 1793351713.4163585,
+    "ast_hash": "44337b1457c91c013b11944146386e2d",
+    "semantic_hash": "44337b1457c91c013b11944146386e2d"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/PromptBuilder.java": {
+    "mtime": 1793331964.8453481,
+    "seen": 1793351713.4163623,
+    "ast_hash": "296a1f04079725c5d228fc510b8beafe",
+    "semantic_hash": "296a1f04079725c5d228fc510b8beafe"
+  },
+  "backend/src/main/java/com/investary/knowledge/assistant/ResearchAssistantService.java": {
+    "mtime": 1793331608.6032853,
+    "seen": 1793351713.416366,
+    "ast_hash": "f224e54894d3f9c256e4652ae7df9e82",
+    "semantic_hash": "f224e54894d3f9c256e4652ae7df9e82"
+  },
+  "backend/src/main/java/com/investary/knowledge/chunking/Chunk.java": {
+    "mtime": 1793323791.8077648,
+    "seen": 1793351713.4163704,
+    "ast_hash": "1290e1fa02327b438e792ee377b3051e",
+    "semantic_hash": "1290e1fa02327b438e792ee377b3051e"
+  },
+  "backend/src/main/java/com/investary/knowledge/chunking/TextChunker.java": {
+    "mtime": 1793323791.8103032,
+    "seen": 1793351713.4163756,
+    "ast_hash": "6f9124413084416bc91f8d7e45822cac",
+    "semantic_hash": "6f9124413084416bc91f8d7e45822cac"
+  },
+  "backend/src/main/java/com/investary/knowledge/chunking/TickerDetector.java": {
+    "mtime": 1793323791.8116004,
+    "seen": 1793351713.416381,
+    "ast_hash": "5be0b0ab977d1084672ea3bf6e6ec2f6",
+    "semantic_hash": "5be0b0ab977d1084672ea3bf6e6ec2f6"
+  },
+  "backend/src/main/java/com/investary/knowledge/embedding/EmbeddingDimensionMismatchException.java": {
+    "mtime": 1793323791.8138995,
+    "seen": 1793351713.4163864,
+    "ast_hash": "5fb2fe3d299dbd59bbe43efa9bedb78b",
+    "semantic_hash": "5fb2fe3d299dbd59bbe43efa9bedb78b"
+  },
+  "backend/src/main/java/com/investary/knowledge/embedding/EmbeddingException.java": {
+    "mtime": 1793323791.8159049,
+    "seen": 1793351713.4163914,
+    "ast_hash": "ac8f602c6146b8c290be9eeb4c966670",
+    "semantic_hash": "ac8f602c6146b8c290be9eeb4c966670"
+  },
+  "backend/src/main/java/com/investary/knowledge/embedding/EmbeddingService.java": {
+    "mtime": 1793323791.818897,
+    "seen": 1793351713.4163964,
+    "ast_hash": "cf27eaea249c25fceb1857d93d28173e",
+    "semantic_hash": "cf27eaea249c25fceb1857d93d28173e"
+  },
+  "backend/src/main/java/com/investary/knowledge/embedding/EmbeddingUnavailableException.java": {
+    "mtime": 1793323791.8222077,
+    "seen": 1793351713.4164011,
+    "ast_hash": "bcb21a353b9f236acbdd97342bb08540",
+    "semantic_hash": "bcb21a353b9f236acbdd97342bb08540"
+  },
+  "backend/src/main/java/com/investary/knowledge/embedding/PgVectors.java": {
+    "mtime": 1793323791.8244493,
+    "seen": 1793351713.416406,
+    "ast_hash": "93818f0e5a8604aa08a403006251f628",
+    "semantic_hash": "93818f0e5a8604aa08a403006251f628"
+  },
+  "backend/src/main/java/com/investary/knowledge/extraction/EmailTextExtractor.java": {
+    "mtime": 1793323791.826918,
+    "seen": 1793351713.416411,
+    "ast_hash": "2c27dbacdad1e628cd4d1e306166297c",
+    "semantic_hash": "2c27dbacdad1e628cd4d1e306166297c"
+  },
+  "backend/src/main/java/com/investary/knowledge/extraction/ExtractedText.java": {
+    "mtime": 1793323791.8282566,
+    "seen": 1793351713.416416,
+    "ast_hash": "e6fea750aade4b2b328fc18760893c96",
+    "semantic_hash": "e6fea750aade4b2b328fc18760893c96"
+  },
+  "backend/src/main/java/com/investary/knowledge/extraction/ExtractionException.java": {
+    "mtime": 1793323791.8306427,
+    "seen": 1793351713.4164212,
+    "ast_hash": "970b00cec1ecd18144127df85068ee10",
+    "semantic_hash": "970b00cec1ecd18144127df85068ee10"
+  },
+  "backend/src/main/java/com/investary/knowledge/extraction/PdfTextExtractor.java": {
+    "mtime": 1793323791.8326392,
+    "seen": 1793351713.416426,
+    "ast_hash": "573d51cc1a8f95db1e8f2b3c3eb95725",
+    "semantic_hash": "573d51cc1a8f95db1e8f2b3c3eb95725"
+  },
+  "backend/src/main/java/com/investary/knowledge/extraction/SourceLoader.java": {
+    "mtime": 1793323791.8366418,
+    "seen": 1793351713.416431,
+    "ast_hash": "425cda3fb40c334ef2a4870fc6bebd8a",
+    "semantic_hash": "425cda3fb40c334ef2a4870fc6bebd8a"
+  },
+  "backend/src/main/java/com/investary/knowledge/extraction/SourceText.java": {
+    "mtime": 1793323791.8381467,
+    "seen": 1793351713.416436,
+    "ast_hash": "9b406f4ca6594c58b4bdc40bebdf9df3",
+    "semantic_hash": "9b406f4ca6594c58b4bdc40bebdf9df3"
+  },
+  "backend/src/main/java/com/investary/knowledge/extraction/TextSegment.java": {
+    "mtime": 1793323791.84153,
+    "seen": 1793351713.4164407,
+    "ast_hash": "058eb0d4ad75fb505816dd7825c7e0e0",
+    "semantic_hash": "058eb0d4ad75fb505816dd7825c7e0e0"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeChunkStore.java": {
+    "mtime": 1793323791.844865,
+    "seen": 1793351713.416446,
+    "ast_hash": "334e06fd4056b5472f5b223f256f3ad0",
+    "semantic_hash": "334e06fd4056b5472f5b223f256f3ad0"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeIndexProcessor.java": {
+    "mtime": 1793323791.846889,
+    "seen": 1793351713.4164505,
+    "ast_hash": "baad3d92b5da310da9c27a3ccbdab011",
+    "semantic_hash": "baad3d92b5da310da9c27a3ccbdab011"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeIndexQueue.java": {
+    "mtime": 1793323791.8508883,
+    "seen": 1793351713.4164553,
+    "ast_hash": "750ef41c99fd83cc434f2273a308fe52",
+    "semantic_hash": "750ef41c99fd83cc434f2273a308fe52"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeIndexService.java": {
+    "mtime": 1793323791.8538873,
+    "seen": 1793351713.4164598,
+    "ast_hash": "ec6ab7d54aa946c33771f4678412ea62",
+    "semantic_hash": "ec6ab7d54aa946c33771f4678412ea62"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeIndexWorker.java": {
+    "mtime": 1793323791.8571374,
+    "seen": 1793351713.4164646,
+    "ast_hash": "d0a837ff90dc967a56ec97496ea82c50",
+    "semantic_hash": "d0a837ff90dc967a56ec97496ea82c50"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeJob.java": {
+    "mtime": 1793323791.859606,
+    "seen": 1793351713.41647,
+    "ast_hash": "aa19449a889d3cd9844a22538abb8772",
+    "semantic_hash": "aa19449a889d3cd9844a22538abb8772"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeJobNotFoundException.java": {
+    "mtime": 1793323791.86142,
+    "seen": 1793351713.4164753,
+    "ast_hash": "58d0c83a035a3f6e46c4e4461b4d3440",
+    "semantic_hash": "58d0c83a035a3f6e46c4e4461b4d3440"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeSourceStatus.java": {
+    "mtime": 1793323791.863419,
+    "seen": 1793351713.41648,
+    "ast_hash": "e0cace83170f45953cedcb49d56aa980",
+    "semantic_hash": "e0cace83170f45953cedcb49d56aa980"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/KnowledgeStatus.java": {
+    "mtime": 1793323791.8660123,
+    "seen": 1793351713.416485,
+    "ast_hash": "a61d6607628c45b615b285a87bb28a91",
+    "semantic_hash": "a61d6607628c45b615b285a87bb28a91"
+  },
+  "backend/src/main/java/com/investary/knowledge/index/ReindexScope.java": {
+    "mtime": 1793323791.8681965,
+    "seen": 1793351713.4164894,
+    "ast_hash": "8bca53eafc615ff3045ce8398a58e52e",
+    "semantic_hash": "8bca53eafc615ff3045ce8398a58e52e"
+  },
+  "backend/src/main/java/com/investary/knowledge/search/ChunkLookupService.java": {
+    "mtime": 1793331666.1468222,
+    "seen": 1793351713.4164944,
+    "ast_hash": "374ee61bedcd56f30a79874eaf9f3e17",
+    "semantic_hash": "374ee61bedcd56f30a79874eaf9f3e17"
+  },
+  "backend/src/main/java/com/investary/knowledge/search/HybridSearchService.java": {
+    "mtime": 1793323791.8708565,
+    "seen": 1793351713.4164994,
+    "ast_hash": "e31ce6d5d779f4e67fc68945aeff5d3b",
+    "semantic_hash": "e31ce6d5d779f4e67fc68945aeff5d3b"
+  },
+  "backend/src/main/java/com/investary/knowledge/search/QueryAnalysis.java": {
+    "mtime": 1793323791.8740647,
+    "seen": 1793351713.416505,
+    "ast_hash": "b17215c25a580e1117c4c85714cbdfdc",
+    "semantic_hash": "b17215c25a580e1117c4c85714cbdfdc"
+  },
+  "backend/src/main/java/com/investary/knowledge/search/SearchFilters.java": {
+    "mtime": 1793323791.8779836,
+    "seen": 1793351713.416522,
+    "ast_hash": "c2873aaf8bb03dc9fa7125f837c2fc2c",
+    "semantic_hash": "c2873aaf8bb03dc9fa7125f837c2fc2c"
+  },
+  "backend/src/main/java/com/investary/knowledge/search/SearchHit.java": {
+    "mtime": 1793323791.8822284,
+    "seen": 1793351713.416527,
+    "ast_hash": "51326179854e4922467e9ff0910308cd",
+    "semantic_hash": "51326179854e4922467e9ff0910308cd"
+  },
+  "backend/src/main/java/com/investary/knowledge/search/SearchResult.java": {
+    "mtime": 1793323791.8842275,
+    "seen": 1793351713.4165323,
+    "ast_hash": "3192be89df226306f984aad8ddd37d17",
+    "semantic_hash": "3192be89df226306f984aad8ddd37d17"
+  },
+  "backend/src/main/java/com/investary/portfolio/api/InstrumentController.java": {
+    "mtime": 1793332559.0642276,
+    "seen": 1793351713.416537,
+    "ast_hash": "db1d320eb4b2a5da31ad0af1448bb27c",
+    "semantic_hash": "db1d320eb4b2a5da31ad0af1448bb27c"
+  },
+  "backend/src/main/java/com/investary/portfolio/api/PortfolioController.java": {
+    "mtime": 1793332559.0311456,
+    "seen": 1793351713.416542,
+    "ast_hash": "764a4007e985e8eb486e0faa67e7b6be",
+    "semantic_hash": "764a4007e985e8eb486e0faa67e7b6be"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/HoldingCalculator.java": {
+    "mtime": 1793331250.483744,
+    "seen": 1793351713.4165466,
+    "ast_hash": "590dd199679af2b9d661913e1c475c46",
+    "semantic_hash": "590dd199679af2b9d661913e1c475c46"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/InstrumentService.java": {
+    "mtime": 1793332559.101391,
+    "seen": 1793351713.416551,
+    "ast_hash": "90fbd0fc1d2c45b6f1912e8f31afefef",
+    "semantic_hash": "90fbd0fc1d2c45b6f1912e8f31afefef"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/Money.java": {
+    "mtime": 1793331261.3572342,
+    "seen": 1793351713.416556,
+    "ast_hash": "57084d07c044bc5d3a04360b4ab6d3bf",
+    "semantic_hash": "57084d07c044bc5d3a04360b4ab6d3bf"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/PortfolioCommands.java": {
+    "mtime": 1793331357.5355804,
+    "seen": 1793351713.416561,
+    "ast_hash": "a8ad027f77f09d770895fb4b8774c164",
+    "semantic_hash": "a8ad027f77f09d770895fb4b8774c164"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/PortfolioExceptions.java": {
+    "mtime": 1793332559.0683446,
+    "seen": 1793351713.4165654,
+    "ast_hash": "563da9181b7b5b5347ce424f2ceed1f2",
+    "semantic_hash": "563da9181b7b5b5347ce424f2ceed1f2"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/PortfolioProperties.java": {
+    "mtime": 1793331357.8162162,
+    "seen": 1793351713.416571,
+    "ast_hash": "6a50ecf75a073876f49c720783beba5d",
+    "semantic_hash": "6a50ecf75a073876f49c720783beba5d"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/PortfolioQueryService.java": {
+    "mtime": 1793331391.0724761,
+    "seen": 1793351713.416576,
+    "ast_hash": "19e05f61de7eca2e638b5e2d828ac74b",
+    "semantic_hash": "19e05f61de7eca2e638b5e2d828ac74b"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/PortfolioService.java": {
+    "mtime": 1793332559.0982163,
+    "seen": 1793351713.4165807,
+    "ast_hash": "4fefb12d0bce929217500031817efeb9",
+    "semantic_hash": "4fefb12d0bce929217500031817efeb9"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/PortfolioValuator.java": {
+    "mtime": 1793331314.1139588,
+    "seen": 1793351713.4165852,
+    "ast_hash": "790f6e2cbfa1cec9544230b0fd9e209b",
+    "semantic_hash": "790f6e2cbfa1cec9544230b0fd9e209b"
+  },
+  "backend/src/main/java/com/investary/portfolio/application/PortfolioViews.java": {
+    "mtime": 1793331285.1188886,
+    "seen": 1793351713.4165897,
+    "ast_hash": "8e2c69722ed6d08d24e8bc84f4e61fcb",
+    "semantic_hash": "8e2c69722ed6d08d24e8bc84f4e61fcb"
+  },
+  "backend/src/main/java/com/investary/portfolio/domain/Exchange.java": {
+    "mtime": 1793331180.2390954,
+    "seen": 1793351713.4165947,
+    "ast_hash": "74a8a9c1cc7732fa9eb9a110e954e2ab",
+    "semantic_hash": "74a8a9c1cc7732fa9eb9a110e954e2ab"
+  },
+  "backend/src/main/java/com/investary/portfolio/domain/Instrument.java": {
+    "mtime": 1793331212.1754675,
+    "seen": 1793351713.4165998,
+    "ast_hash": "41b191dea54ee24b04a4167d6eb4a4cf",
+    "semantic_hash": "41b191dea54ee24b04a4167d6eb4a4cf"
+  },
+  "backend/src/main/java/com/investary/portfolio/domain/InstrumentPrice.java": {
+    "mtime": 1793331213.0517883,
+    "seen": 1793351713.4166045,
+    "ast_hash": "def9cdd68371e82a92aaa3ecc90da5cc",
+    "semantic_hash": "def9cdd68371e82a92aaa3ecc90da5cc"
+  },
+  "backend/src/main/java/com/investary/portfolio/domain/InstrumentType.java": {
+    "mtime": 1793331180.236601,
+    "seen": 1793351713.4166102,
+    "ast_hash": "0c303d40469a46851c73ca0455b89866",
+    "semantic_hash": "0c303d40469a46851c73ca0455b89866"
+  },
+  "backend/src/main/java/com/investary/portfolio/domain/Portfolio.java": {
+    "mtime": 1793331212.4451108,
+    "seen": 1793351713.416615,
+    "ast_hash": "9ef790d5b90944c17156d01df6c8b799",
+    "semantic_hash": "9ef790d5b90944c17156d01df6c8b799"
+  },
+  "backend/src/main/java/com/investary/portfolio/domain/PortfolioTransaction.java": {
+    "mtime": 1793331212.7394745,
+    "seen": 1793351713.41662,
+    "ast_hash": "0a8d9e97676b4e6fc063be23b0060550",
+    "semantic_hash": "0a8d9e97676b4e6fc063be23b0060550"
+  },
+  "backend/src/main/java/com/investary/portfolio/domain/TransactionType.java": {
+    "mtime": 1793331180.241105,
+    "seen": 1793351713.4166255,
+    "ast_hash": "bd506c14d86ae63bee3045436397598c",
+    "semantic_hash": "bd506c14d86ae63bee3045436397598c"
+  },
+  "backend/src/main/java/com/investary/portfolio/persistence/InstrumentPriceRepository.java": {
+    "mtime": 1793331229.7762415,
+    "seen": 1793351713.4166303,
+    "ast_hash": "901cc15f142366c3da594f8212f006ce",
+    "semantic_hash": "901cc15f142366c3da594f8212f006ce"
+  },
+  "backend/src/main/java/com/investary/portfolio/persistence/InstrumentRepository.java": {
+    "mtime": 1793331229.2534454,
+    "seen": 1793351713.416635,
+    "ast_hash": "805a73c5ab623616fce5a6b2849ddde8",
+    "semantic_hash": "805a73c5ab623616fce5a6b2849ddde8"
+  },
+  "backend/src/main/java/com/investary/portfolio/persistence/PortfolioRepository.java": {
+    "mtime": 1793331228.4947083,
+    "seen": 1793351713.4166405,
+    "ast_hash": "4f19cbbf93810a8b9a6be6ceabe34e77",
+    "semantic_hash": "4f19cbbf93810a8b9a6be6ceabe34e77"
+  },
+  "backend/src/main/java/com/investary/portfolio/persistence/PortfolioTransactionRepository.java": {
+    "mtime": 1793331228.8254457,
+    "seen": 1793351713.416645,
+    "ast_hash": "db84a3fed398763929ad3426b6cdcd36",
+    "semantic_hash": "db84a3fed398763929ad3426b6cdcd36"
+  },
+  "backend/src/main/java/com/investary/research/application/DocumentDeletionListener.java": {
+    "mtime": 1793254482.7375648,
+    "seen": 1793351713.4166515,
+    "ast_hash": "479af7ec8e030aae6321767874e0ddc3",
+    "semantic_hash": "479af7ec8e030aae6321767874e0ddc3"
+  },
+  "backend/src/main/java/com/investary/research/application/DownloadNotAllowedException.java": {
+    "mtime": 1793254428.036623,
+    "seen": 1793351713.4166572,
+    "ast_hash": "a9cd560ee8316f473d1e3378469eb476",
+    "semantic_hash": "a9cd560ee8316f473d1e3378469eb476"
+  },
+  "backend/src/main/java/com/investary/research/application/DownloadRequestService.java": {
+    "mtime": 1793254482.263906,
+    "seen": 1793351713.4166617,
+    "ast_hash": "cd3bc9f6e496285c77c81dee7787f784",
+    "semantic_hash": "cd3bc9f6e496285c77c81dee7787f784"
+  },
+  "backend/src/main/java/com/investary/research/application/LinkNotFoundException.java": {
+    "mtime": 1793254427.0445175,
+    "seen": 1793351713.416667,
+    "ast_hash": "34e6806c929b3d793f72836c80d0cc86",
+    "semantic_hash": "34e6806c929b3d793f72836c80d0cc86"
+  },
+  "backend/src/main/java/com/investary/research/application/LinkStatistics.java": {
+    "mtime": 1793254481.4452946,
+    "seen": 1793351713.416672,
+    "ast_hash": "df4bdc22416f87c2ecad8ba0db441ac3",
+    "semantic_hash": "df4bdc22416f87c2ecad8ba0db441ac3"
+  },
+  "backend/src/main/java/com/investary/research/application/LinkedDocumentView.java": {
+    "mtime": 1793254480.8543913,
+    "seen": 1793351713.4166768,
+    "ast_hash": "742cfff44e15d07ca6c6203ca05f8413",
+    "semantic_hash": "742cfff44e15d07ca6c6203ca05f8413"
+  },
+  "backend/src/main/java/com/investary/research/application/ResearchIngestionService.java": {
+    "mtime": 1793255558.6853485,
+    "seen": 1793351713.4166813,
+    "ast_hash": "d4f297316e97a0b74c918c345cb2a9b0",
+    "semantic_hash": "d4f297316e97a0b74c918c345cb2a9b0"
+  },
+  "backend/src/main/java/com/investary/research/application/ResearchItemView.java": {
+    "mtime": 1793254479.901785,
+    "seen": 1793351713.416686,
+    "ast_hash": "3ff483b4860645e8a78260c0c5360322",
+    "semantic_hash": "3ff483b4860645e8a78260c0c5360322"
+  },
+  "backend/src/main/java/com/investary/research/application/ResearchQueryService.java": {
+    "mtime": 1793254481.845857,
+    "seen": 1793351713.4166903,
+    "ast_hash": "3452e7c2183f9a35baffc5b72c4d5ccd",
+    "semantic_hash": "3452e7c2183f9a35baffc5b72c4d5ccd"
+  },
+  "backend/src/main/java/com/investary/research/application/ResearchSource.java": {
+    "mtime": 1793254215.1823792,
+    "seen": 1793351713.4166949,
+    "ast_hash": "3e2fee993a817723d3fc7290dce978fd",
+    "semantic_hash": "3e2fee993a817723d3fc7290dce978fd"
+  },
+  "backend/src/main/java/com/investary/research/application/SourceLinkView.java": {
+    "mtime": 1793254479.0675817,
+    "seen": 1793351713.4166996,
+    "ast_hash": "362c37c8b8b42262cc2897296ba8cc25",
+    "semantic_hash": "362c37c8b8b42262cc2897296ba8cc25"
+  },
+  "backend/src/main/java/com/investary/research/download/BlockedAddressException.java": {
+    "mtime": 1793254283.6717758,
+    "seen": 1793351713.4167044,
+    "ast_hash": "e8b8298a0cacedd6ada6b3383921cdd5",
+    "semantic_hash": "e8b8298a0cacedd6ada6b3383921cdd5"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadConfiguration.java": {
+    "mtime": 1793254351.026295,
+    "seen": 1793351713.41671,
+    "ast_hash": "9d3456d48c95d16b7541169835dacafb",
+    "semantic_hash": "9d3456d48c95d16b7541169835dacafb"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadException.java": {
+    "mtime": 1793254285.9111876,
+    "seen": 1793351713.416715,
+    "ast_hash": "3757a61cbd12a53b0b3482bac23b9f56",
+    "semantic_hash": "3757a61cbd12a53b0b3482bac23b9f56"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadJob.java": {
+    "mtime": 1793254352.6803493,
+    "seen": 1793351713.4167194,
+    "ast_hash": "119a6e608a90eef8b87e6f81a1f1f719",
+    "semantic_hash": "119a6e608a90eef8b87e6f81a1f1f719"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadJobProcessor.java": {
+    "mtime": 1793255559.3166497,
+    "seen": 1793351713.416724,
+    "ast_hash": "3d6e0905a92ef8f6976f5cb02f2e4e9b",
+    "semantic_hash": "3d6e0905a92ef8f6976f5cb02f2e4e9b"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadJobQueue.java": {
+    "mtime": 1793254423.6555803,
+    "seen": 1793351713.4167285,
+    "ast_hash": "f2c50d51c86bbd4b5defa2482a292af3",
+    "semantic_hash": "f2c50d51c86bbd4b5defa2482a292af3"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadJobRepository.java": {
+    "mtime": 1793254353.8800569,
+    "seen": 1793351713.4167335,
+    "ast_hash": "6b3ef4dc1104c508b9748461b0c9d679",
+    "semantic_hash": "6b3ef4dc1104c508b9748461b0c9d679"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadJobStatus.java": {
+    "mtime": 1793254351.6957846,
+    "seen": 1793351713.4167476,
+    "ast_hash": "18ee5c4f677fa7c5fa72e17aa1eb5ee8",
+    "semantic_hash": "18ee5c4f677fa7c5fa72e17aa1eb5ee8"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadJobWorker.java": {
+    "mtime": 1793254425.2128313,
+    "seen": 1793351713.416752,
+    "ast_hash": "1f3bfda2fa4474d568ccdd28ec59d878",
+    "semantic_hash": "1f3bfda2fa4474d568ccdd28ec59d878"
+  },
+  "backend/src/main/java/com/investary/research/download/DownloadProperties.java": {
+    "mtime": 1793254283.1932397,
+    "seen": 1793351713.416757,
+    "ast_hash": "814fd19c6111e09ee5ec6efa6e576ca3",
+    "semantic_hash": "814fd19c6111e09ee5ec6efa6e576ca3"
+  },
+  "backend/src/main/java/com/investary/research/download/ReportDownloader.java": {
+    "mtime": 1793254521.6595638,
+    "seen": 1793351713.416762,
+    "ast_hash": "b1634b475cd5c2727a2026a72d905de3",
+    "semantic_hash": "b1634b475cd5c2727a2026a72d905de3"
+  },
+  "backend/src/main/java/com/investary/research/download/RestrictedAddressDnsResolver.java": {
+    "mtime": 1793254284.6548443,
+    "seen": 1793351713.4167666,
+    "ast_hash": "e3521227b4490b23dcd5d6bd5fa6bbda",
+    "semantic_hash": "e3521227b4490b23dcd5d6bd5fa6bbda"
+  },
+  "backend/src/main/java/com/investary/research/download/UrlPolicy.java": {
+    "mtime": 1793254285.3050869,
+    "seen": 1793351713.4167721,
+    "ast_hash": "85ff4c752c50121f37abd48d74fdf10c",
+    "semantic_hash": "85ff4c752c50121f37abd48d74fdf10c"
+  },
+  "backend/src/main/java/com/investary/research/extraction/ResearchItem.java": {
+    "mtime": 1793254172.6984842,
+    "seen": 1793351713.416777,
+    "ast_hash": "71b09ec40a8355d63144d96b71a91b12",
+    "semantic_hash": "71b09ec40a8355d63144d96b71a91b12"
+  },
+  "backend/src/main/java/com/investary/research/extraction/ResearchItemExtractor.java": {
+    "mtime": 1793254216.72922,
+    "seen": 1793351713.416782,
+    "ast_hash": "33df179bb7d8a6cabcfb0202a652bf15",
+    "semantic_hash": "33df179bb7d8a6cabcfb0202a652bf15"
+  },
+  "backend/src/main/java/com/investary/research/extraction/ResearchItemRepository.java": {
+    "mtime": 1793254173.6442704,
+    "seen": 1793351713.4167867,
+    "ast_hash": "7324a4fd7db683ce140d130403d9c3ae",
+    "semantic_hash": "7324a4fd7db683ce140d130403d9c3ae"
+  },
+  "backend/src/main/java/com/investary/research/extraction/ResearchItemType.java": {
+    "mtime": 1793254171.856708,
+    "seen": 1793351713.416792,
+    "ast_hash": "dd180eca4e54fabae2e3a556b59dc938",
+    "semantic_hash": "dd180eca4e54fabae2e3a556b59dc938"
+  },
+  "backend/src/main/java/com/investary/research/link/BrokerageRegistry.java": {
+    "mtime": 1793323791.8884444,
+    "seen": 1793351713.416797,
+    "ast_hash": "9fb76c7a42cdacf63bec867c7b635b5f",
+    "semantic_hash": "9fb76c7a42cdacf63bec867c7b635b5f"
+  },
+  "backend/src/main/java/com/investary/research/link/Classification.java": {
+    "mtime": 1793254043.067388,
+    "seen": 1793351713.4168017,
+    "ast_hash": "8e161d58edce8ac763f8d5ed23da2808",
+    "semantic_hash": "8e161d58edce8ac763f8d5ed23da2808"
+  },
+  "backend/src/main/java/com/investary/research/link/Keywords.java": {
+    "mtime": 1793254042.2331145,
+    "seen": 1793351713.4168072,
+    "ast_hash": "b2552a08df2b8eb6440a042d710d932c",
+    "semantic_hash": "b2552a08df2b8eb6440a042d710d932c"
+  },
+  "backend/src/main/java/com/investary/research/link/LinkCategory.java": {
+    "mtime": 1793254040.560898,
+    "seen": 1793351713.416812,
+    "ast_hash": "0f03fd17c12826c102761db2c530d154",
+    "semantic_hash": "0f03fd17c12826c102761db2c530d154"
+  },
+  "backend/src/main/java/com/investary/research/link/LinkClassifier.java": {
+    "mtime": 1793254071.360739,
+    "seen": 1793351713.4168172,
+    "ast_hash": "115a0dac3ea0bb288b6605f374526fd1",
+    "semantic_hash": "115a0dac3ea0bb288b6605f374526fd1"
+  },
+  "backend/src/main/java/com/investary/research/link/LinkStatus.java": {
+    "mtime": 1793254041.1181636,
+    "seen": 1793351713.416822,
+    "ast_hash": "917705ced5a0fefad9a8086f77241911",
+    "semantic_hash": "917705ced5a0fefad9a8086f77241911"
+  },
+  "backend/src/main/java/com/investary/research/link/ResearchProperties.java": {
+    "mtime": 1793254169.839659,
+    "seen": 1793351713.4168267,
+    "ast_hash": "1332625615f656014155e6dfd4d9d9b3",
+    "semantic_hash": "1332625615f656014155e6dfd4d9d9b3"
+  },
+  "backend/src/main/java/com/investary/research/link/SourceLink.java": {
+    "mtime": 1793255558.1721742,
+    "seen": 1793351713.4168317,
+    "ast_hash": "c1369576186d0c88a307b0f46ba9d242",
+    "semantic_hash": "c1369576186d0c88a307b0f46ba9d242"
+  },
+  "backend/src/main/java/com/investary/research/link/SourceLinkRepository.java": {
+    "mtime": 1793254169.136757,
+    "seen": 1793351713.4168365,
+    "ast_hash": "d55e5a888572b7436ecef0ed0a1aa380",
+    "semantic_hash": "d55e5a888572b7436ecef0ed0a1aa380"
+  },
+  "backend/src/main/java/com/investary/research/provenance/ProvenanceRepository.java": {
+    "mtime": 1793254233.7099,
+    "seen": 1793351713.416842,
+    "ast_hash": "25d69861c3a22a7d82ce05cc7445be3d",
+    "semantic_hash": "25d69861c3a22a7d82ce05cc7445be3d"
+  },
+  "backend/src/main/resources/application-dev.yml": {
+    "mtime": 1793248244.438478,
+    "seen": 1793351713.416847,
+    "ast_hash": "ad372bcaf34b4e9af9870e23f4c47cd2",
+    "semantic_hash": "ad372bcaf34b4e9af9870e23f4c47cd2"
+  },
+  "backend/src/main/resources/application.yml": {
+    "mtime": 1793331363.3924465,
+    "seen": 1793351713.416852,
+    "ast_hash": "f4a8fd365cc48796fe9c42e887cec6c1",
+    "semantic_hash": "f4a8fd365cc48796fe9c42e887cec6c1"
+  },
+  "backend/src/main/resources/db/migration/V1__create_document_table.sql": {
+    "mtime": 1793259676.3019133,
+    "seen": 1793351713.4168565,
+    "ast_hash": "f911de250a2e46a262d3ce31f2f92439",
+    "semantic_hash": "f911de250a2e46a262d3ce31f2f92439"
+  },
+  "backend/src/main/resources/db/migration/V2__email_ingestion.sql": {
+    "mtime": 1793255556.2880445,
+    "seen": 1793351713.4168608,
+    "ast_hash": "aa726789882e9e200822abaa4ac77d7a",
+    "semantic_hash": "aa726789882e9e200822abaa4ac77d7a"
+  },
+  "backend/src/main/resources/db/migration/V3__knowledge_base.sql": {
+    "mtime": 1793323791.898881,
+    "seen": 1793351713.4168658,
+    "ast_hash": "c591b845b09bec2642781664770a04c3",
+    "semantic_hash": "c591b845b09bec2642781664770a04c3"
+  },
+  "backend/src/main/resources/db/migration/V4__investor_portfolio.sql": {
+    "mtime": 1793330881.7623935,
+    "seen": 1793351713.4168704,
+    "ast_hash": "91579fb52b787f2083e3065131c47d07",
+    "semantic_hash": "91579fb52b787f2083e3065131c47d07"
+  },
+  "backend/src/main/resources/db/migration/V5__intelligence.sql": {
+    "mtime": 1793332056.4294958,
+    "seen": 1793351713.4168751,
+    "ast_hash": "d06189ee3a3b7a88c4b5f3a09c1dc3e6",
+    "semantic_hash": "d06189ee3a3b7a88c4b5f3a09c1dc3e6"
+  },
+  "backend/src/test/java/com/investary/ArchitectureTest.java": {
+    "mtime": 1793331479.4934237,
+    "seen": 1793351713.4168794,
+    "ast_hash": "a61a7ec9e34a5b72690b7453e51752a1",
+    "semantic_hash": "a61a7ec9e34a5b72690b7453e51752a1"
+  },
+  "backend/src/test/java/com/investary/FlywayUpgradeTest.java": {
+    "mtime": 1793323791.905904,
+    "seen": 1793351713.416884,
+    "ast_hash": "169c684e976cf0ebafe34e6fb3728442",
+    "semantic_hash": "169c684e976cf0ebafe34e6fb3728442"
+  },
+  "backend/src/test/java/com/investary/TestDatabase.java": {
+    "mtime": 1793323791.9079013,
+    "seen": 1793351713.4168887,
+    "ast_hash": "761a3c8e18a8cac6d5dca2d1d5892859",
+    "semantic_hash": "761a3c8e18a8cac6d5dca2d1d5892859"
+  },
+  "backend/src/test/java/com/investary/document/DocumentIntegrationTest.java": {
+    "mtime": 1793323791.912516,
+    "seen": 1793351713.416894,
+    "ast_hash": "d0d5cdfccfe567870d60882667c00a4f",
+    "semantic_hash": "d0d5cdfccfe567870d60882667c00a4f"
+  },
+  "backend/src/test/java/com/investary/document/TestPdfs.java": {
+    "mtime": 1793248434.6027007,
+    "seen": 1793351713.4168985,
+    "ast_hash": "3539508a2223d7d169a0dc4d11f4b7a6",
+    "semantic_hash": "3539508a2223d7d169a0dc4d11f4b7a6"
+  },
+  "backend/src/test/java/com/investary/document/api/DocumentControllerTest.java": {
+    "mtime": 1793253283.5586998,
+    "seen": 1793351713.4169035,
+    "ast_hash": "b98d83aa30f05d43eaf34e2788a8396c",
+    "semantic_hash": "b98d83aa30f05d43eaf34e2788a8396c"
+  },
+  "backend/src/test/java/com/investary/document/application/DocumentServiceTest.java": {
+    "mtime": 1793253397.978078,
+    "seen": 1793351713.416908,
+    "ast_hash": "102dffcc2e6c79f7e47ed09bf70f2fb2",
+    "semantic_hash": "102dffcc2e6c79f7e47ed09bf70f2fb2"
+  },
+  "backend/src/test/java/com/investary/document/application/PdfSignatureValidatorTest.java": {
+    "mtime": 1793248436.0756598,
+    "seen": 1793351713.4169137,
+    "ast_hash": "c838732119f3dee855d4d12be0551c1d",
+    "semantic_hash": "c838732119f3dee855d4d12be0551c1d"
+  },
+  "backend/src/test/java/com/investary/email/EmailIngestionIntegrationTest.java": {
+    "mtime": 1793323791.9165137,
+    "seen": 1793351713.4169195,
+    "ast_hash": "775426a38aaf879d7a6d137159e0f812",
+    "semantic_hash": "775426a38aaf879d7a6d137159e0f812"
+  },
+  "backend/src/test/java/com/investary/email/TestEmails.java": {
+    "mtime": 1793323791.9203374,
+    "seen": 1793351713.4169247,
+    "ast_hash": "838a2d9f5184d14352be842ad1b0155a",
+    "semantic_hash": "838a2d9f5184d14352be842ad1b0155a"
+  },
+  "backend/src/test/java/com/investary/email/api/EmailControllerTest.java": {
+    "mtime": 1793255198.115209,
+    "seen": 1793351713.4169297,
+    "ast_hash": "3b43b2c923d84a196bec823f87020dc9",
+    "semantic_hash": "3b43b2c923d84a196bec823f87020dc9"
+  },
+  "backend/src/test/java/com/investary/email/parsing/ContentAnalyzerTest.java": {
+    "mtime": 1793254942.4971914,
+    "seen": 1793351713.416935,
+    "ast_hash": "995d245e2cc69b0040ade698a625fdb0",
+    "semantic_hash": "995d245e2cc69b0040ade698a625fdb0"
+  },
+  "backend/src/test/java/com/investary/email/parsing/EmlParserTest.java": {
+    "mtime": 1793254940.9649255,
+    "seen": 1793351713.4169397,
+    "ast_hash": "0b56be0190e8ae7a210d2476b81b500a",
+    "semantic_hash": "0b56be0190e8ae7a210d2476b81b500a"
+  },
+  "backend/src/test/java/com/investary/email/parsing/HtmlSanitizerTest.java": {
+    "mtime": 1793256793.1691408,
+    "seen": 1793351713.4169438,
+    "ast_hash": "22ab35219c1b1404f2c3495955f319d1",
+    "semantic_hash": "22ab35219c1b1404f2c3495955f319d1"
+  },
+  "backend/src/test/java/com/investary/email/parsing/TrackingLinkUnwrapperTest.java": {
+    "mtime": 1793254949.7745252,
+    "seen": 1793351713.416949,
+    "ast_hash": "d078c784de5400801555fe276a605339",
+    "semantic_hash": "d078c784de5400801555fe276a605339"
+  },
+  "backend/src/test/java/com/investary/intelligence/IntelligenceIntegrationTest.java": {
+    "mtime": 1793333256.3701642,
+    "seen": 1793351713.416954,
+    "ast_hash": "5a2082b9a94cddb07567611a7d70ef75",
+    "semantic_hash": "5a2082b9a94cddb07567611a7d70ef75"
+  },
+  "backend/src/test/java/com/investary/intelligence/IntelligenceTestData.java": {
+    "mtime": 1793333041.3052626,
+    "seen": 1793351713.4169595,
+    "ast_hash": "f99b3ec447f7aedf40a764d0b01b31dc",
+    "semantic_hash": "f99b3ec447f7aedf40a764d0b01b31dc"
+  },
+  "backend/src/test/java/com/investary/intelligence/api/IntelligenceControllerTest.java": {
+    "mtime": 1793332491.3144944,
+    "seen": 1793351713.4169643,
+    "ast_hash": "f614b83b66dfe1ceb5bb5abe816ab746",
+    "semantic_hash": "f614b83b66dfe1ceb5bb5abe816ab746"
+  },
+  "backend/src/test/java/com/investary/intelligence/application/ImpactAssessmentServiceTest.java": {
+    "mtime": 1793332409.7209952,
+    "seen": 1793351713.4169693,
+    "ast_hash": "c174d61a69f6cd82f501c12295f3e876",
+    "semantic_hash": "c174d61a69f6cd82f501c12295f3e876"
+  },
+  "backend/src/test/java/com/investary/intelligence/application/PortfolioAssistantServiceTest.java": {
+    "mtime": 1793332439.2788682,
+    "seen": 1793351713.4169745,
+    "ast_hash": "ea6a6e6cddd8f512a791a1b82056d4f3",
+    "semantic_hash": "ea6a6e6cddd8f512a791a1b82056d4f3"
+  },
+  "backend/src/test/java/com/investary/intelligence/application/ResearchMatcherTest.java": {
+    "mtime": 1793332337.6587803,
+    "seen": 1793351713.4169805,
+    "ast_hash": "7261030871f9e1f4cfc1e5e056f18e7e",
+    "semantic_hash": "7261030871f9e1f4cfc1e5e056f18e7e"
+  },
+  "backend/src/test/java/com/investary/investor/api/InvestorControllerTest.java": {
+    "mtime": 1793333041.3148413,
+    "seen": 1793351713.4169855,
+    "ast_hash": "368ed565f68212a28f789c91ae6bea15",
+    "semantic_hash": "368ed565f68212a28f789c91ae6bea15"
+  },
+  "backend/src/test/java/com/investary/knowledge/FakeAiConfiguration.java": {
+    "mtime": 1793323791.9226887,
+    "seen": 1793351713.4169903,
+    "ast_hash": "3e0e60c73dc5938dddd4a9b60be95560",
+    "semantic_hash": "3e0e60c73dc5938dddd4a9b60be95560"
+  },
+  "backend/src/test/java/com/investary/knowledge/FakeEmbeddingModel.java": {
+    "mtime": 1793323791.9247136,
+    "seen": 1793351713.4169948,
+    "ast_hash": "4b11c28393bf9a9ca1d95fb8f19be8c1",
+    "semantic_hash": "4b11c28393bf9a9ca1d95fb8f19be8c1"
+  },
+  "backend/src/test/java/com/investary/knowledge/KnowledgeBaseIntegrationTest.java": {
+    "mtime": 1793323791.92971,
+    "seen": 1793351713.4169993,
+    "ast_hash": "9251bbc2ed75108375f963400cd90d3a",
+    "semantic_hash": "9251bbc2ed75108375f963400cd90d3a"
+  },
+  "backend/src/test/java/com/investary/knowledge/KnowledgeEvaluationTest.java": {
+    "mtime": 1793323791.9312048,
+    "seen": 1793351713.4170036,
+    "ast_hash": "7b80d086891b0d3b12d085219502a24f",
+    "semantic_hash": "7b80d086891b0d3b12d085219502a24f"
+  },
+  "backend/src/test/java/com/investary/knowledge/KnowledgeTestSupport.java": {
+    "mtime": 1793323791.9331717,
+    "seen": 1793351713.4170086,
+    "ast_hash": "cf5520abd2e1c7e67ab420f5c9993e13",
+    "semantic_hash": "cf5520abd2e1c7e67ab420f5c9993e13"
+  },
+  "backend/src/test/java/com/investary/knowledge/ScriptedChatModel.java": {
+    "mtime": 1793323791.9370713,
+    "seen": 1793351713.4170136,
+    "ast_hash": "2664b39ed11c33d92df4f3cb2de5c3ef",
+    "semantic_hash": "2664b39ed11c33d92df4f3cb2de5c3ef"
+  },
+  "backend/src/test/java/com/investary/knowledge/SyntheticResearchCorpus.java": {
+    "mtime": 1793323791.9390917,
+    "seen": 1793351713.417019,
+    "ast_hash": "e64da121dd4df25b0bb73f397f8b8f13",
+    "semantic_hash": "e64da121dd4df25b0bb73f397f8b8f13"
+  },
+  "backend/src/test/java/com/investary/knowledge/TestKnowledgeProperties.java": {
+    "mtime": 1793323791.942092,
+    "seen": 1793351713.4170244,
+    "ast_hash": "f2e212a8c4ac9f7d51432f42e2cf110d",
+    "semantic_hash": "f2e212a8c4ac9f7d51432f42e2cf110d"
+  },
+  "backend/src/test/java/com/investary/knowledge/TestResearchPdfs.java": {
+    "mtime": 1793323791.9440968,
+    "seen": 1793351713.4170291,
+    "ast_hash": "c530c17ff337e62c1123216749631633",
+    "semantic_hash": "c530c17ff337e62c1123216749631633"
+  },
+  "backend/src/test/java/com/investary/knowledge/api/KnowledgeControllerTest.java": {
+    "mtime": 1793323791.9472265,
+    "seen": 1793351713.417034,
+    "ast_hash": "4dd426b584c593ae10551098308a791e",
+    "semantic_hash": "4dd426b584c593ae10551098308a791e"
+  },
+  "backend/src/test/java/com/investary/knowledge/api/ResearchControllerTest.java": {
+    "mtime": 1793323791.9494233,
+    "seen": 1793351713.4170392,
+    "ast_hash": "054868f19bc69ad472c644b2e9efdc70",
+    "semantic_hash": "054868f19bc69ad472c644b2e9efdc70"
+  },
+  "backend/src/test/java/com/investary/knowledge/assistant/CitationValidatorTest.java": {
+    "mtime": 1793323791.952773,
+    "seen": 1793351713.4170444,
+    "ast_hash": "ebbfa321ecbdbc54cba492dcb7afaccd",
+    "semantic_hash": "ebbfa321ecbdbc54cba492dcb7afaccd"
+  },
+  "backend/src/test/java/com/investary/knowledge/assistant/ResearchAssistantServiceTest.java": {
+    "mtime": 1793323791.9557762,
+    "seen": 1793351713.4170494,
+    "ast_hash": "f0ea01636c9276a56029a15c6e4ea4cf",
+    "semantic_hash": "f0ea01636c9276a56029a15c6e4ea4cf"
+  },
+  "backend/src/test/java/com/investary/knowledge/chunking/TextChunkerTest.java": {
+    "mtime": 1793323791.958037,
+    "seen": 1793351713.4170547,
+    "ast_hash": "27771899c3616fa4aa359b072e276f59",
+    "semantic_hash": "27771899c3616fa4aa359b072e276f59"
+  },
+  "backend/src/test/java/com/investary/knowledge/chunking/TickerDetectorTest.java": {
+    "mtime": 1793323791.960358,
+    "seen": 1793351713.4170597,
+    "ast_hash": "e35ece62645b569ae8f011a08f87b961",
+    "semantic_hash": "e35ece62645b569ae8f011a08f87b961"
+  },
+  "backend/src/test/java/com/investary/knowledge/embedding/EmbeddingServiceTest.java": {
+    "mtime": 1793323791.9635184,
+    "seen": 1793351713.417065,
+    "ast_hash": "e5eeb0924cabd5564bd4a212435eb94d",
+    "semantic_hash": "e5eeb0924cabd5564bd4a212435eb94d"
+  },
+  "backend/src/test/java/com/investary/knowledge/extraction/EmailTextExtractorTest.java": {
+    "mtime": 1793323791.9675057,
+    "seen": 1793351713.41707,
+    "ast_hash": "f47e60c93e042e39961cc0811b464f72",
+    "semantic_hash": "f47e60c93e042e39961cc0811b464f72"
+  },
+  "backend/src/test/java/com/investary/knowledge/extraction/PdfTextExtractorTest.java": {
+    "mtime": 1793323791.9699533,
+    "seen": 1793351713.417075,
+    "ast_hash": "783ee9824341eab59fb57b630f793ba3",
+    "semantic_hash": "783ee9824341eab59fb57b630f793ba3"
+  },
+  "backend/src/test/java/com/investary/knowledge/search/QueryAnalysisTest.java": {
+    "mtime": 1793323791.9758556,
+    "seen": 1793351713.4170792,
+    "ast_hash": "db2deb7dd1de87c66284fad7b9dcc35b",
+    "semantic_hash": "db2deb7dd1de87c66284fad7b9dcc35b"
+  },
+  "backend/src/test/java/com/investary/portfolio/PortfolioIntegrationTest.java": {
+    "mtime": 1793333041.3158274,
+    "seen": 1793351713.4170845,
+    "ast_hash": "e236566ed0452259a461686461670aab",
+    "semantic_hash": "e236566ed0452259a461686461670aab"
+  },
+  "backend/src/test/java/com/investary/portfolio/api/PortfolioControllerTest.java": {
+    "mtime": 1793332559.280304,
+    "seen": 1793351713.417089,
+    "ast_hash": "3e8895f052cca7e85e4212ebf38ff976",
+    "semantic_hash": "3e8895f052cca7e85e4212ebf38ff976"
+  },
+  "backend/src/test/java/com/investary/portfolio/application/HoldingCalculatorTest.java": {
+    "mtime": 1793332290.8204474,
+    "seen": 1793351713.4170935,
+    "ast_hash": "8ce7fcf027bf81d6eddc64a2c4e87c4b",
+    "semantic_hash": "8ce7fcf027bf81d6eddc64a2c4e87c4b"
+  },
+  "backend/src/test/java/com/investary/portfolio/application/PortfolioValuatorTest.java": {
+    "mtime": 1793332278.5113246,
+    "seen": 1793351713.417099,
+    "ast_hash": "9e19d914e7974f457ad0d273ad78b54c",
+    "semantic_hash": "9e19d914e7974f457ad0d273ad78b54c"
+  },
+  "backend/src/test/java/com/investary/research/download/DownloadJobQueueTest.java": {
+    "mtime": 1793323791.9788563,
+    "seen": 1793351713.4171042,
+    "ast_hash": "880c76c4e859b40608309c581136fea9",
+    "semantic_hash": "880c76c4e859b40608309c581136fea9"
+  },
+  "backend/src/test/java/com/investary/research/download/ReportDownloaderTest.java": {
+    "mtime": 1793255116.7251723,
+    "seen": 1793351713.4171095,
+    "ast_hash": "12798254d7b36d1f3382e2cadba9418f",
+    "semantic_hash": "12798254d7b36d1f3382e2cadba9418f"
+  },
+  "backend/src/test/java/com/investary/research/download/RestrictedAddressDnsResolverTest.java": {
+    "mtime": 1793255072.5412157,
+    "seen": 1793351713.4171147,
+    "ast_hash": "ef5aaa9dbf410d3819fef92014d06dbd",
+    "semantic_hash": "ef5aaa9dbf410d3819fef92014d06dbd"
+  },
+  "backend/src/test/java/com/investary/research/download/UrlPolicyTest.java": {
+    "mtime": 1793255071.7990782,
+    "seen": 1793351713.4171195,
+    "ast_hash": "81c37ab4d82636cb85d06300623faceb",
+    "semantic_hash": "81c37ab4d82636cb85d06300623faceb"
+  },
+  "backend/src/test/java/com/investary/research/extraction/ResearchItemExtractorTest.java": {
+    "mtime": 1793255070.5695658,
+    "seen": 1793351713.4171245,
+    "ast_hash": "36f769a2dacacccc79bf728bb41a5350",
+    "semantic_hash": "36f769a2dacacccc79bf728bb41a5350"
+  },
+  "backend/src/test/java/com/investary/research/link/LinkClassifierTest.java": {
+    "mtime": 1793255070.2428691,
+    "seen": 1793351713.4171293,
+    "ast_hash": "4fd06b47645c1cf5b66b24c0e3ce2f32",
+    "semantic_hash": "4fd06b47645c1cf5b66b24c0e3ce2f32"
+  },
+  "backend/src/test/resources/knowledge/eval/questions.json": {
+    "mtime": 1793323791.9908702,
+    "seen": 1793351713.4171343,
+    "ast_hash": "53c8f3883d787b9a3c60d0da3de8f2fc",
+    "semantic_hash": "53c8f3883d787b9a3c60d0da3de8f2fc"
+  },
+  "docs/harness/migration-checksums.json": {
+    "mtime": 1793333787.689767,
+    "seen": 1793351713.417139,
+    "ast_hash": "d266c6c1879a7e961ab6d52833f68b72",
+    "semantic_hash": "d266c6c1879a7e961ab6d52833f68b72"
+  },
+  "frontend/.vscode/extensions.json": {
+    "mtime": 1793248994.8934634,
+    "seen": 1793351713.4171445,
+    "ast_hash": "66fd9e60d4633b6099fe02e06a7075ea",
+    "semantic_hash": "66fd9e60d4633b6099fe02e06a7075ea"
+  },
+  "frontend/.vscode/launch.json": {
+    "mtime": 1793248994.895463,
+    "seen": 1793351713.4171505,
+    "ast_hash": "430386a2f03e9d559664c196344c121b",
+    "semantic_hash": "430386a2f03e9d559664c196344c121b"
+  },
+  "frontend/.vscode/tasks.json": {
+    "mtime": 1793248994.898,
+    "seen": 1793351713.4171567,
+    "ast_hash": "cb7ed9a56930402d9059ea5a9773d60e",
+    "semantic_hash": "cb7ed9a56930402d9059ea5a9773d60e"
+  },
+  "frontend/angular.json": {
+    "mtime": 1793325176.7607815,
+    "seen": 1793351713.4171615,
+    "ast_hash": "52d6399da2328968dd38bdd3c0ff925a",
+    "semantic_hash": "52d6399da2328968dd38bdd3c0ff925a"
+  },
+  "frontend/package.json": {
+    "mtime": 1793248994.873745,
+    "seen": 1793351713.417173,
+    "ast_hash": "af333d32759e8972617f58dc0e2e2a23",
+    "semantic_hash": "af333d32759e8972617f58dc0e2e2a23"
+  },
+  "frontend/proxy.conf.json": {
+    "mtime": 1793249223.610854,
+    "seen": 1793351713.4171782,
+    "ast_hash": "f89b6f83ef580aa703179600114236a3",
+    "semantic_hash": "f89b6f83ef580aa703179600114236a3"
+  },
+  "frontend/src/app/app.config.ts": {
+    "mtime": 1793249382.1350105,
+    "seen": 1793351713.4171832,
+    "ast_hash": "42ab8b8f0166ec5dd5f64b228c3ff7b1",
+    "semantic_hash": "42ab8b8f0166ec5dd5f64b228c3ff7b1"
+  },
+  "frontend/src/app/app.routes.ts": {
+    "mtime": 1793333087.0052042,
+    "seen": 1793351713.417188,
+    "ast_hash": "75343e2331b61725b887f02f2cc563dd",
+    "semantic_hash": "75343e2331b61725b887f02f2cc563dd"
+  },
+  "frontend/src/app/app.spec.ts": {
+    "mtime": 1793333702.1691995,
+    "seen": 1793351713.417193,
+    "ast_hash": "f77533cdc27bde4c9d2b5e7b13a7ead7",
+    "semantic_hash": "f77533cdc27bde4c9d2b5e7b13a7ead7"
+  },
+  "frontend/src/app/app.ts": {
+    "mtime": 1793249379.814683,
+    "seen": 1793351713.4171984,
+    "ast_hash": "dadc2d185213ed57f15811be2b64a9bb",
+    "semantic_hash": "dadc2d185213ed57f15811be2b64a9bb"
+  },
+  "frontend/src/app/core/api/document-api.service.spec.ts": {
+    "mtime": 1793249407.5984242,
+    "seen": 1793351713.4172032,
+    "ast_hash": "8b5e1152bf2d15146bdf70ef5bb752e1",
+    "semantic_hash": "8b5e1152bf2d15146bdf70ef5bb752e1"
+  },
+  "frontend/src/app/core/api/document-api.service.ts": {
+    "mtime": 1793249251.9878125,
+    "seen": 1793351713.4172087,
+    "ast_hash": "95e81bd0d1ee244cdd5a0bd5882e6fa4",
+    "semantic_hash": "95e81bd0d1ee244cdd5a0bd5882e6fa4"
+  },
+  "frontend/src/app/core/api/email-api.service.spec.ts": {
+    "mtime": 1793256454.7244878,
+    "seen": 1793351713.4172142,
+    "ast_hash": "cd2c30dce573bb7a9b33bc9c90700b3b",
+    "semantic_hash": "cd2c30dce573bb7a9b33bc9c90700b3b"
+  },
+  "frontend/src/app/core/api/email-api.service.ts": {
+    "mtime": 1793255958.750917,
+    "seen": 1793351713.417219,
+    "ast_hash": "25bc051c220775e97f601ba04b753255",
+    "semantic_hash": "25bc051c220775e97f601ba04b753255"
+  },
+  "frontend/src/app/core/api/error-message.spec.ts": {
+    "mtime": 1793249409.141579,
+    "seen": 1793351713.4172237,
+    "ast_hash": "4ead992758ea697042a1b80747c228f1",
+    "semantic_hash": "4ead992758ea697042a1b80747c228f1"
+  },
+  "frontend/src/app/core/api/error-message.ts": {
+    "mtime": 1793255960.2518466,
+    "seen": 1793351713.4172294,
+    "ast_hash": "9a5efc4f22642c2891f26cf33f4e088b",
+    "semantic_hash": "9a5efc4f22642c2891f26cf33f4e088b"
+  },
+  "frontend/src/app/core/api/intelligence-api.service.spec.ts": {
+    "mtime": 1793333338.658419,
+    "seen": 1793351713.4172342,
+    "ast_hash": "de74022836d969dd1bc7cd711bc88e8f",
+    "semantic_hash": "de74022836d969dd1bc7cd711bc88e8f"
+  },
+  "frontend/src/app/core/api/intelligence-api.service.ts": {
+    "mtime": 1793332718.1723561,
+    "seen": 1793351713.4172397,
+    "ast_hash": "0b4747cdcb370267cdd2659983066114",
+    "semantic_hash": "0b4747cdcb370267cdd2659983066114"
+  },
+  "frontend/src/app/core/api/knowledge-api.service.spec.ts": {
+    "mtime": 1793323792.0194962,
+    "seen": 1793351713.4172444,
+    "ast_hash": "b9a21901537b660f0fd0409bdf95d69c",
+    "semantic_hash": "b9a21901537b660f0fd0409bdf95d69c"
+  },
+  "frontend/src/app/core/api/knowledge-api.service.ts": {
+    "mtime": 1793323792.02152,
+    "seen": 1793351713.4172492,
+    "ast_hash": "85cece6a334b49ac515eb24b9c1a3a85",
+    "semantic_hash": "85cece6a334b49ac515eb24b9c1a3a85"
+  },
+  "frontend/src/app/core/api/portfolio-api.service.ts": {
+    "mtime": 1793332717.8670611,
+    "seen": 1793351713.4172547,
+    "ast_hash": "8210c3a2b03e01da3541fdf5773c73ae",
+    "semantic_hash": "8210c3a2b03e01da3541fdf5773c73ae"
+  },
+  "frontend/src/app/core/models/document.model.ts": {
+    "mtime": 1793255961.543444,
+    "seen": 1793351713.4172595,
+    "ast_hash": "96b15c021bf151fd97461de8afac360d",
+    "semantic_hash": "96b15c021bf151fd97461de8afac360d"
+  },
+  "frontend/src/app/core/models/email.model.ts": {
+    "mtime": 1793255957.3535485,
+    "seen": 1793351713.4172645,
+    "ast_hash": "aa280ad3691b5e707c615bea8bd1328e",
+    "semantic_hash": "aa280ad3691b5e707c615bea8bd1328e"
+  },
+  "frontend/src/app/core/models/intelligence.model.ts": {
+    "mtime": 1793332692.7387342,
+    "seen": 1793351713.417269,
+    "ast_hash": "a9bb0b55602c68b46276dec4008d5544",
+    "semantic_hash": "a9bb0b55602c68b46276dec4008d5544"
+  },
+  "frontend/src/app/core/models/knowledge.model.ts": {
+    "mtime": 1793323792.024521,
+    "seen": 1793351713.4172735,
+    "ast_hash": "56940ac2b42ec0327353653a5400f4b0",
+    "semantic_hash": "56940ac2b42ec0327353653a5400f4b0"
+  },
+  "frontend/src/app/core/models/portfolio.model.ts": {
+    "mtime": 1793332690.9370883,
+    "seen": 1793351713.417279,
+    "ast_hash": "bbe90396f838dea7a6e1df08e096c25e",
+    "semantic_hash": "bbe90396f838dea7a6e1df08e096c25e"
+  },
+  "frontend/src/app/features/assistant/answer-segments.spec.ts": {
+    "mtime": 1793323792.027419,
+    "seen": 1793351713.4172847,
+    "ast_hash": "42d9ebc78e6981edf58c651093706e53",
+    "semantic_hash": "42d9ebc78e6981edf58c651093706e53"
+  },
+  "frontend/src/app/features/assistant/answer-segments.ts": {
+    "mtime": 1793323792.0285254,
+    "seen": 1793351713.41729,
+    "ast_hash": "16d9315679e3cb7791b7960c6837cb2d",
+    "semantic_hash": "16d9315679e3cb7791b7960c6837cb2d"
+  },
+  "frontend/src/app/features/assistant/research-assistant.spec.ts": {
+    "mtime": 1793333285.446062,
+    "seen": 1793351713.4172952,
+    "ast_hash": "325b9e4a02368f1c3bdce103b67f32f3",
+    "semantic_hash": "325b9e4a02368f1c3bdce103b67f32f3"
+  },
+  "frontend/src/app/features/assistant/research-assistant.ts": {
+    "mtime": 1793333075.2024775,
+    "seen": 1793351713.4173002,
+    "ast_hash": "9cc08cbcee48b0a65ae09a67e734cc80",
+    "semantic_hash": "9cc08cbcee48b0a65ae09a67e734cc80"
+  },
+  "frontend/src/app/features/dashboard/dashboard.ts": {
+    "mtime": 1793256165.205257,
+    "seen": 1793351713.4173057,
+    "ast_hash": "8e60ad5974adf2f601cc04a8a2ebd921",
+    "semantic_hash": "8e60ad5974adf2f601cc04a8a2ebd921"
+  },
+  "frontend/src/app/features/documents/document-detail.ts": {
+    "mtime": 1793323792.0419426,
+    "seen": 1793351713.4173098,
+    "ast_hash": "0f9b6b3894b6e1fa2b75bf86a2c0a86b",
+    "semantic_hash": "0f9b6b3894b6e1fa2b75bf86a2c0a86b"
+  },
+  "frontend/src/app/features/documents/document-library.ts": {
+    "mtime": 1793256141.1193542,
+    "seen": 1793351713.4173148,
+    "ast_hash": "e1e4b30c8bf165e90560acbf6dcc8f42",
+    "semantic_hash": "e1e4b30c8bf165e90560acbf6dcc8f42"
+  },
+  "frontend/src/app/features/documents/upload-panel.ts": {
+    "mtime": 1793249329.565757,
+    "seen": 1793351713.4173203,
+    "ast_hash": "a45ac54dec5c57c1414205e3cb3860e9",
+    "semantic_hash": "a45ac54dec5c57c1414205e3cb3860e9"
+  },
+  "frontend/src/app/features/emails/email-detail.spec.ts": {
+    "mtime": 1793323792.0480542,
+    "seen": 1793351713.4173245,
+    "ast_hash": "08f5e812db72392d04f6b18b6d0fe69c",
+    "semantic_hash": "08f5e812db72392d04f6b18b6d0fe69c"
+  },
+  "frontend/src/app/features/emails/email-detail.ts": {
+    "mtime": 1793323792.051797,
+    "seen": 1793351713.41733,
+    "ast_hash": "21230601ea4fdf8c39c61ab1b3f26bb5",
+    "semantic_hash": "21230601ea4fdf8c39c61ab1b3f26bb5"
+  },
+  "frontend/src/app/features/emails/email-import-panel.ts": {
+    "mtime": 1793256004.2772007,
+    "seen": 1793351713.4173343,
+    "ast_hash": "da07e5c8eee94f23eed3daa0f4fc7811",
+    "semantic_hash": "da07e5c8eee94f23eed3daa0f4fc7811"
+  },
+  "frontend/src/app/features/emails/email-inbox.spec.ts": {
+    "mtime": 1793256623.6957388,
+    "seen": 1793351713.4173393,
+    "ast_hash": "4091a2682b0af5507dabfb613bb5a9e0",
+    "semantic_hash": "4091a2682b0af5507dabfb613bb5a9e0"
+  },
+  "frontend/src/app/features/emails/email-inbox.ts": {
+    "mtime": 1793256005.7112906,
+    "seen": 1793351713.4173443,
+    "ast_hash": "a27a0d1c7001bc9d595e377fe9af6d61",
+    "semantic_hash": "a27a0d1c7001bc9d595e377fe9af6d61"
+  },
+  "frontend/src/app/features/investor/investor-profile.spec.ts": {
+    "mtime": 1793333337.8390844,
+    "seen": 1793351713.417349,
+    "ast_hash": "4f4abc27abb14a8abe22a69f8fc74295",
+    "semantic_hash": "4f4abc27abb14a8abe22a69f8fc74295"
+  },
+  "frontend/src/app/features/investor/investor-profile.ts": {
+    "mtime": 1793332972.2860973,
+    "seen": 1793351713.4173536,
+    "ast_hash": "16e024bbed49990f1e1175018aa5e537",
+    "semantic_hash": "16e024bbed49990f1e1175018aa5e537"
+  },
+  "frontend/src/app/features/portfolio/portfolio-dashboard.spec.ts": {
+    "mtime": 1793333336.1706772,
+    "seen": 1793351713.4173582,
+    "ast_hash": "0e16d36fd6b30a55f15815b34f05f502",
+    "semantic_hash": "0e16d36fd6b30a55f15815b34f05f502"
+  },
+  "frontend/src/app/features/portfolio/portfolio-dashboard.ts": {
+    "mtime": 1793332932.539053,
+    "seen": 1793351713.4173632,
+    "ast_hash": "37a4c3e5c47efff0a8fb55ddc697841d",
+    "semantic_hash": "37a4c3e5c47efff0a8fb55ddc697841d"
+  },
+  "frontend/src/app/features/portfolio/portfolio-list.ts": {
+    "mtime": 1793332791.2195463,
+    "seen": 1793351713.4173675,
+    "ast_hash": "53f7cdfbe323de3b478546422c5d0b3e",
+    "semantic_hash": "53f7cdfbe323de3b478546422c5d0b3e"
+  },
+  "frontend/src/app/features/portfolio/research-insights.ts": {
+    "mtime": 1793332881.5456321,
+    "seen": 1793351713.4173727,
+    "ast_hash": "adb66c417e166aa12f8eebe3d3506da7",
+    "semantic_hash": "adb66c417e166aa12f8eebe3d3506da7"
+  },
+  "frontend/src/app/features/portfolio/transaction-form.spec.ts": {
+    "mtime": 1793333336.918602,
+    "seen": 1793351713.4173772,
+    "ast_hash": "33981707de1c5ee0796d05b4268e8a64",
+    "semantic_hash": "33981707de1c5ee0796d05b4268e8a64"
+  },
+  "frontend/src/app/features/portfolio/transaction-form.ts": {
+    "mtime": 1793332849.230672,
+    "seen": 1793351713.417382,
+    "ast_hash": "e4cf6eadd171d66bab057f95e136792f",
+    "semantic_hash": "e4cf6eadd171d66bab057f95e136792f"
+  },
+  "frontend/src/app/layout/shell.ts": {
+    "mtime": 1793333089.0644903,
+    "seen": 1793351713.4173868,
+    "ast_hash": "a3fe21927a82848a643ed59cd8ecc151",
+    "semantic_hash": "a3fe21927a82848a643ed59cd8ecc151"
+  },
+  "frontend/src/app/shared/components/alert.ts": {
+    "mtime": 1793249279.032351,
+    "seen": 1793351713.4173927,
+    "ast_hash": "6cf867055f1c5aae826cd2f3683c2ecc",
+    "semantic_hash": "6cf867055f1c5aae826cd2f3683c2ecc"
+  },
+  "frontend/src/app/shared/components/empty-state.ts": {
+    "mtime": 1793249256.046682,
+    "seen": 1793351713.4173968,
+    "ast_hash": "777316d2cb7b7fc67e5289d69aa2af0e",
+    "semantic_hash": "777316d2cb7b7fc67e5289d69aa2af0e"
+  },
+  "frontend/src/app/shared/components/index-status.spec.ts": {
+    "mtime": 1793323792.0583475,
+    "seen": 1793351713.4174013,
+    "ast_hash": "6a75e315ef3a243032b84a92145048ab",
+    "semantic_hash": "6a75e315ef3a243032b84a92145048ab"
+  },
+  "frontend/src/app/shared/components/index-status.ts": {
+    "mtime": 1793323792.0613482,
+    "seen": 1793351713.4174056,
+    "ast_hash": "1f0105cefe8b518a9043977704d1a12c",
+    "semantic_hash": "1f0105cefe8b518a9043977704d1a12c"
+  },
+  "frontend/src/app/shared/components/pager.ts": {
+    "mtime": 1793255963.0066957,
+    "seen": 1793351713.4174101,
+    "ast_hash": "9ecfa4b28cd583f933c81bdb23ed0866",
+    "semantic_hash": "9ecfa4b28cd583f933c81bdb23ed0866"
+  },
+  "frontend/src/app/shared/components/status-badge.ts": {
+    "mtime": 1793323792.0635152,
+    "seen": 1793351713.4174154,
+    "ast_hash": "e8c4895ab53c73250482caf905c72890",
+    "semantic_hash": "e8c4895ab53c73250482caf905c72890"
+  },
+  "frontend/src/app/shared/pipes/file-size.pipe.spec.ts": {
+    "mtime": 1793249411.8579905,
+    "seen": 1793351713.4174213,
+    "ast_hash": "42d92bcbf413d90e671daff22ca77b21",
+    "semantic_hash": "42d92bcbf413d90e671daff22ca77b21"
+  },
+  "frontend/src/app/shared/pipes/file-size.pipe.ts": {
+    "mtime": 1793249253.9862792,
+    "seen": 1793351713.417426,
+    "ast_hash": "2797cc0fe9fb8a36fdd5fee1648b82e2",
+    "semantic_hash": "2797cc0fe9fb8a36fdd5fee1648b82e2"
+  },
+  "frontend/src/app/shared/pipes/report-type-label.pipe.ts": {
+    "mtime": 1793249254.613778,
+    "seen": 1793351713.4174309,
+    "ast_hash": "a97a6b69b2beae7e20b0bce0d574f44d",
+    "semantic_hash": "a97a6b69b2beae7e20b0bce0d574f44d"
+  },
+  "frontend/src/main.ts": {
+    "mtime": 1793248994.9025116,
+    "seen": 1793351713.417437,
+    "ast_hash": "1289536d6d8f94242a4ffc598d094633",
+    "semantic_hash": "1289536d6d8f94242a4ffc598d094633"
+  },
+  "frontend/tsconfig.app.json": {
+    "mtime": 1793248994.8893425,
+    "seen": 1793351713.4174435,
+    "ast_hash": "e36d55dc3a81c35d0328a257103d6d3d",
+    "semantic_hash": "e36d55dc3a81c35d0328a257103d6d3d"
+  },
+  "frontend/tsconfig.json": {
+    "mtime": 1793248994.879283,
+    "seen": 1793351713.417454,
+    "ast_hash": "53bc94dc8fdca030fe291132353484a9",
+    "semantic_hash": "53bc94dc8fdca030fe291132353484a9"
+  },
+  "frontend/tsconfig.spec.json": {
+    "mtime": 1793248994.8903444,
+    "seen": 1793351713.4174602,
+    "ast_hash": "9e61a5663cdfef3c963a3595ac1a7813",
+    "semantic_hash": "9e61a5663cdfef3c963a3595ac1a7813"
+  },
+  "infrastructure/docker-compose.yml": {
+    "mtime": 1793323792.0732305,
+    "seen": 1793351713.4174657,
+    "ast_hash": "0dfb1de77e0c885fcdb46d1e5fb76738",
+    "semantic_hash": "0dfb1de77e0c885fcdb46d1e5fb76738"
+  },
+  "infrastructure/start-postgres.ps1": {
+    "mtime": 1793325049.546371,
+    "seen": 1793351713.4174714,
+    "ast_hash": "ef3301fe152f77781324ab59052536fa",
+    "semantic_hash": "ef3301fe152f77781324ab59052536fa"
+  },
+  "infrastructure/stop-dev.ps1": {
+    "mtime": 1793326768.321908,
+    "seen": 1793351713.4174767,
+    "ast_hash": "c5abc65c7b1ec4582f1f61998314100d",
+    "semantic_hash": "c5abc65c7b1ec4582f1f61998314100d"
+  },
+  "scripts/check-harness.mjs": {
+    "mtime": 1793259650.5779078,
+    "seen": 1793351713.4174814,
+    "ast_hash": "437ca6d4f0c5853beb07c9e7150f3559",
+    "semantic_hash": "437ca6d4f0c5853beb07c9e7150f3559"
+  },
+  "AGENTS.md": {
+    "mtime": 1793333814.8683133,
+    "seen": 1793351713.4174871,
+    "ast_hash": "7f2ee2ffbe41dfe50ac703d2fe211724",
+    "semantic_hash": "7f2ee2ffbe41dfe50ac703d2fe211724"
+  },
+  "CLAUDE.md": {
+    "mtime": 1793259519.9026442,
+    "seen": 1793351713.4174917,
+    "ast_hash": "9fbbf63f49b74f59cc8c99eec503bf70",
+    "semantic_hash": "9fbbf63f49b74f59cc8c99eec503bf70"
+  },
+  "README.md": {
+    "mtime": 1793333787.0848546,
+    "seen": 1793351713.4174972,
+    "ast_hash": "fd62b27e83dda2b954fe7a1f11e68e5e",
+    "semantic_hash": "fd62b27e83dda2b954fe7a1f11e68e5e"
+  },
+  "backend/CLAUDE.md": {
+    "mtime": 1793333795.7669086,
+    "seen": 1793351713.4175024,
+    "ast_hash": "b2c92f6b8dc50438348e960fa22d7260",
+    "semantic_hash": "b2c92f6b8dc50438348e960fa22d7260"
+  },
+  "docs/adr/0001-modular-monolith.md": {
+    "mtime": 1793249707.6990542,
+    "seen": 1793351713.417508,
+    "ast_hash": "b7ee47c6cd7fb4defae3e698081780b5",
+    "semantic_hash": "b7ee47c6cd7fb4defae3e698081780b5"
+  },
+  "docs/adr/0002-duplicate-handling.md": {
+    "mtime": 1793249713.3292224,
+    "seen": 1793351713.4175127,
+    "ast_hash": "cc3c0cf1b671e0df2f0f1b6c24f007a5",
+    "semantic_hash": "cc3c0cf1b671e0df2f0f1b6c24f007a5"
+  },
+  "docs/adr/0003-preserve-original-eml.md": {
+    "mtime": 1793257017.1751661,
+    "seen": 1793351713.417518,
+    "ast_hash": "b65ca882a4b15b901879c2ec1f430fc1",
+    "semantic_hash": "b65ca882a4b15b901879c2ec1f430fc1"
+  },
+  "docs/adr/0004-report-download-policy.md": {
+    "mtime": 1793257017.6614044,
+    "seen": 1793351713.417523,
+    "ast_hash": "bbddfe21d078ec6c319d54d90e46ac0f",
+    "semantic_hash": "bbddfe21d078ec6c319d54d90e46ac0f"
+  },
+  "docs/adr/0005-spring-ai-models-own-vector-schema.md": {
+    "mtime": 1793323791.9928687,
+    "seen": 1793351713.4175284,
+    "ast_hash": "f3e27c3dda5cdf1e40be235ffadfbc48",
+    "semantic_hash": "f3e27c3dda5cdf1e40be235ffadfbc48"
+  },
+  "docs/adr/0006-citation-integrity.md": {
+    "mtime": 1793323791.9948707,
+    "seen": 1793351713.4175336,
+    "ast_hash": "efefda08d72d1b2f70a2b327fb795b5a",
+    "semantic_hash": "efefda08d72d1b2f70a2b327fb795b5a"
+  },
+  "docs/adr/0007-portfolio-accounting.md": {
+    "mtime": 1793333556.848132,
+    "seen": 1793351713.417539,
+    "ast_hash": "b71a5e130dd855b55ae3df1ce13399ad",
+    "semantic_hash": "b71a5e130dd855b55ae3df1ce13399ad"
+  },
+  "docs/adr/0008-read-only-portfolio-intelligence.md": {
+    "mtime": 1793333557.5230365,
+    "seen": 1793351713.4175446,
+    "ast_hash": "43d5a87322cb08e0125d6af130d28f96",
+    "semantic_hash": "43d5a87322cb08e0125d6af130d28f96"
+  },
+  "docs/architecture.md": {
+    "mtime": 1793333787.1148071,
+    "seen": 1793351713.41755,
+    "ast_hash": "26788ea88cd67e423eecc0b0fd29d84f",
+    "semantic_hash": "26788ea88cd67e423eecc0b0fd29d84f"
+  },
+  "docs/failures/0001-toolchain-maven-jdk-npx.md": {
+    "mtime": 1793259563.251003,
+    "seen": 1793351713.417555,
+    "ast_hash": "8b49bf96ae7d1fb8bc4e534974dfa9d2",
+    "semantic_hash": "8b49bf96ae7d1fb8bc4e534974dfa9d2"
+  },
+  "docs/failures/0002-spring-boot-4-package-moves.md": {
+    "mtime": 1793259563.6652377,
+    "seen": 1793351713.4175606,
+    "ast_hash": "1caff4bfa03f1cab0dfe0c85d5d38667",
+    "semantic_hash": "1caff4bfa03f1cab0dfe0c85d5d38667"
+  },
+  "docs/failures/0003-module-dependency-cycle.md": {
+    "mtime": 1793259564.3308036,
+    "seen": 1793351713.4175656,
+    "ast_hash": "51a2aa7f60092d633504cc6728f18864",
+    "semantic_hash": "51a2aa7f60092d633504cc6728f18864"
+  },
+  "docs/failures/0004-integration-test-background-worker.md": {
+    "mtime": 1793259565.0700004,
+    "seen": 1793351713.4175708,
+    "ast_hash": "3d504d72fd01c2ce410e0c2867da7b5c",
+    "semantic_hash": "3d504d72fd01c2ce410e0c2867da7b5c"
+  },
+  "docs/failures/0005-real-email-data.md": {
+    "mtime": 1793259565.6348107,
+    "seen": 1793351713.4175756,
+    "ast_hash": "13c93b9be8c6a710d4388a59b049de5e",
+    "semantic_hash": "13c93b9be8c6a710d4388a59b049de5e"
+  },
+  "docs/failures/0006-embedded-browser-iframe.md": {
+    "mtime": 1793259566.4006689,
+    "seen": 1793351713.4175804,
+    "ast_hash": "07d7f3d33903558a8ac632b5aaf06602",
+    "semantic_hash": "07d7f3d33903558a8ac632b5aaf06602"
+  },
+  "docs/failures/0007-text-block-sql-trailing-space.md": {
+    "mtime": 1793323792.0013967,
+    "seen": 1793351713.4175851,
+    "ast_hash": "ea1e9b794c46eadc17fe9d9fc4ce4668",
+    "semantic_hash": "ea1e9b794c46eadc17fe9d9fc4ce4668"
+  },
+  "docs/failures/0008-intellij-run-config-terminal-before-launch.md": {
+    "mtime": 1793329053.7575452,
+    "seen": 1793351713.4175904,
+    "ast_hash": "a5b16eced5f5e18af91b97db66d8a524",
+    "semantic_hash": "a5b16eced5f5e18af91b97db66d8a524"
+  },
+  "docs/failures/0009-market-date-vs-jvm-zone.md": {
+    "mtime": 1793333813.2853298,
+    "seen": 1793351713.4175956,
+    "ast_hash": "e005b4b9ed559d6bacd628677ecaf6d4",
+    "semantic_hash": "e005b4b9ed559d6bacd628677ecaf6d4"
+  },
+  "docs/harness/adoption-report.md": {
+    "mtime": 1793260049.8517807,
+    "seen": 1793351713.4176013,
+    "ast_hash": "c8a96b6a094e666d57b5efddf6a4ef70",
+    "semantic_hash": "c8a96b6a094e666d57b5efddf6a4ef70"
+  },
+  "docs/phase-2-implementation.md": {
+    "mtime": 1793257018.6742592,
+    "seen": 1793351713.4176059,
+    "ast_hash": "cb1fbcf93867daa79ce15702b2e874bf",
+    "semantic_hash": "cb1fbcf93867daa79ce15702b2e874bf"
+  },
+  "docs/phase-3-implementation.md": {
+    "mtime": 1793323792.007398,
+    "seen": 1793351713.41761,
+    "ast_hash": "4b5bb0c89d05d1feb39dcb9346c98bad",
+    "semantic_hash": "4b5bb0c89d05d1feb39dcb9346c98bad"
+  },
+  "docs/phase-4-implementation.md": {
+    "mtime": 1793333556.3384843,
+    "seen": 1793351713.4176154,
+    "ast_hash": "5f918e9249171d6c638c10f93267fc4a",
+    "semantic_hash": "5f918e9249171d6c638c10f93267fc4a"
+  },
+  "frontend/CLAUDE.md": {
+    "mtime": 1793323792.0117013,
+    "seen": 1793351713.4176383,
+    "ast_hash": "0e784fdc84e40456269a1568a61b15e8",
+    "semantic_hash": "0e784fdc84e40456269a1568a61b15e8"
+  },
+  "frontend/README.md": {
+    "mtime": 1793249714.1006536,
+    "seen": 1793351713.4176443,
+    "ast_hash": "024ebc31628622e8b8b2545b04a7d72b",
+    "semantic_hash": "024ebc31628622e8b8b2545b04a7d72b"
+  },
+  "frontend/src/app/features/assistant/research-assistant.html": {
+    "mtime": 1793333075.204489,
+    "seen": 1793351713.4176502,
+    "ast_hash": "42c13d9b148432f7ddc85c8e86068914",
+    "semantic_hash": "42c13d9b148432f7ddc85c8e86068914"
+  },
+  "frontend/src/app/features/dashboard/dashboard.html": {
+    "mtime": 1793256167.1888797,
+    "seen": 1793351713.417655,
+    "ast_hash": "b94f69b46085beacfff90cce53c47724",
+    "semantic_hash": "b94f69b46085beacfff90cce53c47724"
+  },
+  "frontend/src/app/features/documents/upload-panel.html": {
+    "mtime": 1793249331.0123892,
+    "seen": 1793351713.4176605,
+    "ast_hash": "9c17fc40d89a4ac9754e567da925a1ca",
+    "semantic_hash": "9c17fc40d89a4ac9754e567da925a1ca"
+  },
+  "frontend/src/app/features/emails/email-detail.html": {
+    "mtime": 1793323792.0459802,
+    "seen": 1793351713.4176652,
+    "ast_hash": "9b0e0e5a00d49d2dbf5c5d9f2ea764cb",
+    "semantic_hash": "9b0e0e5a00d49d2dbf5c5d9f2ea764cb"
+  },
+  "frontend/src/app/features/emails/email-inbox.html": {
+    "mtime": 1793256008.242254,
+    "seen": 1793351713.4176702,
+    "ast_hash": "c697634a30c736a132683f066c4af0a2",
+    "semantic_hash": "c697634a30c736a132683f066c4af0a2"
+  },
+  "frontend/src/app/features/investor/investor-profile.html": {
+    "mtime": 1793332973.1122394,
+    "seen": 1793351713.4176753,
+    "ast_hash": "ac809d2ac25d40f145baffac5baa93aa",
+    "semantic_hash": "ac809d2ac25d40f145baffac5baa93aa"
+  },
+  "frontend/src/app/features/portfolio/portfolio-dashboard.html": {
+    "mtime": 1793332933.4654033,
+    "seen": 1793351713.41768,
+    "ast_hash": "986aa53a5090c1500626d1664fc2a7b6",
+    "semantic_hash": "986aa53a5090c1500626d1664fc2a7b6"
+  },
+  "frontend/src/app/features/portfolio/research-insights.html": {
+    "mtime": 1793332882.532412,
+    "seen": 1793351713.417686,
+    "ast_hash": "850f7bf0d86de3e71cde9a05df041aaf",
+    "semantic_hash": "850f7bf0d86de3e71cde9a05df041aaf"
+  },
+  "frontend/src/app/features/portfolio/transaction-form.html": {
+    "mtime": 1793332849.7159445,
+    "seen": 1793351713.4176915,
+    "ast_hash": "65b73bebe4529dbdc534151654f62750",
+    "semantic_hash": "65b73bebe4529dbdc534151654f62750"
+  },
+  "frontend/src/index.html": {
+    "mtime": 1793328105.5391202,
+    "seen": 1793351713.4176962,
+    "ast_hash": "5d15384441e497b06f43a8bd315b8f9c",
+    "semantic_hash": "5d15384441e497b06f43a8bd315b8f9c"
+  },
+  "frontend/public/favicon.svg": {
+    "mtime": 1793328105.3684907,
+    "seen": 1793351713.417725,
+    "ast_hash": "a17f023365127fe78213817846780401",
+    "semantic_hash": "a17f023365127fe78213817846780401"
+  }
+}
