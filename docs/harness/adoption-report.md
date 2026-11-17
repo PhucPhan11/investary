@@ -67,3 +67,17 @@ framework pitfalls found during Phase 1–2 existed only in session transcripts.
   module cycles).
 - Count harness check failures caught before commit, and add a failure note whenever a new
   class of mistake shows up twice.
+
+## Addendum 2026-11-17: graphify code map
+
+- **What:** `graphify-out/` holds a knowledge graph of the repository (AST for code, model-extracted
+  concepts for docs and templates). `GRAPH_REPORT.md`, `graph.json`, `graph.html` and the community labels are
+  committed; the cache, manifest, cost log and interpreter/root paths are machine-local and ignored. A stray
+  `frontend/graphify-out/` (built with `frontend/` as root) and a committed `bash.exe.stackdump` were removed.
+- **Why:** agents rediscovered module structure file by file. The report gives a map of communities, central
+  ("god") nodes and cross-module links, and `graphify query` / `path` / `explain` answer navigation questions
+  without reading every file.
+- **Guard rails:** the graph is derived and can be stale; it never overrides code, `AGENTS.md` or
+  `ArchitectureTest`. INFERRED edges are hints. The corpus is the repository only, never library PDFs or emails.
+- **How agents learn it:** "Code map (graphify)" section in `AGENTS.md`, one line in `CLAUDE.md`, a bullet in
+  the README "Working with AI coding agents" section.

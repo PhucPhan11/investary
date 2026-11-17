@@ -577,6 +577,9 @@ instead of rediscovering them:
   changes and the "before you finish" checklist. `CLAUDE.md` imports it, and `backend/CLAUDE.md` /
   `frontend/CLAUDE.md` add stack-specific notes.
 - **`docs/failures/`:** failure memory. Real problems from earlier phases, each with Prevention and Detection.
+- **`graphify-out/`:** a committed code map (knowledge graph) of the repository. Agents read
+  `GRAPH_REPORT.md` or run `graphify query "<question>"` to navigate, then verify in the source. Usage, the
+  staleness rules and the refresh steps are in the "Code map (graphify)" section of `AGENTS.md`.
 - **Checks:**
   - `ArchitectureTest` (part of `./mvnw verify`) enforces the module dependency direction.
   - `node scripts/check-harness.mjs` blocks committed real emails/PDFs/`.env`, edits to applied Flyway

@@ -9,5 +9,8 @@
   8080). It blocks iframes; see `docs/failures/0006-embedded-browser-iframe.md`.
 - Long-running servers (`spring-boot:run`, `npm start`) should run in the background, and must be
   stopped when you are done. On Windows the Java process can outlive the task, so check port 8080.
+- For codebase, architecture or "what calls/uses X" questions, use the `graphify` skill against the
+  committed code map first (`graphify-out/GRAPH_REPORT.md`, `graphify query`), then open the cited source
+  before acting. Rules and refresh steps: "Code map (graphify)" in `AGENTS.md`.
 - Real sample emails the user shares (e.g. in `Downloads`) may be read locally for analysis. Never copy
   them into the repo, never quote personal data from them, and delete any scratch copies afterwards.

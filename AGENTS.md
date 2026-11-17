@@ -78,6 +78,39 @@ journal ──▶ portfolio, investor (*QueryService only), document, email, res
 - Research data copies values from the source and never invents them. A source rating such as
   "Chờ mua" is the brokerage's statement, not Investary advice.
 
+## Code map (graphify)
+
+`graphify-out/` is a committed knowledge graph of this repository: AST nodes for code, plus concepts
+extracted from docs and templates, grouped into labelled communities. Use it to find your way around, then
+read the code.
+
+| File | Use |
+|---|---|
+| `graphify-out/GRAPH_REPORT.md` | Start here: community list, god nodes (most-connected abstractions), surprising cross-module links, suggested questions |
+| `graphify-out/graph.json` | Nodes and edges with `source_file`, `source_location`, `community_name` and a confidence (EXTRACTED / INFERRED / AMBIGUOUS) |
+| `graphify-out/graph.html` | Interactive view for humans (aggregated by community) |
+
+- **When:** architecture or navigation questions ("what uses X", "how does A reach B", "which module owns Y"),
+  impact checks before a cross-module change, and onboarding to an unfamiliar module.
+- **How** (the `graphify` CLI, Python package `graphifyy`; in Claude Code, the `/graphify` skill):
+  - `graphify query "how does the journal build a snapshot"` searches breadth-first; `--dfs` traces one
+    path; `--budget 2000` raises the token cap when the output says it was truncated.
+  - `graphify path "A" "B"` gives the shortest path between two nodes; `graphify explain "X"` lists a node's
+    neighbours.
+  - Doc concepts can share a name with a class. If a name is ambiguous, use `<path>::Symbol` or the node id
+    that the CLI prints.
+  - Without the CLI, read the report, or search `graph.json` for a label and follow its edges.
+- **Rules:**
+  - The graph is **derived and can be stale** (its build date is the first line of the report). Open the
+    cited file before you edit or claim anything. Code, this file and `ArchitectureTest` win over the graph.
+  - INFERRED and AMBIGUOUS edges are hints, not facts. Never cite them as a dependency or as a rule.
+  - The corpus is the repository only. Never point graphify at library PDFs, EML storage or `infrastructure/.env`.
+- **Refresh** after structural changes (a new module, package or phase, or a large refactor):
+  - Run `/graphify . --update` in Claude Code. It re-extracts only changed files; docs need a model.
+  - Or run `graphify update .`, which covers code only and needs no model.
+  - Commit only the report, `graph.json`, `graph.html` and `.graphify_labels.json`. The cache, manifest,
+    cost log and the interpreter and root paths are machine-local and git-ignored.
+
 ## Commands
 
 Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 first:
