@@ -85,7 +85,7 @@ export class UploadPanel {
         },
         error: (err) => {
           this.progress.set(null);
-          this.error.set(errorMessage(err, 'Upload failed.'));
+          this.error.set(errorMessage(err, $localize`:@@uploadPanel.error.uploadFailed:Upload failed.`));
         },
       });
   }
@@ -102,11 +102,11 @@ export class UploadPanel {
     }
     const looksLikePdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     if (!looksLikePdf) {
-      this.error.set('Please choose a PDF file.');
+      this.error.set($localize`:@@uploadPanel.pleaseChoosePdfFile:Please choose a PDF file.`);
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      this.error.set('The file is larger than the 50 MB upload limit.');
+      this.error.set($localize`:@@uploadPanel.fileLargerThan50:The file is larger than the 50 MB upload limit.`);
       return;
     }
     this.file.set(file);

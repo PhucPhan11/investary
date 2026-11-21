@@ -26,6 +26,7 @@ import { StatusBadge } from '../../shared/components/status-badge';
   templateUrl: './decision-list.html',
 })
 export class DecisionList {
+  protected readonly watchlist = $localize`:@@journal.watchlist:Watchlist`;
   private readonly api = inject(JournalApiService);
   private readonly portfolioApi = inject(PortfolioApiService);
 
@@ -63,7 +64,7 @@ export class DecisionList {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(errorMessage(err, 'Could not load the decision journal.'));
+        this.error.set(errorMessage(err, $localize`:@@decisionList.error.loadDecisionJournal:Could not load the decision journal.`));
         this.loading.set(false);
       },
     });

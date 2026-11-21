@@ -10,12 +10,25 @@ import { PortfolioApiService } from '../../core/api/portfolio-api.service';
 import { SettingField, SettingValue, SettingsSection } from '../../core/models/automation.model';
 import { Portfolio } from '../../core/models/portfolio.model';
 import { Alert } from '../../shared/components/alert';
+import { settingHelp, settingLabel } from './setting-labels';
 
 export const SECTION_TITLES: Record<string, { title: string; description: string }> = {
-  gmail: { title: 'Gmail', description: 'Automatic polling of the connected Gmail account.' },
-  processing: { title: 'Research processing', description: 'Automatic PDF downloads, retries and background jobs.' },
-  brief: { title: 'Daily brief', description: 'When the brief is generated and what it covers.' },
-  ai: { title: 'AI usage limits', description: 'Enforced by the backend for automatic and interactive AI calls.' },
+  gmail: {
+    title: 'Gmail',
+    description: $localize`:@@settingsSection.gmail.description:Automatic polling of the connected Gmail account.`,
+  },
+  processing: {
+    title: $localize`:@@settingsSection.processing:Research processing`,
+    description: $localize`:@@settingsSection.processing.description:Automatic PDF downloads, retries and background jobs.`,
+  },
+  brief: {
+    title: $localize`:@@nav.briefs:Daily brief`,
+    description: $localize`:@@settingsSection.brief.description:When the brief is generated and what it covers.`,
+  },
+  ai: {
+    title: $localize`:@@settingsSection.ai:AI usage limits`,
+    description: $localize`:@@settingsSection.ai.description:Enforced by the backend for automatic and interactive AI calls.`,
+  },
 };
 
 const FALLBACK_ZONES = ['Asia/Ho_Chi_Minh', 'Asia/Bangkok', 'Asia/Singapore', 'Asia/Tokyo', 'Europe/London', 'Europe/Berlin',
@@ -48,6 +61,9 @@ export class AutomationSettingsPage implements OnInit {
   protected readonly generatedJob = signal<string | null>(null);
   protected readonly titles = SECTION_TITLES;
   protected readonly zones = supportedZones();
+  protected readonly label = settingLabel;
+  protected readonly help = settingHelp;
+  protected readonly noLimit = $localize`:@@automationSettings.noLimit:No limit`;
 
   ngOnInit(): void {
     this.portfoliosApi.list().subscribe({ next: (p) => this.portfolios.set(p), error: () => this.portfolios.set([]) });
@@ -62,7 +78,7 @@ export class AutomationSettingsPage implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(errorMessage(err, 'Could not load the settings.'));
+        this.error.set(errorMessage(err, $localize`:@@automationSettings.error.loadSettings:Could not load the settings.`));
       },
     });
   }
@@ -85,22 +101,22 @@ export class AutomationSettingsPage implements OnInit {
       values[name] = normalize(field, s.draft[name]);
     }
     if (Object.keys(values).length === 0) {
-      s.message = 'Nothing changed.';
+      s.message = $localize`:@@automationSettings.nothingChanged:Nothing changed.`;
       this.refresh();
       return;
     }
     s.saving = true;
     this.refresh();
     this.api.saveSettings(s.section.section, s.section.version, values).subscribe({
-      next: (section) => this.replace(section, 'Saved. Changes apply without a restart unless marked otherwise.'),
+      next: (section) => this.replace(section, $localize`:@@automationSettings.saved:Saved. Changes apply without a restart unless marked otherwise.`),
       error: (err: HttpErrorResponse) => {
         s.saving = false;
         if (err.status === 422 && err.error?.errors) {
           s.errors = err.error.errors;
         } else if (err.status === 409) {
-          s.message = 'These settings were changed elsewhere. Reload and apply your change again.';
+          s.message = $localize`:@@automationSettings.conflict:These settings were changed elsewhere. Reload and apply your change again.`;
         } else {
-          s.message = errorMessage(err, 'Could not save the settings.');
+          s.message = errorMessage(err, $localize`:@@automationSettings.error.saveSettings:Could not save the settings.`);
         }
         this.refresh();
       },
@@ -109,8 +125,8 @@ export class AutomationSettingsPage implements OnInit {
 
   protected reset(s: SectionState, field: SettingField): void {
     this.api.resetSetting(s.section.section, field.name).subscribe({
-      next: (section) => this.replace(section, `${field.label} reset to the configured default.`),
-      error: (err) => this.error.set(errorMessage(err, 'Could not reset the setting.')),
+      next: (section) => this.replace(section, $localize`:@@automationSettings.resetDone:${settingLabel(section.section, field)}:setting: reset to the configured default.`),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@automationSettings.error.resetSetting:Could not reset the setting.`)),
     });
   }
 
@@ -119,18 +135,20 @@ export class AutomationSettingsPage implements OnInit {
     this.briefs.generate(portfolio).subscribe({
       next: (job) => {
         this.generatedJob.set(job.id);
-        this.notice.set('Brief generation was queued. It appears in Daily brief when it is ready.');
+        this.notice.set($localize`:@@automationSettings.briefGenerationWasQueued:Brief generation was queued. It appears in Daily brief when it is ready.`);
       },
-      error: (err) => this.error.set(errorMessage(err, 'Could not start the brief generation.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@automationSettings.error.startBriefGeneration:Could not start the brief generation.`)),
     });
   }
 
   protected display(field: SettingField, value: SettingValue): string {
     if (value === null || value === '') {
-      return field.name === 'defaultPortfolioId' ? 'Every portfolio' : 'Not set';
+      return field.name === 'defaultPortfolioId'
+        ? $localize`:@@automationSettings.everyPortfolio:Every portfolio`
+        : $localize`:@@automationSettings.notSet:Not set`;
     }
     if (field.type === 'BOOLEAN') {
-      return value ? 'On' : 'Off';
+      return value ? $localize`:@@common.on:On` : $localize`:@@common.off:Off`;
     }
     if (field.name === 'defaultPortfolioId') {
       return this.portfolios().find((p) => p.id === value)?.name ?? String(value);
@@ -174,21 +192,21 @@ export function validateSection(fields: SettingField[], draft: Record<string, Se
     const value = normalize(field, draft[field.name]);
     if (value === null) {
       if (!field.nullable && field.type !== 'BOOLEAN') {
-        errors[field.name] = 'Required.';
+        errors[field.name] = $localize`:@@validation.required:Required.`;
       }
       continue;
     }
     if (field.type === 'INTEGER') {
       const n = Number(value);
       if (!Number.isInteger(n)) {
-        errors[field.name] = 'Enter a whole number.';
+        errors[field.name] = $localize`:@@validation.wholeNumber:Enter a whole number.`;
       } else if ((field.min !== null && n < field.min) || (field.max !== null && n > field.max)) {
-        errors[field.name] = `Must be between ${field.min} and ${field.max}.`;
+        errors[field.name] = $localize`:@@validation.between:Must be between ${field.min}:min: and ${field.max}:max:.`;
       }
     } else if (field.type === 'TIME' && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(String(value))) {
-      errors[field.name] = 'Enter a time HH:mm.';
+      errors[field.name] = $localize`:@@validation.time:Enter a time HH:mm.`;
     } else if (field.type === 'ENUM' && !field.options.includes(String(value))) {
-      errors[field.name] = `Choose one of ${field.options.join(', ')}.`;
+      errors[field.name] = $localize`:@@validation.chooseOne:Choose one of ${field.options.join(', ')}:options:.`;
     }
   }
   return errors;

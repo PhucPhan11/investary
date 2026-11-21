@@ -1,18 +1,24 @@
-<a routerLink="/emails" class="link back-link">← Email research</a>
+<a routerLink="/emails" class="link back-link" i18n="@@emails.detail.back">← Email research</a>
 
 @if (error(); as message) {
   <app-alert kind="error">{{ message }}</app-alert>
 }
 
 @if (loading() && !email()) {
-  <p class="muted">Loading email…</p>
+  <p class="muted" i18n="@@emails.detail.loading">Loading email…</p>
 } @else if (email(); as e) {
   <section class="card detail-header">
     <div class="detail-header__main">
-      <h1 class="page-title">{{ e.subject || '(no subject)' }}</h1>
+      <h1 class="page-title">
+        @if (e.subject) {
+          {{ e.subject }}
+        } @else {
+          <ng-container i18n="@@emails.noSubject">(no subject)</ng-container>
+        }
+      </h1>
       <dl class="meta">
         <div>
-          <dt>From</dt>
+          <dt i18n="@@emails.detail.from">From</dt>
           <dd>
             {{ e.senderName || e.senderAddress || '—' }}
             @if (e.senderName && e.senderAddress) {
@@ -20,31 +26,31 @@
             }
           </dd>
         </div>
-        <div><dt>Sent</dt><dd>{{ e.sentAt ? (e.sentAt | date: 'medium') : '—' }}</dd></div>
-        <div><dt>Imported</dt><dd>{{ e.importedAt | date: 'medium' }}</dd></div>
+        <div><dt i18n="@@emails.detail.sent">Sent</dt><dd>{{ e.sentAt ? (e.sentAt | date: 'medium') : '—' }}</dd></div>
+        <div><dt i18n="@@emails.detail.imported">Imported</dt><dd>{{ e.importedAt | date: 'medium' }}</dd></div>
         @if (e.brokerage) {
-          <div><dt>Brokerage</dt><dd><span class="tag tag--plain">{{ e.brokerage }}</span></dd></div>
+          <div><dt i18n="@@emails.detail.brokerage">Brokerage</dt><dd><span class="tag tag--plain">{{ e.brokerage }}</span></dd></div>
         }
         @if (e.languages.length) {
-          <div><dt>Languages</dt><dd>{{ e.languages.join(', ') }}</dd></div>
+          <div><dt i18n="@@emails.detail.languages">Languages</dt><dd>{{ e.languages.join(', ') }}</dd></div>
         }
-        <div><dt>Parsing</dt><dd><app-status-badge [value]="e.parsingStatus" /></dd></div>
+        <div><dt i18n="@@emails.detail.parsing">Parsing</dt><dd><app-status-badge [value]="e.parsingStatus" /></dd></div>
       </dl>
       @if (e.parsingError) {
-        <p class="muted small">Parsing notes: {{ e.parsingError }}</p>
+        <p class="muted small" i18n="@@emails.detail.parsingNotes">Parsing notes: {{ e.parsingError }}</p>
       }
       @if (e.sameMessageIdAs.length) {
         <p class="muted small">
-          Another import has the same Message-ID but different file content:
+          <ng-container i18n="@@emails.detail.sameMessageId">Another import has the same Message-ID but different file content:</ng-container>
           @for (other of e.sameMessageIdAs; track other) {
-            <a class="link" [routerLink]="['/emails', other]">open</a>
+            <a class="link" [routerLink]="['/emails', other]" i18n="@@emails.detail.open">open</a>
           }
         </p>
       }
     </div>
     <div class="detail-header__actions">
-      <a class="btn btn--small btn--ghost" [href]="'/api/v1/emails/' + e.id + '/original'" download>Original .eml ({{ e.fileSize | fileSize }})</a>
-      <button type="button" class="btn btn--small btn--danger" (click)="deleteEmail()">Delete</button>
+      <a class="btn btn--small btn--ghost" [href]="'/api/v1/emails/' + e.id + '/original'" download i18n="@@emails.detail.original">Original .eml ({{ e.fileSize | fileSize }})</a>
+      <button type="button" class="btn btn--small btn--danger" (click)="deleteEmail()" i18n="@@common.delete">Delete</button>
     </div>
   </section>
 
@@ -53,30 +59,32 @@
 
   <section class="card">
     <div class="card__header">
-      <h2 class="card__title">Research links</h2>
-      <span class="muted">{{ e.statistics.researchLinks }} research · {{ links().length }} total</span>
+      <h2 class="card__title" i18n="@@emails.detail.links.title">Research links</h2>
+      <span class="muted" i18n="@@emails.detail.links.count">{{ e.statistics.researchLinks }} research · {{ links().length }} total</span>
     </div>
     @if (notice(); as message) {
       <app-alert kind="error" [dismissible]="true" (dismissed)="notice.set(null)">{{ message }}</app-alert>
     }
     @if (links().length === 0) {
-      <app-empty-state title="No links found">This email does not contain any http(s) links.</app-empty-state>
+      <app-empty-state title="No links found" i18n-title="@@emails.detail.links.emptyTitle"
+        ><ng-container i18n="@@emails.detail.links.empty">This email does not contain any http(s) links.</ng-container></app-empty-state
+      >
     } @else {
       <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
-              <th scope="col">Link</th>
-              <th scope="col">Category</th>
-              <th scope="col">Domain</th>
-              <th scope="col">Status</th>
-              <th scope="col" class="actions-col"><span class="visually-hidden">Actions</span></th>
+              <th scope="col" i18n="@@emails.detail.links.link">Link</th>
+              <th scope="col" i18n="@@emails.detail.links.category">Category</th>
+              <th scope="col" i18n="@@emails.detail.links.domain">Domain</th>
+              <th scope="col" i18n="@@common.status">Status</th>
+              <th scope="col" class="actions-col"><span class="visually-hidden" i18n="@@common.actions">Actions</span></th>
             </tr>
           </thead>
           <tbody>
             @for (link of visibleLinks(); track link.id) {
               <tr>
-                <td data-label="Link">
+                <td data-label="Link" i18n-data-label="@@emails.detail.links.link">
                   <span class="filename">{{ link.displayText || link.targetUrl }}</span>
                   @if (link.language) {
                     <span class="tag tag--plain">{{ link.language }}</span>
@@ -85,29 +93,33 @@
                     <span class="link-section">{{ link.section }}</span>
                   }
                 </td>
-                <td data-label="Category">
+                <td data-label="Category" i18n-data-label="@@emails.detail.links.category">
                   <app-status-badge [value]="link.category" />
                   @if (link.tickerHint) {
                     <span class="tag">{{ link.tickerHint }}</span>
                   }
                 </td>
-                <td data-label="Domain" class="domain" [title]="link.targetUrl">{{ link.host }}</td>
-                <td data-label="Status">
+                <td data-label="Domain" i18n-data-label="@@emails.detail.links.domain" class="domain" [title]="link.targetUrl">{{ link.host }}</td>
+                <td data-label="Status" i18n-data-label="@@common.status">
                   <app-status-badge [value]="link.status" />
                   @if (link.errorMessage) {
                     <span class="link-error">{{ link.errorMessage }}</span>
                   }
                   @if (link.download && link.status === 'DOWNLOADING') {
-                    <span class="link-section">attempt {{ link.download.attempts || 1 }} of {{ link.download.maxAttempts }}</span>
+                    <span class="link-section" i18n="@@emails.detail.links.attempt">attempt {{ link.download.attempts || 1 }} of {{ link.download.maxAttempts }}</span>
                   }
                 </td>
                 <td class="actions-col">
                   @if (link.status === 'DOWNLOADED' && link.documentId) {
-                    <a class="btn btn--small btn--ghost" [routerLink]="['/documents', link.documentId]">Open</a>
+                    <a class="btn btn--small btn--ghost" [routerLink]="['/documents', link.documentId]" i18n="@@common.open">Open</a>
                   } @else if (canDownload(link)) {
                     <button type="button" class="btn btn--small" [class.btn--primary]="link.status === 'READY'" [class.btn--ghost]="link.status !== 'READY'"
                             [disabled]="isRequesting(link)" (click)="download(link)">
-                      {{ link.status === 'FAILED' ? 'Retry' : 'Download' }}
+                      @if (link.status === 'FAILED') {
+                        <ng-container i18n="@@common.retry">Retry</ng-container>
+                      } @else {
+                        <ng-container i18n="@@common.download">Download</ng-container>
+                      }
                     </button>
                   }
                 </td>
@@ -118,10 +130,14 @@
       </div>
       @if (hiddenCount() > 0) {
         <button type="button" class="btn btn--small btn--ghost toggle-links" (click)="showAllLinks.set(!showAllLinks())">
-          {{ showAllLinks() ? 'Hide' : 'Show' }} navigation &amp; promotion links ({{ hiddenCount() }})
+          @if (showAllLinks()) {
+            <ng-container i18n="@@emails.detail.links.hide">Hide navigation &amp; promotion links ({{ hiddenCount() }})</ng-container>
+          } @else {
+            <ng-container i18n="@@emails.detail.links.show">Show navigation &amp; promotion links ({{ hiddenCount() }})</ng-container>
+          }
         </button>
       }
-      <p class="muted small">
+      <p class="muted small" i18n="@@emails.detail.links.note">
         Downloads run in the background over HTTPS from allowlisted brokerage domains only. Tracking redirects are bypassed.
       </p>
     }
@@ -129,11 +145,11 @@
 
   <section class="card">
     <div class="card__header">
-      <h2 class="card__title">Linked reports</h2>
-      <span class="muted">In the document library</span>
+      <h2 class="card__title" i18n="@@emails.detail.reports.title">Linked reports</h2>
+      <span class="muted" i18n="@@emails.detail.reports.subtitle">In the document library</span>
     </div>
     @if (documents().length === 0) {
-      <p class="muted">No reports yet. Download a research link above; PDF attachments are added automatically.</p>
+      <p class="muted" i18n="@@emails.detail.reports.empty">No reports yet. Download a research link above; PDF attachments are added automatically.</p>
     } @else {
       <ul class="recent-list">
         @for (doc of documents(); track doc.documentId + doc.relationshipType) {
@@ -141,15 +157,19 @@
             <div class="recent-list__main">
               <a class="recent-list__name link-plain" [routerLink]="['/documents', doc.documentId]">{{ doc.originalFilename }}</a>
               <span class="recent-list__meta">
-                {{ doc.relationshipType === 'ATTACHMENT' ? 'Attachment' : 'Downloaded from link' }} ·
-                {{ doc.reportType | reportTypeLabel }}
+                @if (doc.relationshipType === 'ATTACHMENT') {
+                  <ng-container i18n="@@emails.detail.reports.attachment">Attachment</ng-container>
+                } @else {
+                  <ng-container i18n="@@emails.detail.reports.fromLink">Downloaded from link</ng-container>
+                }
+                · {{ doc.reportType | reportTypeLabel }}
                 @if (doc.ticker) {
                   · <span class="tag">{{ doc.ticker }}</span>
                 }
               </span>
             </div>
             <div class="recent-list__side">
-              <a class="btn btn--small btn--ghost" [href]="downloadUrl(doc.documentId)" download>Download PDF</a>
+              <a class="btn btn--small btn--ghost" [href]="downloadUrl(doc.documentId)" download i18n="@@common.downloadPdf">Download PDF</a>
               <span class="muted">{{ doc.fileSize | fileSize }}</span>
             </div>
           </li>
@@ -161,11 +181,13 @@
   @if (items().length) {
     <section class="card">
       <div class="card__header">
-        <h2 class="card__title">Extracted research</h2>
-        <span class="muted">Deterministic rules · original text kept</span>
+        <h2 class="card__title" i18n="@@emails.detail.items.title">Extracted research</h2>
+        <span class="muted" i18n="@@emails.detail.items.subtitle">Deterministic rules · original text kept</span>
       </div>
       <ul class="items">
-        @for (item of items(); track item.id) {
+        @for (entry of visibleItems(); track entry.item.id) {
+          @let item = entry.item;
+          @let translated = entry.translation && !showsOriginal(item.id) ? entry.translation : null;
           <li class="item" [class.item--recommendation]="item.itemType === 'STOCK_RECOMMENDATION'">
             <div class="item__head">
               <span class="badge badge--info">{{ itemTypeLabels[item.itemType] }}</span>
@@ -178,40 +200,83 @@
               @if (item.language) {
                 <span class="tag tag--plain">{{ item.language }}</span>
               }
+              @if (translated) {
+                <span class="tag tag--plain" [attr.lang]="language" i18n="@@emails.detail.items.sourceTranslation">Source-provided translation ({{ language }})</span>
+              }
             </div>
             @if (recommendation(item); as rec) {
               <p class="item__recommendation">
-                {{ item.brokerage || 'The source' }} states: <strong>{{ rec }}</strong>
-                @for (t of translations(item); track t.language) {
-                  <span class="muted"> ({{ t.language }}: {{ t.recommendation }})</span>
+                @if (translated?.sourceRecommendation; as translatedRec) {
+                  <ng-container i18n="@@emails.detail.items.states">{{ item.brokerage || sourceLabel }} states: <strong>{{ translatedRec }}</strong></ng-container>
+                  <span class="muted"> ({{ item.language }}: {{ rec }})</span>
+                } @else {
+                  <ng-container i18n="@@emails.detail.items.states">{{ item.brokerage || sourceLabel }} states: <strong>{{ rec }}</strong></ng-container>
+                  @for (t of translations(item); track t.language) {
+                    <span class="muted"> ({{ t.language }}: {{ t.recommendation }})</span>
+                  }
                 }
               </p>
-              <p class="item__disclaimer">Recommendation as published by the brokerage — not advice from Investary.</p>
+              <p class="item__disclaimer" i18n="@@emails.detail.items.disclaimer">Recommendation as published by the brokerage — not advice from Investary.</p>
             }
-            <p class="item__content">{{ item.content }}</p>
+            @if (translated) {
+              <p class="item__content" [attr.lang]="language">{{ translated.content }}</p>
+            } @else {
+              <p class="item__content" [attr.lang]="item.language">{{ item.content }}</p>
+            }
             <span class="link-section">{{ item.sourceLocation }}</span>
+            @if (entry.translation) {
+              <button type="button" class="btn btn--small btn--ghost" (click)="toggleOriginal(item.id)">
+                @if (showsOriginal(item.id)) {
+                  <ng-container i18n="@@emails.detail.items.showTranslation">Show source translation</ng-container>
+                } @else {
+                  <ng-container i18n="@@emails.detail.items.showOriginal">Show original</ng-container>
+                }
+              </button>
+            }
           </li>
         }
       </ul>
+      @if (hiddenItemCount() > 0) {
+        <button type="button" class="btn btn--small btn--ghost toggle-links" (click)="showAllItems.set(!showAllItems())">
+          @if (showAllItems()) {
+            <ng-container i18n="@@emails.detail.items.showLanguageOnly">Show only items in this language</ng-container>
+          } @else {
+            <ng-container i18n="@@emails.detail.items.showAllLanguages">Show all languages ({{ hiddenItemCount() }} more)</ng-container>
+          }
+        </button>
+      }
     </section>
   }
 
   @if (e.attachments.length) {
     <section class="card">
-      <div class="card__header"><h2 class="card__title">Attachments</h2></div>
+      <div class="card__header"><h2 class="card__title" i18n="@@emails.detail.attachments.title">Attachments</h2></div>
       <ul class="recent-list">
         @for (a of e.attachments; track a.id) {
           <li class="recent-list__item">
             <div class="recent-list__main">
-              <span class="recent-list__name">{{ a.filename || '(unnamed)' }}</span>
-              <span class="recent-list__meta">{{ a.contentType }} · {{ a.disposition.toLowerCase() }}</span>
+              <span class="recent-list__name">
+                @if (a.filename) {
+                  {{ a.filename }}
+                } @else {
+                  <ng-container i18n="@@emails.detail.attachments.unnamed">(unnamed)</ng-container>
+                }
+              </span>
+              <span class="recent-list__meta">
+                {{ a.contentType }} ·
+                @if (a.disposition === 'INLINE') {
+                  <ng-container i18n="@@emails.detail.attachments.inline">inline</ng-container>
+                } @else {
+                  <ng-container i18n="@@emails.detail.attachments.attachment">attachment</ng-container>
+                }
+              </span>
               @if (a.importError) {
                 <span class="link-error">{{ a.importError }}</span>
               }
             </div>
             <div class="recent-list__side">
               @if (a.documentId) {
-                <a class="link" [routerLink]="['/documents', a.documentId]">In library</a>
+                <a class="link" [routerLink]="['/documents', a.documentId]" i18n="@@emails.detail.attachments.inLibrary">In library</a>
               }
               <span class="muted">{{ a.size | fileSize }}</span>
             </div>
@@ -223,24 +288,24 @@
 
   <section class="card">
     <div class="card__header">
-      <h2 class="card__title">Email content</h2>
+      <h2 class="card__title" i18n="@@emails.detail.content.title">Email content</h2>
       <div class="tabs" role="tablist">
-        <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="tab() === 'text'" [attr.aria-selected]="tab() === 'text'" (click)="tab.set('text')">
+        <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="tab() === 'text'" [attr.aria-selected]="tab() === 'text'" (click)="tab.set('text')" i18n="@@emails.detail.content.text">
           Text
         </button>
         @if (e.hasHtml) {
-          <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="tab() === 'html'" [attr.aria-selected]="tab() === 'html'" (click)="tab.set('html')">
+          <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="tab() === 'html'" [attr.aria-selected]="tab() === 'html'" (click)="tab.set('html')" i18n="@@emails.detail.content.html">
             Safe HTML preview
           </button>
         }
       </div>
     </div>
     @if (tab() === 'text') {
-      <pre class="email-text">{{ e.normalizedText || '(no readable text)' }}</pre>
+      <pre class="email-text">{{ e.normalizedText || noTextLabel }}</pre>
     } @else {
-      <iframe class="email-frame" title="Sanitized email preview" [src]="htmlUrl()"
+      <iframe class="email-frame" title="Sanitized email preview" i18n-title="@@emails.detail.content.frameTitle" [src]="htmlUrl()"
               sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
-      <p class="muted small">Scripts, forms, styles and remote images are removed; links point to their real destination.</p>
+      <p class="muted small" i18n="@@emails.detail.content.htmlNote">Scripts, forms, styles and remote images are removed; links point to their real destination.</p>
     }
   </section>
 }

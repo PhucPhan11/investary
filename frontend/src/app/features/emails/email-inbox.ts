@@ -21,6 +21,7 @@ const SEARCH_DEBOUNCE_MS = 300;
   templateUrl: './email-inbox.html',
 })
 export class EmailInbox implements OnInit, OnDestroy {
+  protected readonly noSubject = $localize`:@@emails.noSubject:(no subject)`;
   private readonly api = inject(EmailApiService);
   private readonly router = inject(Router);
   private searchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -63,7 +64,7 @@ export class EmailInbox implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(errorMessage(err, 'Could not load emails.'));
+        this.error.set(errorMessage(err, $localize`:@@emailInbox.error.loadEmails:Could not load emails.`));
         this.loading.set(false);
       },
     });
@@ -76,7 +77,7 @@ export class EmailInbox implements OnInit, OnDestroy {
 
   protected remove(email: EmailSummary): void {
     const title = email.subject || 'this email';
-    if (!confirm(`Delete "${title}"? Downloaded reports stay in the document library.`)) {
+    if (!confirm($localize`:@@emails.detail.confirmDelete:Delete "${title}:subject:"? Downloaded reports stay in the document library.`)) {
       return;
     }
     this.deletingId.set(email.id);
@@ -84,7 +85,7 @@ export class EmailInbox implements OnInit, OnDestroy {
     this.api.delete(email.id).subscribe({
       next: () => {
         this.deletingId.set(null);
-        this.success.set(`"${title}" was deleted. Its reports remain in the document library.`);
+        this.success.set($localize`:@@emailInbox.deleted:"${title}:subject:" was deleted. Its reports remain in the document library.`);
         const current = this.page();
         const pageIndex = current && current.content.length === 1 && current.page > 0 ? current.page - 1 : (current?.page ?? 0);
         this.load(pageIndex);
@@ -92,7 +93,7 @@ export class EmailInbox implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.deletingId.set(null);
-        this.error.set(errorMessage(err, 'Could not delete the email.'));
+        this.error.set(errorMessage(err, $localize`:@@emailInbox.error.deleteEmail:Could not delete the email.`));
       },
     });
   }

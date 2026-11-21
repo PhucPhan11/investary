@@ -16,8 +16,8 @@ export const MAX_EML_BYTES = 25 * 1024 * 1024;
   template: `
     <section class="card upload">
       <div class="card__header">
-        <h2 class="card__title">Import email</h2>
-        <span class="muted">.eml only · max {{ maxBytes | fileSize }}</span>
+        <h2 class="card__title" i18n="@@emailImportPanel.importEmail">Import email</h2>
+        <span class="muted" i18n="@@emailImportPanel.emlOnlyMax">.eml only · max {{ maxBytes | fileSize }}</span>
       </div>
       <label
         class="dropzone"
@@ -32,8 +32,8 @@ export const MAX_EML_BYTES = 25 * 1024 * 1024;
           <span class="dropzone__file">{{ selected.name }}</span>
           <span class="muted">{{ selected.size | fileSize }}</span>
         } @else {
-          <span class="dropzone__hint"><strong>Choose an .eml file</strong> or drag it here</span>
-          <span class="muted">Export a brokerage email from your mail client ("Save as" / "Download message").</span>
+          <span class="dropzone__hint"><strong i18n="@@emailImportPanel.chooseEmlFile">Choose an .eml file</strong> or drag it here</span>
+          <span class="muted" i18n="@@emailImportPanel.exportBrokerageEmailFrom">Export a brokerage email from your mail client ("Save as" / "Download message").</span>
         }
       </label>
 
@@ -41,7 +41,7 @@ export const MAX_EML_BYTES = 25 * 1024 * 1024;
         <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">
           {{ message }}
           @if (existingId(); as id) {
-            <a class="link" [href]="'/emails/' + id">Open the existing email</a>
+            <a class="link" [href]="'/emails/' + id" i18n="@@emailImportPanel.openExistingEmail">Open the existing email</a>
           }
         </app-alert>
       }
@@ -52,10 +52,16 @@ export const MAX_EML_BYTES = 25 * 1024 * 1024;
       }
       <div class="actions">
         @if (file()) {
-          <button type="button" class="btn btn--ghost" (click)="clear()" [disabled]="progress() !== null">Clear</button>
+          <button type="button" class="btn btn--ghost" (click)="clear()" [disabled]="progress() !== null" i18n="@@emailImportPanel.clear">Clear</button>
         }
         <button type="button" class="btn btn--primary" [disabled]="!file() || progress() !== null" (click)="submit()">
-          {{ progress() !== null ? (progress() === 100 ? 'Parsing…' : 'Uploading… ' + progress() + '%') : 'Import' }}
+          @if (progress() === null) {
+            <ng-container i18n="@@emailImportPanel.import">Import</ng-container>
+          } @else if (progress() === 100) {
+            <ng-container i18n="@@emailImportPanel.parsing">Parsing…</ng-container>
+          } @else {
+            <ng-container i18n="@@uploadPanel.uploading">Uploading… {{ progress() }}%</ng-container>
+          }
         </button>
       </div>
     </section>
@@ -104,7 +110,7 @@ export class EmailImportPanel {
       },
       error: (err) => {
         this.progress.set(null);
-        this.error.set(errorMessage(err, 'Import failed.'));
+        this.error.set(errorMessage(err, $localize`:@@emailImportPanel.error.importFailed:Import failed.`));
         this.existingId.set(err?.error?.existingEmailId ?? null);
       },
     });
@@ -122,11 +128,11 @@ export class EmailImportPanel {
       return;
     }
     if (!file.name.toLowerCase().endsWith('.eml') && file.type !== 'message/rfc822') {
-      this.error.set('Please choose an .eml file.');
+      this.error.set($localize`:@@emailImportPanel.pleaseChooseEmlFile:Please choose an .eml file.`);
       return;
     }
     if (file.size > MAX_EML_BYTES) {
-      this.error.set('The file is larger than the 25 MB import limit.');
+      this.error.set($localize`:@@emailImportPanel.fileLargerThan25:The file is larger than the 25 MB import limit.`);
       return;
     }
     this.file.set(file);

@@ -33,9 +33,9 @@ export const PUBLIC_MAIL_DOMAINS = new Set([
 ]);
 
 export const WARNING_TEXT: Record<string, string> = {
-  PUBLIC_MAIL_DOMAIN: 'A public mailbox domain matches every sender on that service, not only the brokerage.',
-  MANY_DOMAINS: 'Many sender domains in one rule; consider one rule per brokerage.',
-  NO_SUBJECT_FILTER: 'Every email from these domains is imported (no subject keyword or Gmail search).',
+  PUBLIC_MAIL_DOMAIN: $localize`:@@sourceRules.warningText.PUBLIC_MAIL_DOMAIN:A public mailbox domain matches every sender on that service, not only the brokerage.`,
+  MANY_DOMAINS: $localize`:@@sourceRules.warningText.MANY_DOMAINS:Many sender domains in one rule; consider one rule per brokerage.`,
+  NO_SUBJECT_FILTER: $localize`:@@sourceRules.warningText.NO_SUBJECT_FILTER:Every email from these domains is imported (no subject keyword or Gmail search).`,
 };
 
 /** Brokerage source rules: which verified senders Gmail sync may import, and what happens next. */
@@ -88,7 +88,7 @@ export class SourceRules implements OnInit {
         if (err.status === 400 && err.error?.errors) {
           this.errors.set(err.error.errors);
         }
-        this.error.set(errorMessage(err, 'Could not save the source rule.'));
+        this.error.set(errorMessage(err, $localize`:@@sourceRules.error.saveSourceRule:Could not save the source rule.`));
       },
     });
   }
@@ -121,8 +121,7 @@ export class SourceRules implements OnInit {
   /** Automatic PDF download is never switched on silently. */
   protected toggleAutoPdf(event: Event): void {
     const box = event.target as HTMLInputElement;
-    if (box.checked && !this.confirm('Download linked PDF reports automatically for this source? Links are still checked by the '
-        + 'download policy (https, approved brokerage domains, PDF content only).')) {
+    if (box.checked && !this.confirm($localize`:@@sourceRules.confirmAutoPdf:Download linked PDF reports automatically for this source? Links are still checked by the download policy (https, approved brokerage domains, PDF content only).`)) {
       box.checked = false;
       this.draft.autoPdfDownload = false;
       return;
@@ -133,17 +132,17 @@ export class SourceRules implements OnInit {
   protected toggleEnabled(rule: SourceRule): void {
     this.rulesApi.update(rule.id, { ...ruleRequest(rule), enabled: !rule.enabled }).subscribe({
       next: () => this.load(),
-      error: (err) => this.error.set(errorMessage(err, 'Could not change the source.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@sourceRules.error.changeSource:Could not change the source.`)),
     });
   }
 
   protected remove(rule: SourceRule): void {
-    if (!this.confirm(`Delete the source rule "${rule.name}"? Emails already imported stay.`)) {
+    if (!this.confirm($localize`:@@sourceRules.confirmDelete:Delete the source rule "${rule.name}:name:"? Emails already imported stay.`)) {
       return;
     }
     this.rulesApi.delete(rule.id).subscribe({
       next: () => this.load(),
-      error: (err) => this.error.set(errorMessage(err, 'Could not delete the source rule.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@sourceRules.error.deleteSourceRule:Could not delete the source rule.`)),
     });
   }
 
@@ -169,7 +168,7 @@ export class SourceRules implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(errorMessage(err, 'Could not load the source rules.'));
+        this.error.set(errorMessage(err, $localize`:@@sourceRules.error.loadSourceRules:Could not load the source rules.`));
       },
     });
   }
@@ -179,35 +178,35 @@ export class SourceRules implements OnInit {
 export function validateRule(draft: RuleDraft): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!draft.name.trim()) {
-    errors['name'] = 'Enter a name.';
+    errors['name'] = $localize`:@@sourceRules.enterName:Enter a name.`;
   } else if (draft.name.trim().length > 100) {
-    errors['name'] = 'At most 100 characters.';
+    errors['name'] = $localize`:@@sourceRules.atMost100Characters:At most 100 characters.`;
   }
   const addresses = splitList(draft.senderAddresses).map((a) => a.toLowerCase());
   const domains = splitList(draft.senderDomains).map(normalizeDomain);
   const badAddress = addresses.find((a) => !ADDRESS.test(a) || !DOMAIN.test(a.split('@')[1]));
   if (badAddress) {
-    errors['senderAddresses'] = `'${badAddress}' is not a valid email address.`;
+    errors['senderAddresses'] = $localize`:@@sourceRules.invalidAddress:'${badAddress}:address:' is not a valid email address.`;
   } else if (addresses.length > MAX_SENDERS) {
-    errors['senderAddresses'] = `At most ${MAX_SENDERS} addresses.`;
+    errors['senderAddresses'] = $localize`:@@sourceRules.maxAddresses:At most ${MAX_SENDERS}:max: addresses.`;
   }
   const badDomain = domains.find((d) => !DOMAIN.test(d));
   if (badDomain) {
-    errors['senderDomains'] = `'${badDomain}' is not a valid domain.`;
+    errors['senderDomains'] = $localize`:@@sourceRules.invalidDomain:'${badDomain}:domain:' is not a valid domain.`;
   } else if (domains.length > MAX_SENDERS) {
-    errors['senderDomains'] = `At most ${MAX_SENDERS} domains.`;
+    errors['senderDomains'] = $localize`:@@sourceRules.maxDomains:At most ${MAX_SENDERS}:max: domains.`;
   }
   if (addresses.length === 0 && domains.length === 0) {
-    errors['senderAddresses'] = 'Add at least one sender address or domain.';
+    errors['senderAddresses'] = $localize`:@@sourceRules.addAtLeastOne:Add at least one sender address or domain.`;
   }
   const keywords = splitList(draft.subjectKeywords);
   if (keywords.length > MAX_KEYWORDS) {
-    errors['subjectKeywords'] = `At most ${MAX_KEYWORDS} keywords.`;
+    errors['subjectKeywords'] = $localize`:@@sourceRules.maxKeywords:At most ${MAX_KEYWORDS}:max: keywords.`;
   } else if (keywords.some((k) => k.length > MAX_KEYWORD_LENGTH)) {
-    errors['subjectKeywords'] = `Keywords must be at most ${MAX_KEYWORD_LENGTH} characters.`;
+    errors['subjectKeywords'] = $localize`:@@sourceRules.keywordLength:Keywords must be at most ${MAX_KEYWORD_LENGTH}:max: characters.`;
   }
   if (draft.gmailQuery.length > 500) {
-    errors['gmailQuery'] = 'At most 500 characters.';
+    errors['gmailQuery'] = $localize`:@@sourceRules.atMost500Characters:At most 500 characters.`;
   }
   return errors;
 }

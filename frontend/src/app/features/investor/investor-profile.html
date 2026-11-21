@@ -1,7 +1,7 @@
 <header class="page-header">
   <div>
-    <h1 class="page-title">Investor profile &amp; goals</h1>
-    <p class="page-subtitle">
+    <h1 class="page-title" i18n="@@investorProfile.investorProfileAmpGoals">Investor profile &amp; goals</h1>
+    <p class="page-subtitle" i18n="@@investorProfile.usedAsContextBy">
       Used as context by the portfolio-aware assistant. Investary only stores what you enter and gives no personalised advice.
     </p>
   </div>
@@ -15,45 +15,45 @@
 }
 
 @if (loading()) {
-  <p class="muted" role="status">Loading profile…</p>
+  <p class="muted" role="status" i18n="@@investorProfile.loadingProfile">Loading profile…</p>
 } @else {
   <form class="card" (ngSubmit)="saveProfile()">
     <div class="card__header">
-      <h2 class="card__title">Profile</h2>
+      <h2 class="card__title" i18n="@@investorProfile.profile">Profile</h2>
       @if (!configured()) {
-        <span class="badge badge--neutral">Not set yet</span>
+        <span class="badge badge--neutral" i18n="@@investorProfile.notSetYet">Not set yet</span>
       }
     </div>
     <div class="form-grid">
       <label class="field">
-        <span class="field__label">Experience</span>
+        <span class="field__label" i18n="@@investorProfile.experience">Experience</span>
         <select class="input" name="experienceLevel" [(ngModel)]="profile.experienceLevel">
-          <option [ngValue]="null">Not specified</option>
+          <option [ngValue]="null" i18n="@@investorProfile.notSpecified">Not specified</option>
           @for (level of experienceLevels; track level) {
             <option [ngValue]="level">{{ level }}</option>
           }
         </select>
       </label>
       <label class="field">
-        <span class="field__label">Risk tolerance</span>
+        <span class="field__label" i18n="@@investorProfile.riskTolerance">Risk tolerance</span>
         <select class="input" name="riskTolerance" [(ngModel)]="profile.riskTolerance">
-          <option [ngValue]="null">Not specified</option>
+          <option [ngValue]="null" i18n="@@investorProfile.notSpecified">Not specified</option>
           @for (level of riskLevels; track level) {
             <option [ngValue]="level">{{ level }}</option>
           }
         </select>
       </label>
       <label class="field">
-        <span class="field__label">Investment horizon</span>
+        <span class="field__label" i18n="@@investorProfile.investmentHorizon">Investment horizon</span>
         <select class="input" name="investmentHorizon" [(ngModel)]="profile.investmentHorizon">
-          <option [ngValue]="null">Not specified</option>
+          <option [ngValue]="null" i18n="@@investorProfile.notSpecified">Not specified</option>
           @for (h of horizons; track h.value) {
             <option [ngValue]="h.value">{{ h.label }}</option>
           }
         </select>
       </label>
       <fieldset class="field field--wide checkbox-row">
-        <legend class="field__label">Preferred instruments</legend>
+        <legend class="field__label" i18n="@@investorProfile.preferredInstruments">Preferred instruments</legend>
         @for (type of instrumentTypes; track type) {
           <label class="small">
             <input
@@ -66,51 +66,51 @@
         }
       </fieldset>
       <label class="field field--wide">
-        <span class="field__label">Objectives</span>
+        <span class="field__label" i18n="@@investorProfile.objectives">Objectives</span>
         <textarea class="input" name="objectives" rows="2" maxlength="2000" [(ngModel)]="profile.objectives"></textarea>
       </label>
       <label class="field field--wide">
-        <span class="field__label">Restrictions (e.g. sectors or tickers you avoid)</span>
+        <span class="field__label" i18n="@@investorProfile.restrictionsEGSectors">Restrictions (e.g. sectors or tickers you avoid)</span>
         <textarea class="input" name="restrictions" rows="2" maxlength="2000" [(ngModel)]="profile.restrictions"></textarea>
       </label>
       <label class="field field--wide">
-        <span class="field__label">Liquidity needs</span>
+        <span class="field__label" i18n="@@investorProfile.liquidityNeeds">Liquidity needs</span>
         <textarea class="input" name="liquidityNeeds" rows="2" maxlength="2000" [(ngModel)]="profile.liquidityNeeds"></textarea>
       </label>
       <label class="field field--wide">
-        <span class="field__label">Notes</span>
+        <span class="field__label" i18n="@@investorProfile.notes">Notes</span>
         <textarea class="input" name="notes" rows="2" maxlength="4000" [(ngModel)]="profile.notes"></textarea>
       </label>
     </div>
     <div class="actions">
-      <button type="submit" class="btn btn--primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save profile' }}</button>
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">@if (saving()) {<ng-container i18n="@@common.saving">Saving…</ng-container>} @else {<ng-container i18n="@@investorProfile.saveProfile">Save profile</ng-container>}</button>
     </div>
   </form>
 }
 
-<section class="card" aria-label="Goals">
+<section class="card" aria-label="Goals" i18n-aria-label="@@investorProfile.goals">
   <div class="card__header">
-    <h2 class="card__title">Goals</h2>
+    <h2 class="card__title" i18n="@@investorProfile.goals">Goals</h2>
   </div>
   @if (goals().length === 0) {
-    <p class="muted small">No goals yet.</p>
+    <p class="muted small" i18n="@@investorProfile.noGoalsYet">No goals yet.</p>
   } @else {
     <table class="table">
       <thead>
-        <tr><th>Goal</th><th>Priority</th><th class="num">Target amount</th><th>Target date</th><th></th></tr>
+        <tr><th i18n="@@investorProfile.goal">Goal</th><th i18n="@@investorProfile.priority">Priority</th><th class="num" i18n="@@investorProfile.targetAmount">Target amount</th><th i18n="@@investorProfile.targetDate">Target date</th><th></th></tr>
       </thead>
       <tbody>
         @for (g of goals(); track g.id) {
           <tr>
-            <td data-label="Goal"><strong>{{ g.name }}</strong> @if (g.description) { <span class="muted small">{{ g.description }}</span> }</td>
-            <td data-label="Priority">{{ g.priority }}</td>
-            <td data-label="Target amount" class="num">
+            <td data-label="Goal" i18n-data-label="@@investorProfile.goal"><strong>{{ g.name }}</strong> @if (g.description) { <span class="muted small">{{ g.description }}</span> }</td>
+            <td data-label="Priority" i18n-data-label="@@investorProfile.priority">{{ g.priority }}</td>
+            <td data-label="Target amount" i18n-data-label="@@investorProfile.targetAmount" class="num">
               {{ g.targetAmount === null ? '—' : (g.targetAmount | number: '1.0-2') + ' ' + g.currency }}
             </td>
-            <td data-label="Target date">{{ g.targetDate ?? '—' }}</td>
+            <td data-label="Target date" i18n-data-label="@@investorProfile.targetDate">{{ g.targetDate ?? '—' }}</td>
             <td class="actions-col">
-              <button type="button" class="btn btn--ghost btn--small" (click)="editGoal(g)">Edit</button>
-              <button type="button" class="btn btn--danger btn--small" (click)="deleteGoal(g)">Delete</button>
+              <button type="button" class="btn btn--ghost btn--small" (click)="editGoal(g)" i18n="@@investorProfile.edit">Edit</button>
+              <button type="button" class="btn btn--danger btn--small" (click)="deleteGoal(g)" i18n="@@investorProfile.delete">Delete</button>
             </td>
           </tr>
         }
@@ -119,13 +119,13 @@
   }
 
   <form class="subform form-grid" (ngSubmit)="saveGoal()">
-    <legend class="field__label">{{ editingGoalId() ? 'Edit goal' : 'New goal' }}</legend>
+    <legend class="field__label">@if (editingGoalId()) {<ng-container i18n="@@investorProfile.editGoal">Edit goal</ng-container>} @else {<ng-container i18n="@@investorProfile.newGoal">New goal</ng-container>}</legend>
     <label class="field">
-      <span class="field__label">Name</span>
+      <span class="field__label" i18n="@@investorProfile.name">Name</span>
       <input class="input" name="goalName" maxlength="200" [(ngModel)]="goal.name" />
     </label>
     <label class="field">
-      <span class="field__label">Priority</span>
+      <span class="field__label" i18n="@@investorProfile.priority">Priority</span>
       <select class="input" name="goalPriority" [(ngModel)]="goal.priority">
         @for (p of priorities; track p) {
           <option [value]="p">{{ p }}</option>
@@ -133,23 +133,23 @@
       </select>
     </label>
     <label class="field">
-      <span class="field__label">Target amount (optional)</span>
+      <span class="field__label" i18n="@@investorProfile.targetAmountOptional">Target amount (optional)</span>
       <input class="input" type="number" name="goalAmount" min="0" step="any" [(ngModel)]="goal.targetAmount" />
     </label>
     <label class="field">
-      <span class="field__label">Currency</span>
+      <span class="field__label" i18n="@@investorProfile.currency">Currency</span>
       <input class="input" name="goalCurrency" maxlength="3" [(ngModel)]="goal.currency" />
     </label>
     <label class="field">
-      <span class="field__label">Target date (optional)</span>
+      <span class="field__label" i18n="@@investorProfile.targetDateOptional">Target date (optional)</span>
       <input class="input" type="date" name="goalDate" [(ngModel)]="goal.targetDate" />
     </label>
     <label class="field field--wide">
-      <span class="field__label">Description</span>
+      <span class="field__label" i18n="@@investorProfile.description">Description</span>
       <input class="input" name="goalDescription" maxlength="2000" [(ngModel)]="goal.description" />
     </label>
     <label class="field field--wide">
-      <span class="field__label">Notes</span>
+      <span class="field__label" i18n="@@investorProfile.notes">Notes</span>
       <input class="input" name="goalNotes" maxlength="2000" [(ngModel)]="goal.notes" />
     </label>
     @if (goal.name && goalProblems().length) {
@@ -161,10 +161,10 @@
     }
     <div class="actions">
       @if (editingGoalId()) {
-        <button type="button" class="btn btn--ghost btn--small" (click)="cancelGoal()">Cancel</button>
+        <button type="button" class="btn btn--ghost btn--small" (click)="cancelGoal()" i18n="@@investorProfile.cancel">Cancel</button>
       }
       <button type="submit" class="btn btn--primary btn--small" [disabled]="goalProblems().length > 0">
-        {{ editingGoalId() ? 'Save goal' : 'Add goal' }}
+        @if (editingGoalId()) {<ng-container i18n="@@investorProfile.saveGoal">Save goal</ng-container>} @else {<ng-container i18n="@@investorProfile.addGoal">Add goal</ng-container>}
       </button>
     </div>
   </form>

@@ -1,7 +1,7 @@
-<p class="small"><a class="link" routerLink="/briefs">← All briefs</a></p>
+<p class="small"><a class="link" routerLink="/briefs" i18n="@@briefDetail.allBriefs">← All briefs</a></p>
 
 @if (loading() && !brief()) {
-  <p class="muted" role="status">Loading brief…</p>
+  <p class="muted" role="status" i18n="@@briefDetail.loadingBrief">Loading brief…</p>
 }
 @if (error(); as message) {
   <app-alert kind="error">{{ message }}</app-alert>
@@ -10,11 +10,14 @@
 @if (brief(); as b) {
   <section class="page-header">
     <div>
-      <h1 class="page-title">Daily brief · {{ b.businessDate | date: 'mediumDate' }}</h1>
+      <h1 class="page-title" i18n="@@briefDetail.dailyBrief">Daily brief · {{ b.businessDate | date: 'mediumDate' }}</h1>
       <p class="page-subtitle">
-        {{ b.portfolioName ?? 'General brief' }} · period {{ b.periodStart | date: 'short' }} – {{ b.periodEnd | date: 'short' }}
-        ({{ b.zone }}{{ b.partialPeriod ? ', partial period' : '' }}) · generated {{ b.generatedAt | date: 'short' }}
-        · revision {{ b.revision }}
+        {{ b.portfolioName ?? generalBrief }} ·
+        <ng-container i18n="@@briefDetail.periodLine">period {{ b.periodStart | date: 'short' }} – {{ b.periodEnd | date: 'short' }} ({{ b.zone }})</ng-container>
+        @if (b.partialPeriod) {
+          {{ ' ' }}<ng-container i18n="@@briefDetail.partialPeriod">· partial period</ng-container>
+        }
+        · <ng-container i18n="@@briefDetail.generatedRevision">generated {{ b.generatedAt | date: 'short' }} · revision {{ b.revision }}</ng-container>
       </p>
     </div>
     <div class="actions">
@@ -23,7 +26,11 @@
         <span class="tag">{{ stateLabels[b.researchState] }}</span>
       }
       <button type="button" class="btn btn--small btn--ghost" [disabled]="regenerating()" (click)="regenerate()">
-        {{ regenerating() ? 'Regenerating…' : 'Regenerate' }}
+        @if (regenerating()) {
+          <ng-container i18n="@@briefDetail.regenerating">Regenerating…</ng-container>
+        } @else {
+          <ng-container i18n="@@briefDetail.regenerate">Regenerate</ng-container>
+        }
       </button>
     </div>
   </section>
@@ -33,46 +40,46 @@
   }
   @if (job(); as j) {
     @if (j.status === 'SUCCEEDED' && j.outcome === 'UNCHANGED') {
-      <app-alert kind="info">The inputs have not changed since this revision; no new revision was created.</app-alert>
+      <app-alert kind="info"><ng-container i18n="@@briefDetail.unchanged">The inputs have not changed since this revision; no new revision was created.</ng-container></app-alert>
     } @else if (j.status === 'FAILED') {
-      <app-alert kind="error">Regeneration failed{{ j.errorSummary ? ': ' + j.errorSummary : '.' }}</app-alert>
+      <app-alert kind="error"><ng-container i18n="@@briefDetail.regenerationFailed">Regeneration failed</ng-container>{{ j.errorSummary ? ': ' + j.errorSummary : '.' }}</app-alert>
     } @else if (j.status !== 'SUCCEEDED') {
-      <p class="muted small" role="status">Regenerating · attempt {{ j.attempts }}/{{ j.maxAttempts }}…</p>
+      <p class="muted small" role="status" i18n="@@briefDetail.regeneratingAttempt">Regenerating · attempt {{ j.attempts }}/{{ j.maxAttempts }}…</p>
     }
   }
   @if (b.status === 'FAILED') {
-    <app-alert kind="error">This generation failed{{ b.errorSummary ? ': ' + b.errorSummary : '.' }}</app-alert>
+    <app-alert kind="error"><ng-container i18n="@@briefDetail.generationFailed">This generation failed</ng-container>{{ b.errorSummary ? ': ' + b.errorSummary : '.' }}</app-alert>
   } @else if (b.errorSummary) {
-    <app-alert kind="info">The AI part is missing ({{ b.errorCode }}): {{ b.errorSummary }}</app-alert>
+    <app-alert kind="info"><ng-container i18n="@@briefDetail.aiMissing">The AI part is missing ({{ b.errorCode }}): {{ b.errorSummary }}</ng-container></app-alert>
   }
 
   <section class="card brief-facts" data-testid="brief-facts">
     <dl class="meta">
-      <dt>Reporting period</dt>
-      <dd>{{ b.periodStart | date: 'medium' }} – {{ b.periodEnd | date: 'medium' }} · {{ b.zone }}{{ b.partialPeriod ? ' · partial period' : '' }}</dd>
-      <dt>Generated</dt>
-      <dd>{{ b.generatedAt | date: 'medium' }} · sources cut off at {{ b.sourceCutoff | date: 'medium' }}</dd>
-      <dt>Source freshness</dt>
+      <dt i18n="@@briefDetail.reportingPeriod">Reporting period</dt>
+      <dd>{{ b.periodStart | date: 'medium' }} – {{ b.periodEnd | date: 'medium' }} · {{ b.zone }}@if (b.partialPeriod) { {{ ' ' }}<ng-container i18n="@@briefDetail.partialPeriod">· partial period</ng-container>}</dd>
+      <dt i18n="@@briefDetail.generated">Generated</dt>
+      <dd i18n="@@briefDetail.sourcesCutOffAt">{{ b.generatedAt | date: 'medium' }} · sources cut off at {{ b.sourceCutoff | date: 'medium' }}</dd>
+      <dt i18n="@@briefDetail.sourceFreshness">Source freshness</dt>
       <dd data-testid="freshness">
         @if (freshness().newest) {
-          {{ freshness().sources }} source(s) published {{ freshness().oldest | date: 'mediumDate' }} – {{ freshness().newest | date: 'mediumDate' }}
+          <ng-container i18n="@@briefDetail.freshnessRange">{{ freshness().sources }} source(s) published {{ freshness().oldest | date: 'mediumDate' }} – {{ freshness().newest | date: 'mediumDate' }}</ng-container>
         } @else {
-          No dated sources
+          <ng-container i18n="@@briefDetail.noDatedSources">No dated sources</ng-container>
         }
-        @if (freshness().old) { · {{ freshness().old }} older research }
-        @if (freshness().late) { · {{ freshness().late }} late arrival(s) }
-        @if (freshness().undated) { · {{ freshness().undated }} without a publication date }
+        @if (freshness().old) { · <ng-container i18n="@@briefDetail.olderResearchCount">{{ freshness().old }} older research</ng-container> }
+        @if (freshness().late) { · <ng-container i18n="@@briefDetail.lateArrivals">{{ freshness().late }} late arrival(s)</ng-container> }
+        @if (freshness().undated) { · <ng-container i18n="@@briefDetail.undated">{{ freshness().undated }} without a publication date</ng-container> }
       </dd>
     </dl>
     @if (b.limitations.length) {
-      <h3 class="small">Evidence limitations</h3>
+      <h3 class="small" i18n="@@briefDetail.evidenceLimitations">Evidence limitations</h3>
       <ul class="brief-items" data-testid="limitations">
         @for (l of b.limitations; track $index) {
           <li class="small">{{ l.message }}</li>
         }
       </ul>
     }
-    <p class="small muted">
+    <p class="small muted" i18n="@@briefDetail.briefSummarisesStoredResearch">
       A brief summarises stored research for this period; it is not real-time market data. "From source" items are the
       brokerage's statements; "AI interpretation" items are model text checked against the cited sources.
     </p>
@@ -106,7 +113,7 @@
                           type="button"
                           class="cite"
                           [class.cite--active]="selected() === label"
-                          [attr.aria-label]="'Show source ' + label"
+                          [attr.aria-label]="showSourceLabel(label)"
                           (click)="show(label)"
                         >{{ label }}</button>
                       }
@@ -114,7 +121,7 @@
                   }
                 </span>
                 @if (item.assessmentId && b.portfolioId) {
-                  <a class="link small" [routerLink]="['/portfolios', b.portfolioId]">Portfolio</a>
+                  <a class="link small" [routerLink]="['/portfolios', b.portfolioId]" i18n="@@briefDetail.portfolio">Portfolio</a>
                 }
               </li>
             }
@@ -122,29 +129,29 @@
         </section>
       }
       @if (b.sections.length === 0) {
-        <p class="muted">This brief has no content.</p>
+        <p class="muted" i18n="@@briefDetail.thisBriefHasNo">This brief has no content.</p>
       }
 
       @if (b.pendingSources.length || b.omittedSources.length) {
         <section class="card">
-          <div class="card__header"><h2 class="card__title">Sources not analysed</h2></div>
+          <div class="card__header"><h2 class="card__title" i18n="@@briefDetail.sourcesNotAnalysed">Sources not analysed</h2></div>
           <ul class="brief-items">
             @for (s of b.pendingSources; track $index) {
               <li class="brief-item">
-                <span class="tag tag--plain">{{ s.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>
+                <span class="tag tag--plain">@if (s.sourceType === 'DOCUMENT') {PDF} @else {<ng-container i18n="@@common.email">Email</ng-container>}</span>
                 @if (sourceLink(s); as link) {
-                  <a class="link" [routerLink]="link">{{ s.title || '(no title)' }}</a>
-                } @else { {{ s.title || '(deleted source)' }} }
-                <span class="muted small">imported {{ s.importedAt | date: 'short' }} · {{ pendingState(s.state) }}</span>
+                  <a class="link" [routerLink]="link">{{ s.title || noTitle }}</a>
+                } @else { {{ s.title || deletedSource }} }
+                <span class="muted small" i18n="@@briefDetail.imported">imported {{ s.importedAt | date: 'short' }} · {{ pendingState(s.state) }}</span>
               </li>
             }
             @for (s of b.omittedSources; track $index) {
               <li class="brief-item">
-                <span class="tag tag--plain">{{ s.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>
+                <span class="tag tag--plain">@if (s.sourceType === 'DOCUMENT') {PDF} @else {<ng-container i18n="@@common.email">Email</ng-container>}</span>
                 @if (sourceLink(s); as link) {
-                  <a class="link" [routerLink]="link">{{ s.title || '(no title)' }}</a>
-                } @else { {{ s.title || '(deleted source)' }} }
-                <span class="muted small">left out by the source or length limits</span>
+                  <a class="link" [routerLink]="link">{{ s.title || noTitle }}</a>
+                } @else { {{ s.title || deletedSource }} }
+                <span class="muted small" i18n="@@briefDetail.leftOutBySource">left out by the source or length limits</span>
               </li>
             }
           </ul>
@@ -152,23 +159,23 @@
       }
 
       <section class="card">
-        <div class="card__header"><h2 class="card__title">About this brief</h2></div>
+        <div class="card__header"><h2 class="card__title" i18n="@@briefDetail.aboutThisBrief">About this brief</h2></div>
         <p class="muted small">
           AI: {{ b.aiStatus }}{{ b.model ? ' (' + b.model + ')' : '' }}
           @if (b.inputTokens !== null || b.outputTokens !== null) {
-            · tokens reported by the provider: {{ b.inputTokens ?? '—' }} in / {{ b.outputTokens ?? '—' }} out
+            · <ng-container i18n="@@briefDetail.tokens">tokens reported by the provider: {{ b.inputTokens ?? '—' }} in / {{ b.outputTokens ?? '—' }} out</ng-container>
           }
-          · sources cut off at {{ b.sourceCutoff | date: 'short' }} · prompt {{ b.promptVersion }} · config {{ b.configVersion }}
+          · <ng-container i18n="@@briefDetail.versions">sources cut off at {{ b.sourceCutoff | date: 'short' }} · prompt {{ b.promptVersion }} · config {{ b.configVersion }}</ng-container>
         </p>
         @if (b.revisions.length > 1) {
-          <h3 class="small">Revisions</h3>
+          <h3 class="small" i18n="@@briefDetail.revisions">Revisions</h3>
           <ul class="brief-items">
             @for (r of b.revisions; track r.id) {
               <li>
                 @if (r.id === b.id) {
-                  <strong>Revision {{ r.revision }}</strong>
+                  <strong i18n="@@briefDetail.revision">Revision {{ r.revision }}</strong>
                 } @else {
-                  <a class="link" [routerLink]="['/briefs', r.id]">Revision {{ r.revision }}</a>
+                  <a class="link" [routerLink]="['/briefs', r.id]" i18n="@@briefDetail.revision">Revision {{ r.revision }}</a>
                 }
                 <span class="muted small">{{ r.triggerType }} · {{ r.status }} · {{ r.generatedAt | date: 'short' }}</span>
               </li>
@@ -179,9 +186,9 @@
       </section>
     </section>
 
-    <aside class="assistant__sources card" aria-label="Sources">
+    <aside class="assistant__sources card" aria-label="Sources" i18n-aria-label="@@briefDetail.sources">
       <div class="card__header">
-        <h2 class="card__title">Sources</h2>
+        <h2 class="card__title" i18n="@@briefDetail.sources">Sources</h2>
         <span class="muted small">{{ b.citations.length }}</span>
       </div>
       @if (b.citations.length) {
@@ -190,32 +197,36 @@
             <li class="source" [id]="'source-' + c.label" [class.source--active]="selected() === c.label">
               <div class="source__head">
                 <button type="button" class="cite" (click)="show(c.label)">{{ c.label }}</button>
-                <span class="tag tag--plain">{{ c.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>
+                <span class="tag tag--plain">@if (c.sourceType === 'DOCUMENT') {PDF} @else {<ng-container i18n="@@common.email">Email</ng-container>}</span>
                 @if (c.brokerage) {
                   <span class="tag">{{ c.brokerage }}</span>
                 }
                 @if (c.oldPublication) {
-                  <span class="badge badge--warning">Older research</span>
+                  <span class="badge badge--warning" i18n="@@briefDetail.olderResearch">Older research</span>
                 }
                 @if (c.lateArrival) {
-                  <span class="badge badge--muted">Late arrival</span>
+                  <span class="badge badge--muted" i18n="@@briefDetail.lateArrival">Late arrival</span>
                 }
               </div>
               @if (sourceLink(c); as link) {
-                <a class="source__title link" [routerLink]="link">{{ c.title || '(no title)' }}</a>
+                <a class="source__title link" [routerLink]="link">{{ c.title || noTitle }}</a>
               } @else {
-                <span class="source__title">{{ c.title || '(deleted source)' }}</span>
+                <span class="source__title">{{ c.title || deletedSource }}</span>
               }
               <p class="source__meta muted small">
                 @if (c.publishedOn) {
-                  {{ c.dateBasis === 'EMAIL_SENT' ? 'Email date' : 'Published' }} {{ c.publishedOn | date: 'mediumDate' }}
-                } @else { No publication date }
+                  @if (c.dateBasis === 'EMAIL_SENT') {
+                    <ng-container i18n="@@researchAssistant.emailDate">Email date {{ c.publishedOn | date: 'mediumDate' }}</ng-container>
+                  } @else {
+                    <ng-container i18n="@@researchAssistant.publishedDate">Published {{ c.publishedOn | date: 'mediumDate' }}</ng-container>
+                  }
+                } @else { <ng-container i18n="@@briefDetail.noPublicationDate">No publication date</ng-container> }
                 @if (c.location) { · {{ c.location }} }
               </p>
               @if (selected() === c.label) {
                 <p class="source__meta muted small">
-                  @if (c.sentAt) { Sent {{ c.sentAt | date: 'short' }} · }
-                  Imported {{ c.importedAt | date: 'short' }} · searchable since {{ c.indexedAt | date: 'short' }}
+                  @if (c.sentAt) { <ng-container i18n="@@briefDetail.sentAt">Sent {{ c.sentAt | date: 'short' }}</ng-container> · }
+                  <ng-container i18n="@@briefDetail.importedIndexed">Imported {{ c.importedAt | date: 'short' }} · searchable since {{ c.indexedAt | date: 'short' }}</ng-container>
                 </p>
                 <blockquote class="source__excerpt">{{ c.excerpt }}</blockquote>
               }
@@ -223,7 +234,7 @@
           }
         </ol>
       } @else {
-        <p class="muted small">No new sources in this period.</p>
+        <p class="muted small" i18n="@@briefDetail.noNewSourcesThis">No new sources in this period.</p>
       }
     </aside>
   </div>

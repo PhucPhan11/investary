@@ -307,7 +307,7 @@ checks that a Phase 1 database upgrades without data loss.
 
 ```
 src/app/
-  core/       API services (documents, emails), models, error mapping
+  core/       API services (documents, emails), models, error mapping, i18n helpers (language switch, research language)
   shared/     alert, empty state, pager, status badge, pipes, index status, workflow status, notification bell
   layout/     application shell
   features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
@@ -320,6 +320,12 @@ src/app/
 - The Angular dev server proxies `/api` to the backend, so the browser sees a single origin.
 - Email HTML is never bound into the Angular DOM. The safe preview loads from the backend's sanitized
   endpoint into an `<iframe sandbox>` without scripts or same-origin access.
+- **Languages (ADR 0014):** build-time i18n with `@angular/localize`. English is the source locale in the code;
+  Vietnamese (`src/locale/messages.vi.xlf`) is the default. One build per language (`browser/vi`, `browser/en`);
+  in development Vietnamese runs on 4200 and English on 4201, and the header switch links to the same route on the
+  other build (`core/i18n/language.ts`). Only interface text is translated; research content keeps its source
+  language, and the email page prefers items in the UI language and source-provided translations
+  (`core/i18n/research-language.ts`) without ever machine-translating.
 
 ## Configuration and profiles
 

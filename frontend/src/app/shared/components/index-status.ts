@@ -8,9 +8,9 @@ import { StatusBadge } from './status-badge';
 
 const POLL_MS = 3000;
 const REASONS: Record<string, string> = {
-  OCR_REQUIRED: 'The PDF has no text layer (scanned). OCR is not supported yet.',
-  NO_TEXT: 'No indexable text was found.',
-  PARSING_FAILED: 'The email could not be parsed, so there is no reliable text to index.',
+  OCR_REQUIRED: $localize`:@@indexStatus.reason.OCR_REQUIRED:The PDF has no text layer (scanned). OCR is not supported yet.`,
+  NO_TEXT: $localize`:@@indexStatus.reason.NO_TEXT:No indexable text was found.`,
+  PARSING_FAILED: $localize`:@@indexStatus.reason.PARSING_FAILED:The email could not be parsed, so there is no reliable text to index.`,
 };
 
 /**
@@ -23,7 +23,7 @@ const REASONS: Record<string, string> = {
   template: `
     <section class="card index-status">
       <div class="card__header">
-        <h2 class="card__title">Research assistant index</h2>
+        <h2 class="card__title" i18n="@@indexStatus.title">Research assistant index</h2>
         @if (job(); as j) {
           <app-status-badge [value]="j.status" />
         }
@@ -34,20 +34,20 @@ const REASONS: Record<string, string> = {
       @if (job(); as j) {
         <p class="muted small">
           @switch (j.status) {
-            @case ('NOT_INDEXED') { Not in the knowledge base yet. }
-            @case ('PENDING') { Queued for indexing. Indexing runs in the background when an embedding model is configured. }
-            @case ('PROCESSING') { Extracting text and creating embeddings… }
+            @case ('NOT_INDEXED') { <ng-container i18n="@@indexStatus.notIndexed">Not in the knowledge base yet.</ng-container> }
+            @case ('PENDING') { <ng-container i18n="@@indexStatus.pending">Queued for indexing. Indexing runs in the background when an embedding model is configured.</ng-container> }
+            @case ('PROCESSING') { <ng-container i18n="@@indexStatus.processing">Extracting text and creating embeddings…</ng-container> }
             @case ('INDEXED') {
-              {{ j.chunkCount }} searchable passage{{ j.chunkCount === 1 ? '' : 's' }}
-              @if (j.pageCount) { from {{ j.pageCount }} page{{ j.pageCount === 1 ? '' : 's' }} }
-              @if (j.completedAt) { · indexed {{ j.completedAt | date: 'medium' }} }
+              <ng-container i18n="@@indexStatus.passages">{j.chunkCount, plural, =1 {1 searchable passage} other {{{ j.chunkCount }} searchable passages}}</ng-container>
+              @if (j.pageCount) { {{ ' ' }}<ng-container i18n="@@indexStatus.pages">{j.pageCount, plural, =1 {from 1 page} other {from {{ j.pageCount }} pages}}</ng-container> }
+              @if (j.completedAt) { <ng-container i18n="@@indexStatus.indexedAt">· indexed {{ j.completedAt | date: 'medium' }}</ng-container> }
             }
             @case ('SKIPPED') { {{ reason(j.statusReason) }} }
-            @case ('FAILED') { Indexing failed after {{ j.attempts }} attempt{{ j.attempts === 1 ? '' : 's' }}. }
+            @case ('FAILED') { <ng-container i18n="@@indexStatus.failed">{j.attempts, plural, =1 {Indexing failed after 1 attempt.} other {Indexing failed after {{ j.attempts }} attempts.}}</ng-container> }
           }
         </p>
         @if (j.status === 'INDEXED' && !j.currentVersion) {
-          <p class="muted small">Indexed with an older configuration, so it is not searched. Reindex to include it.</p>
+          <p class="muted small" i18n="@@indexStatus.stale">Indexed with an older configuration, so it is not searched. Reindex to include it.</p>
         }
         @if (j.lastError && j.status !== 'INDEXED') {
           <p class="link-error small">{{ j.lastError }}</p>
@@ -55,21 +55,21 @@ const REASONS: Record<string, string> = {
         <div class="actions">
           @switch (j.status) {
             @case ('NOT_INDEXED') {
-              <button type="button" class="btn btn--small btn--primary" [disabled]="busy()" (click)="index()">Index now</button>
+              <button type="button" class="btn btn--small btn--primary" [disabled]="busy()" (click)="index()" i18n="@@indexStatus.indexNow">Index now</button>
             }
             @case ('FAILED') {
-              <button type="button" class="btn btn--small btn--primary" [disabled]="busy()" (click)="index()">Retry</button>
+              <button type="button" class="btn btn--small btn--primary" [disabled]="busy()" (click)="index()" i18n="@@common.retry">Retry</button>
             }
             @case ('INDEXED') {
-              <button type="button" class="btn btn--small" [disabled]="busy()" (click)="index()">Reindex</button>
+              <button type="button" class="btn btn--small" [disabled]="busy()" (click)="index()" i18n="@@indexStatus.reindex">Reindex</button>
             }
             @case ('SKIPPED') {
-              <button type="button" class="btn btn--small" [disabled]="busy()" (click)="index()">Reindex</button>
+              <button type="button" class="btn btn--small" [disabled]="busy()" (click)="index()" i18n="@@indexStatus.reindex">Reindex</button>
             }
           }
         </div>
       } @else if (!error()) {
-        <p class="muted small">Loading index status…</p>
+        <p class="muted small" i18n="@@indexStatus.loading">Loading index status…</p>
       }
     </section>
   `,
@@ -100,20 +100,20 @@ export class IndexStatus {
       },
       error: (err) => {
         this.busy.set(false);
-        this.error.set(errorMessage(err, 'Could not queue indexing.'));
+        this.error.set(errorMessage(err, $localize`:@@indexStatus.error.queueIndexing:Could not queue indexing.`));
       },
     });
   }
 
   protected reason(code: string | null): string {
-    return (code && REASONS[code]) ?? 'Nothing to index.';
+    return (code && REASONS[code]) ?? $localize`:@@indexStatus.nothingToIndex:Nothing to index.`;
   }
 
   private load(type: KnowledgeSourceType, id: string): void {
     this.stopPolling();
     this.api.sourceStatus(type, id).subscribe({
       next: (job) => this.show(job),
-      error: (err) => this.error.set(errorMessage(err, 'Could not load the index status.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@indexStatus.error.loadIndexStatus:Could not load the index status.`)),
     });
   }
 

@@ -71,6 +71,8 @@ function orNull(value: string): string | null {
   templateUrl: './decision-form.html',
 })
 export class DecisionForm implements OnInit {
+  protected readonly wholePortfolio = $localize`:@@journal.wholePortfolio:Whole portfolio`;
+  protected readonly choose = $localize`:@@common.choose:Choose…`;
   private readonly api = inject(JournalApiService);
   private readonly portfolioApi = inject(PortfolioApiService);
   private readonly instrumentApi = inject(InstrumentApiService);
@@ -108,7 +110,7 @@ export class DecisionForm implements OnInit {
           this.loading.set(false);
         },
         error: (err) => {
-          this.error.set(errorMessage(err, 'Could not load the decision.'));
+          this.error.set(errorMessage(err, $localize`:@@decisionForm.error.loadDecision:Could not load the decision.`));
           this.loading.set(false);
         },
       });
@@ -118,11 +120,11 @@ export class DecisionForm implements OnInit {
   protected save(): void {
     const decision = this.existing();
     if (!this.model.title.trim()) {
-      this.error.set('Give the decision a title.');
+      this.error.set($localize`:@@decisionForm.giveDecisionTitle:Give the decision a title.`);
       return;
     }
     if (this.amending() && !this.model.amendmentReason.trim()) {
-      this.error.set('Explain why you are amending a finalized decision.');
+      this.error.set($localize`:@@decisionForm.explainWhyYouAre:Explain why you are amending a finalized decision.`);
       return;
     }
     const request = this.toRequest();
@@ -135,7 +137,7 @@ export class DecisionForm implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(errorMessage(err, 'The decision could not be saved.'));
+        this.error.set(errorMessage(err, $localize`:@@decisionForm.error.decisionBeSaved:The decision could not be saved.`));
       },
     });
   }

@@ -1,12 +1,12 @@
 <section class="page-header">
   <div>
-    <h1 class="page-title">Decision journal</h1>
-    <p class="page-subtitle">
+    <h1 class="page-title" i18n="@@decisionList.decisionJournal">Decision journal</h1>
+    <p class="page-subtitle" i18n="@@decisionList.yourOwnInvestmentDecisions">
       Your own investment decisions with their reasoning, the evidence you relied on and the portfolio as it was when you
       decided. Portfolio transactions stay the financial record; the journal never trades.
     </p>
   </div>
-  <a class="btn btn--primary" routerLink="/journal/new">New decision</a>
+  <a class="btn btn--primary" routerLink="/journal/new" i18n="@@decisionList.newDecision">New decision</a>
 </section>
 
 @if (error(); as message) {
@@ -15,67 +15,67 @@
 
 <section class="card">
   <div class="card__header">
-    <h2 class="card__title">Decisions</h2>
+    <h2 class="card__title" i18n="@@decisionList.decisions">Decisions</h2>
     @if (page(); as p) {
-      <span class="muted">{{ p.totalElements }} total</span>
+      <span class="muted" i18n="@@decisionList.total">{{ p.totalElements }} total</span>
     }
   </div>
   <form class="filters" (ngSubmit)="applyFilters()">
     <label class="field">
-      <span class="field__label">Ticker</span>
-      <input class="input" name="ticker" placeholder="e.g. FPT" [(ngModel)]="filters.ticker" />
+      <span class="field__label" i18n="@@decisionList.ticker">Ticker</span>
+      <input class="input" name="ticker" placeholder="e.g. FPT" i18n-placeholder="@@decisionList.eGFpt" [(ngModel)]="filters.ticker" />
     </label>
     <label class="field">
-      <span class="field__label">Portfolio</span>
+      <span class="field__label" i18n="@@decisionList.portfolio">Portfolio</span>
       <select class="input" name="portfolioId" [(ngModel)]="filters.portfolioId" (change)="applyFilters()">
-        <option value="">All</option>
+        <option value="" i18n="@@decisionList.all">All</option>
         @for (p of portfolios(); track p.id) {
           <option [value]="p.id">{{ p.name }}</option>
         }
       </select>
     </label>
     <label class="field">
-      <span class="field__label">Status</span>
+      <span class="field__label" i18n="@@decisionList.status">Status</span>
       <select class="input" name="status" [(ngModel)]="filters.status" (change)="applyFilters()">
-        <option value="">All</option>
+        <option value="" i18n="@@decisionList.all">All</option>
         @for (s of statuses; track s) {
           <option [value]="s">{{ s }}</option>
         }
       </select>
     </label>
     <label class="field">
-      <span class="field__label">Type</span>
+      <span class="field__label" i18n="@@decisionList.type">Type</span>
       <select class="input" name="type" [(ngModel)]="filters.type" (change)="applyFilters()">
-        <option value="">All</option>
+        <option value="" i18n="@@decisionList.all">All</option>
         @for (t of types; track t) {
           <option [value]="t">{{ typeLabels[t] }}</option>
         }
       </select>
     </label>
     <div class="actions">
-      <button type="submit" class="btn btn--ghost">Search</button>
-      <button type="button" class="btn btn--ghost" (click)="clearFilters()">Clear</button>
+      <button type="submit" class="btn btn--ghost" i18n="@@decisionList.search">Search</button>
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()" i18n="@@decisionList.clear">Clear</button>
     </div>
   </form>
 
   @if (loading() && !page()) {
-    <p class="muted">Loading decisions…</p>
+    <p class="muted" i18n="@@decisionList.loadingDecisions">Loading decisions…</p>
   } @else if (page()?.totalElements === 0) {
-    <app-empty-state title="No decisions recorded">
-      Record what you decided and why. Drafts stay editable until you finalize them.
+    <app-empty-state title="No decisions recorded" i18n-title="@@decisionList.noDecisionsRecorded">
+      <ng-container i18n="@@decisionList.empty">Record what you decided and why. Drafts stay editable until you finalize them.</ng-container>
     </app-empty-state>
   } @else if (page(); as p) {
     <div class="table-wrap" [class.table-wrap--loading]="loading()">
       <table class="table">
         <thead>
           <tr>
-            <th scope="col">Date</th>
-            <th scope="col">Decision</th>
-            <th scope="col">Type</th>
-            <th scope="col">Ticker</th>
-            <th scope="col">Portfolio</th>
-            <th scope="col">Review</th>
-            <th scope="col">Status</th>
+            <th scope="col" i18n="@@decisionList.date">Date</th>
+            <th scope="col" i18n="@@decisionList.decision">Decision</th>
+            <th scope="col" i18n="@@decisionList.type">Type</th>
+            <th scope="col" i18n="@@decisionList.ticker">Ticker</th>
+            <th scope="col" i18n="@@decisionList.portfolio">Portfolio</th>
+            <th scope="col" i18n="@@decisionList.review">Review</th>
+            <th scope="col" i18n="@@decisionList.status">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -85,7 +85,7 @@
               <td><a class="link" [routerLink]="['/journal', d.id]">{{ d.title }}</a></td>
               <td>{{ typeLabels[d.decisionType] }}</td>
               <td>{{ d.symbol ?? '—' }}</td>
-              <td>{{ d.portfolioName ?? 'Watchlist' }}@if (d.portfolioName && !d.portfolioId) { <span class="muted small"> (deleted)</span> }</td>
+              <td>{{ d.portfolioName ?? watchlist }}@if (d.portfolioName && !d.portfolioId) { <span class="muted small" i18n="@@decisionList.deleted"> (deleted)</span> }</td>
               <td>{{ d.reviewDate ?? '—' }}</td>
               <td><app-status-badge [value]="statusBadge(d.status)" /></td>
             </tr>

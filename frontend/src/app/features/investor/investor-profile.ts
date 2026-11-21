@@ -41,9 +41,9 @@ export class InvestorProfilePage {
   protected readonly experienceLevels: ExperienceLevel[] = ['NONE', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
   protected readonly riskLevels: RiskTolerance[] = ['LOW', 'MODERATE', 'HIGH'];
   protected readonly horizons: { value: InvestmentHorizon; label: string }[] = [
-    { value: 'SHORT', label: 'Short (< 1 year)' },
-    { value: 'MEDIUM', label: 'Medium (1–5 years)' },
-    { value: 'LONG', label: 'Long (> 5 years)' },
+    { value: 'SHORT', label: $localize`:@@investorProfile.short1Year:Short (< 1 year)` },
+    { value: 'MEDIUM', label: $localize`:@@investorProfile.medium15Years:Medium (1–5 years)` },
+    { value: 'LONG', label: $localize`:@@investorProfile.long5Years:Long (> 5 years)` },
   ];
   protected readonly instrumentTypes: InstrumentType[] = ['STOCK', 'ETF', 'FUND', 'BOND', 'OTHER'];
   protected readonly priorities: GoalPriority[] = ['HIGH', 'MEDIUM', 'LOW'];
@@ -86,7 +86,7 @@ export class InvestorProfilePage {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(errorMessage(err, 'Could not load the investor profile.'));
+        this.error.set(errorMessage(err, $localize`:@@investorProfile.error.loadInvestorProfile:Could not load the investor profile.`));
       },
     });
     this.loadGoals();
@@ -106,20 +106,20 @@ export class InvestorProfilePage {
       next: (p) => {
         this.saving.set(false);
         this.configured.set(p.configured);
-        this.notice.set('Profile saved.');
+        this.notice.set($localize`:@@investorProfile.profileSaved:Profile saved.`);
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(errorMessage(err, 'Could not save the profile.'));
+        this.error.set(errorMessage(err, $localize`:@@investorProfile.error.saveProfile:Could not save the profile.`));
       },
     });
   }
 
   protected goalProblems(): string[] {
     const problems: string[] = [];
-    if (!this.goal.name.trim()) problems.push('Name the goal.');
-    if (this.goal.targetAmount !== null && !(this.goal.targetAmount > 0)) problems.push('The target amount must be greater than 0.');
-    if (!/^[A-Za-z]{3}$/.test(this.goal.currency.trim())) problems.push('Use a 3-letter currency code.');
+    if (!this.goal.name.trim()) problems.push($localize`:@@investorProfile.nameGoal:Name the goal.`);
+    if (this.goal.targetAmount !== null && !(this.goal.targetAmount > 0)) problems.push($localize`:@@investorProfile.targetAmountMustBe:The target amount must be greater than 0.`);
+    if (!/^[A-Za-z]{3}$/.test(this.goal.currency.trim())) problems.push($localize`:@@investorProfile.use3LetterCurrency:Use a 3-letter currency code.`);
     return problems;
   }
 
@@ -144,7 +144,7 @@ export class InvestorProfilePage {
         this.editingGoalId.set(null);
         this.loadGoals();
       },
-      error: (err) => this.error.set(errorMessage(err, 'Could not save the goal.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@investorProfile.error.saveGoal:Could not save the goal.`)),
     });
   }
 
@@ -167,19 +167,19 @@ export class InvestorProfilePage {
   }
 
   protected deleteGoal(goal: Goal): void {
-    if (!confirm(`Delete the goal "${goal.name}"?`)) {
+    if (!confirm($localize`:@@investorProfile.confirmDeleteGoal:Delete the goal "${goal.name}:name:"?`)) {
       return;
     }
     this.api.deleteGoal(goal.id).subscribe({
       next: () => this.loadGoals(),
-      error: (err) => this.error.set(errorMessage(err, 'Could not delete the goal.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@investorProfile.error.deleteGoal:Could not delete the goal.`)),
     });
   }
 
   private loadGoals(): void {
     this.api.goals().subscribe({
       next: (goals) => this.goals.set(goals),
-      error: (err) => this.error.set(errorMessage(err, 'Could not load goals.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@investorProfile.error.loadGoals:Could not load goals.`)),
     });
   }
 

@@ -14,17 +14,17 @@ import { Pager } from '../../shared/components/pager';
 import { StatusBadge } from '../../shared/components/status-badge';
 
 export const JOB_TYPE_LABELS: Record<AutomationJobType, string> = {
-  PREPARE: 'Read import',
-  DOWNLOADS: 'PDF downloads',
-  INDEX: 'Indexing',
-  MATCH: 'Portfolio matching',
-  ASSESS: 'Impact assessment',
+  PREPARE: $localize`:@@jobHistory.jobTypeLabels.PREPARE:Read import`,
+  DOWNLOADS: $localize`:@@jobHistory.jobTypeLabels.DOWNLOADS:PDF downloads`,
+  INDEX: $localize`:@@jobHistory.jobTypeLabels.INDEX:Indexing`,
+  MATCH: $localize`:@@jobHistory.jobTypeLabels.MATCH:Portfolio matching`,
+  ASSESS: $localize`:@@jobHistory.jobTypeLabels.ASSESS:Impact assessment`,
 };
 
 export const RETRY_BLOCKED: Record<string, string> = {
-  NOT_FAILED: 'Only failed jobs can be retried.',
-  SOURCE_DELETED: 'The source was deleted; a retry cannot succeed.',
-  RETRY_LIMIT_REACHED: 'The manual retry limit was reached; process the source again instead.',
+  NOT_FAILED: $localize`:@@jobHistory.retryBlocked.NOT_FAILED:Only failed jobs can be retried.`,
+  SOURCE_DELETED: $localize`:@@jobHistory.retryBlocked.SOURCE_DELETED:The source was deleted; a retry cannot succeed.`,
+  RETRY_LIMIT_REACHED: $localize`:@@jobHistory.retryBlocked.RETRY_LIMIT_REACHED:The manual retry limit was reached; process the source again instead.`,
 };
 
 const PAGE_SIZE = 20;
@@ -76,7 +76,7 @@ export class JobHistory implements OnInit {
 
   protected applyFilters(): void {
     if (this.filters.from && this.filters.to && this.filters.from > this.filters.to) {
-      this.error.set('The start date must not be after the end date.');
+      this.error.set($localize`:@@jobHistory.startDateMustNot:The start date must not be after the end date.`);
       return;
     }
     this.load(0);
@@ -115,13 +115,13 @@ export class JobHistory implements OnInit {
     this.api.retry(job.id).subscribe({
       next: () => {
         this.retrying.set(null);
-        this.notice.set(`Retry of the ${JOB_TYPE_LABELS[job.type].toLowerCase()} job was queued.`);
+        this.notice.set($localize`:@@jobHistory.retryQueued:Retry of the ${JOB_TYPE_LABELS[job.type].toLowerCase()}:jobType: job was queued.`);
         this.load(this.page());
       },
       error: (err) => {
         this.retrying.set(null);
         this.load(this.page());
-        this.error.set(errorMessage(err, 'The job could not be retried.'));
+        this.error.set(errorMessage(err, $localize`:@@jobHistory.error.jobBeRetried:The job could not be retried.`));
       },
     });
   }
@@ -131,13 +131,13 @@ export class JobHistory implements OnInit {
     this.briefsApi.retryJob(job.id).subscribe({
       next: () => {
         this.retrying.set(null);
-        this.notice.set(`Brief generation for ${job.businessDate} was queued again.`);
+        this.notice.set($localize`:@@jobHistory.briefRequeued:Brief generation for ${job.businessDate}:date: was queued again.`);
         this.load(this.page());
       },
       error: (err) => {
         this.retrying.set(null);
         this.load(this.page());
-        this.error.set(errorMessage(err, 'The brief job could not be retried.'));
+        this.error.set(errorMessage(err, $localize`:@@jobHistory.error.briefJobBeRetried:The brief job could not be retried.`));
       },
     });
   }
@@ -158,6 +158,6 @@ export class JobHistory implements OnInit {
 
   private failed(err: unknown): void {
     this.loading.set(false);
-    this.error.set(errorMessage(err, 'Could not load the jobs.'));
+    this.error.set(errorMessage(err, $localize`:@@jobHistory.error.loadJobs:Could not load the jobs.`));
   }
 }

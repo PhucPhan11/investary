@@ -1,7 +1,7 @@
-<a routerLink="/portfolios" class="back-link">← Portfolios</a>
+<a routerLink="/portfolios" class="back-link" i18n="@@portfolioDashboard.portfolios">← Portfolios</a>
 
 @if (loading()) {
-  <p class="muted" role="status">Loading portfolio…</p>
+  <p class="muted" role="status" i18n="@@portfolioDashboard.loadingPortfolio">Loading portfolio…</p>
 }
 @if (error(); as message) {
   <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
@@ -14,25 +14,25 @@
   <header class="page-header">
     <div>
       <h1 class="page-title">{{ p.name }}</h1>
-      <p class="page-subtitle">{{ p.description || 'Holdings computed from your transactions (weighted average cost).' }}</p>
+      <p class="page-subtitle">{{ p.description || defaultDescription }}</p>
     </div>
   </header>
 
   @if (summary(); as s) {
-    <section class="stats" aria-label="Overview">
+    <section class="stats" aria-label="Overview" i18n-aria-label="@@portfolioDashboard.overview">
       <div class="stat-card">
-        <span class="stat-card__label">Cost basis ({{ s.currency }})</span>
+        <span class="stat-card__label" i18n="@@portfolioDashboard.costBasis">Cost basis ({{ s.currency }})</span>
         <span class="stat-card__value">{{ s.totalCostBasis | number: '1.0-2' }}</span>
-        <span class="muted small">{{ s.openHoldings }} open · {{ s.closedPositions }} closed</span>
+        <span class="muted small" i18n="@@portfolioDashboard.openClosed">{{ s.openHoldings }} open · {{ s.closedPositions }} closed</span>
       </div>
       <div class="stat-card">
-        <span class="stat-card__label">Market value ({{ s.currency }})</span>
+        <span class="stat-card__label" i18n="@@portfolioDashboard.marketValue">Market value ({{ s.currency }})</span>
         @if (s.totalMarketValue !== null) {
           <span class="stat-card__value">{{ s.totalMarketValue | number: '1.0-2' }}</span>
         } @else {
-          <span class="stat-card__value muted" data-testid="market-value-unavailable">Not available</span>
+          <span class="stat-card__value muted" data-testid="market-value-unavailable" i18n="@@portfolioDashboard.notAvailable">Not available</span>
           @if (s.pricedMarketValue !== null) {
-            <span class="muted small">Priced holdings only: {{ s.pricedMarketValue | number: '1.0-2' }} ({{ s.pricedCoveragePct }}% of cost)</span>
+            <span class="muted small" i18n="@@portfolioDashboard.pricedHoldingsOnlyCost">Priced holdings only: {{ s.pricedMarketValue | number: '1.0-2' }} ({{ s.pricedCoveragePct }}% of cost)</span>
           }
         }
         @if (valuation(); as v) {
@@ -40,28 +40,28 @@
         }
       </div>
       <div class="stat-card">
-        <span class="stat-card__label">Unrealized P&amp;L</span>
+        <span class="stat-card__label" i18n="@@portfolioDashboard.unrealizedPAmpL">Unrealized P&amp;L</span>
         @if (s.unrealizedPnl !== null) {
           <span [class]="'stat-card__value ' + tone(s.unrealizedPnl)">{{ s.unrealizedPnl | number: '1.0-2' }}</span>
-          <span class="muted small">{{ s.unrealizedPnlPct }}% vs cost</span>
+          <span class="muted small" i18n="@@portfolioDashboard.vsCost">{{ s.unrealizedPnlPct }}% vs cost</span>
         } @else {
           <span class="stat-card__value muted" data-testid="pnl-unavailable">—</span>
-          <span class="muted small">Needs a price for every holding.</span>
+          <span class="muted small" i18n="@@portfolioDashboard.needsPriceEveryHolding">Needs a price for every holding.</span>
         }
       </div>
       <div class="stat-card">
-        <span class="stat-card__label">Realized P&amp;L</span>
+        <span class="stat-card__label" i18n="@@portfolioDashboard.realizedPAmpL">Realized P&amp;L</span>
         <span [class]="'stat-card__value ' + tone(s.realizedPnl)">{{ s.realizedPnl | number: '1.0-2' }}</span>
-        <span class="muted small">Net of fees and taxes</span>
+        <span class="muted small" i18n="@@portfolioDashboard.netFeesTaxes">Net of fees and taxes</span>
       </div>
     </section>
     @if (valuation(); as v) {
-      <p class="muted small">
+      <p class="muted small" i18n="@@portfolioDashboard.valuationDatePricesOlder">
         {{ v.text }} Valuation date {{ s.valuationDate }}; prices older than {{ s.priceStaleAfterDays }} days are stale.
       </p>
     }
     <details class="limitations">
-      <summary class="small">Limitations of these figures</summary>
+      <summary class="small" i18n="@@portfolioDashboard.limitationsTheseFigures">Limitations of these figures</summary>
       <ul class="small">
         @for (l of s.limitations; track l) {
           <li>{{ l }}</li>
@@ -71,10 +71,10 @@
   }
 
   @if (allocation(); as a) {
-    <section class="card allocation" aria-label="Allocation">
+    <section class="card allocation" aria-label="Allocation" i18n-aria-label="@@portfolioDashboard.allocation">
       <div class="allocation__col">
-        <h2 class="card__title">Allocation by cost basis</h2>
-        <p class="muted small">Money invested, not market value.</p>
+        <h2 class="card__title" i18n="@@portfolioDashboard.allocationByCostBasis">Allocation by cost basis</h2>
+        <p class="muted small" i18n="@@portfolioDashboard.moneyInvestedNotMarket">Money invested, not market value.</p>
         @for (slice of a.costBasis.byInstrument; track slice.key) {
           <div class="bar-row">
             <span class="bar-row__label">{{ slice.key }}</span>
@@ -82,9 +82,9 @@
             <span class="bar-row__value">{{ slice.weightPct }}%</span>
           </div>
         } @empty {
-          <p class="muted small">No open holdings.</p>
+          <p class="muted small" i18n="@@portfolioDashboard.noOpenHoldings">No open holdings.</p>
         }
-        <h3 class="small allocation__sub">By instrument type</h3>
+        <h3 class="small allocation__sub" i18n="@@portfolioDashboard.byInstrumentType">By instrument type</h3>
         @for (slice of a.costBasis.byInstrumentType; track slice.key) {
           <div class="bar-row">
             <span class="bar-row__label">{{ slice.key }}</span>
@@ -94,9 +94,9 @@
         }
       </div>
       <div class="allocation__col">
-        <h2 class="card__title">Allocation by market value</h2>
+        <h2 class="card__title" i18n="@@portfolioDashboard.allocationByMarketValue">Allocation by market value</h2>
         @if (marketAllocation(); as m) {
-          <p class="muted small">From your manual price observations.</p>
+          <p class="muted small" i18n="@@portfolioDashboard.fromYourManualPrice">From your manual price observations.</p>
           @for (slice of m.byInstrument; track slice.key) {
             <div class="bar-row">
               <span class="bar-row__label">{{ slice.key }}</span>
@@ -111,48 +111,48 @@
     </section>
   }
 
-  <section class="card" aria-label="Holdings">
+  <section class="card" aria-label="Holdings" i18n-aria-label="@@portfolioDashboard.holdings">
     <div class="card__header">
-      <h2 class="card__title">Holdings</h2>
+      <h2 class="card__title" i18n="@@portfolioDashboard.holdings">Holdings</h2>
     </div>
     @if (holdings().length === 0) {
-      <app-empty-state title="No open holdings">Add an opening position or a buy below.</app-empty-state>
+      <app-empty-state title="No open holdings" i18n-title="@@portfolioDashboard.noOpenHoldings2">Add an opening position or a buy below.</app-empty-state>
     } @else {
       <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
-              <th>Symbol</th><th class="num">Quantity</th><th class="num">Avg cost</th><th class="num">Cost basis</th>
-              <th class="num">Weight (cost)</th><th>Latest price</th><th class="num">Market value</th>
-              <th class="num">Unrealized P&amp;L</th><th></th>
+              <th i18n="@@portfolioDashboard.symbol">Symbol</th><th class="num" i18n="@@portfolioDashboard.quantity">Quantity</th><th class="num" i18n="@@portfolioDashboard.avgCost">Avg cost</th><th class="num" i18n="@@portfolioDashboard.costBasis2">Cost basis</th>
+              <th class="num" i18n="@@portfolioDashboard.weightCost">Weight (cost)</th><th i18n="@@portfolioDashboard.latestPrice">Latest price</th><th class="num" i18n="@@portfolioDashboard.marketValue2">Market value</th>
+              <th class="num" i18n="@@portfolioDashboard.unrealizedPAmpL">Unrealized P&amp;L</th><th></th>
             </tr>
           </thead>
           <tbody>
             @for (h of holdings(); track h.instrumentId) {
               <tr>
-                <td data-label="Symbol"><strong>{{ h.symbol }}</strong> <span class="muted small">{{ h.instrumentType }}</span></td>
-                <td data-label="Quantity" class="num">{{ h.quantity | number: '1.0-6' }}</td>
-                <td data-label="Avg cost" class="num">{{ h.averageCost | number: '1.0-4' }}</td>
-                <td data-label="Cost basis" class="num">{{ h.costBasis | number: '1.0-2' }}</td>
-                <td data-label="Weight (cost)" class="num">{{ h.costWeightPct }}%</td>
-                <td data-label="Latest price">
+                <td data-label="Symbol" i18n-data-label="@@portfolioDashboard.symbol"><strong>{{ h.symbol }}</strong> <span class="muted small">{{ h.instrumentType }}</span></td>
+                <td data-label="Quantity" i18n-data-label="@@portfolioDashboard.quantity" class="num">{{ h.quantity | number: '1.0-6' }}</td>
+                <td data-label="Avg cost" i18n-data-label="@@portfolioDashboard.avgCost" class="num">{{ h.averageCost | number: '1.0-4' }}</td>
+                <td data-label="Cost basis" i18n-data-label="@@portfolioDashboard.costBasis2" class="num">{{ h.costBasis | number: '1.0-2' }}</td>
+                <td data-label="Weight (cost)" i18n-data-label="@@portfolioDashboard.weightCost" class="num">{{ h.costWeightPct }}%</td>
+                <td data-label="Latest price" i18n-data-label="@@portfolioDashboard.latestPrice">
                   @if (h.latestPrice !== null) {
                     {{ h.latestPrice | number: '1.0-4' }}
                     <span class="muted small">{{ h.priceAsOf }} · {{ h.priceSource }}</span>
                     @if (h.valuationStatus === 'STALE') {
-                      <span class="badge badge--warning">{{ h.priceAgeDays }} days old</span>
+                      <span class="badge badge--warning" i18n="@@portfolioDashboard.daysOld">{{ h.priceAgeDays }} days old</span>
                     }
                   } @else {
-                    <span class="muted">No price</span>
+                    <span class="muted" i18n="@@portfolioDashboard.noPrice">No price</span>
                   }
                 </td>
-                <td data-label="Market value" class="num">{{ h.marketValue === null ? '—' : (h.marketValue | number: '1.0-2') }}</td>
-                <td data-label="Unrealized P&L" [class]="'num ' + tone(h.unrealizedPnl)">
+                <td data-label="Market value" i18n-data-label="@@portfolioDashboard.marketValue2" class="num">{{ h.marketValue === null ? '—' : (h.marketValue | number: '1.0-2') }}</td>
+                <td data-label="Unrealized P&L" i18n-data-label="@@portfolioDashboard.unrealizedPL" [class]="'num ' + tone(h.unrealizedPnl)">
                   {{ h.unrealizedPnl === null ? '—' : (h.unrealizedPnl | number: '1.0-2') }}
                   @if (h.unrealizedPnlPct !== null) { <span class="small">({{ h.unrealizedPnlPct }}%)</span> }
                 </td>
                 <td class="actions-col">
-                  <button type="button" class="btn btn--ghost btn--small" (click)="startPricing(h)">Add price</button>
+                  <button type="button" class="btn btn--ghost btn--small" (click)="startPricing(h)" i18n="@@portfolioDashboard.addPrice">Add price</button>
                 </td>
               </tr>
             }
@@ -163,27 +163,27 @@
 
     @if (pricing(); as h) {
       <form class="subform form-grid" (ngSubmit)="savePrice()">
-        <legend class="field__label">Manual price for {{ h.symbol }} (where did you read it?)</legend>
+        <legend class="field__label" i18n="@@portfolioDashboard.manualPriceWhereDid">Manual price for {{ h.symbol }} (where did you read it?)</legend>
         <label class="field">
-          <span class="field__label">Price / NAV</span>
+          <span class="field__label" i18n="@@portfolioDashboard.priceNav">Price / NAV</span>
           <input class="input" type="number" name="price" min="0" step="any" [(ngModel)]="priceDraft.price" />
         </label>
         <label class="field">
-          <span class="field__label">As of</span>
+          <span class="field__label" i18n="@@portfolioDashboard.as">As of</span>
           <input class="input" type="date" name="asOf" [max]="maxDate" [(ngModel)]="priceDraft.asOf" />
         </label>
         <label class="field">
-          <span class="field__label">Source</span>
-          <input class="input" name="source" maxlength="200" placeholder="e.g. Bảng giá HOSE" [(ngModel)]="priceDraft.source" />
+          <span class="field__label" i18n="@@portfolioDashboard.source">Source</span>
+          <input class="input" name="source" maxlength="200" placeholder="e.g. HOSE price board" i18n-placeholder="@@portfolioDashboard.priceSourcePlaceholder" [(ngModel)]="priceDraft.source" />
         </label>
         <label class="field">
-          <span class="field__label">Note</span>
+          <span class="field__label" i18n="@@portfolioDashboard.note">Note</span>
           <input class="input" name="note" maxlength="1000" [(ngModel)]="priceDraft.note" />
         </label>
         <div class="actions">
-          <button type="button" class="btn btn--ghost btn--small" (click)="pricing.set(null)">Cancel</button>
+          <button type="button" class="btn btn--ghost btn--small" (click)="pricing.set(null)" i18n="@@portfolioDashboard.cancel">Cancel</button>
           <button type="submit" class="btn btn--primary btn--small"
-                  [disabled]="!priceDraft.price || priceDraft.price <= 0 || !priceDraft.source.trim() || !priceDraft.asOf">
+                  [disabled]="!priceDraft.price || priceDraft.price <= 0 || !priceDraft.source.trim() || !priceDraft.asOf" i18n="@@portfolioDashboard.savePrice">
             Save price
           </button>
         </div>
@@ -201,36 +201,36 @@
     (cancelled)="editing.set(null)"
   />
 
-  <section class="card" aria-label="Transactions">
+  <section class="card" aria-label="Transactions" i18n-aria-label="@@portfolioDashboard.transactions">
     <div class="card__header">
-      <h2 class="card__title">Transactions</h2>
-      <span class="muted small">{{ p.transactionCount }} total · newest first</span>
+      <h2 class="card__title" i18n="@@portfolioDashboard.transactions">Transactions</h2>
+      <span class="muted small" i18n="@@portfolioDashboard.totalNewestFirst">{{ p.transactionCount }} total · newest first</span>
     </div>
     @if (transactions().length === 0) {
-      <p class="muted small">No transactions yet.</p>
+      <p class="muted small" i18n="@@portfolioDashboard.noTransactionsYet">No transactions yet.</p>
     } @else {
       <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
-              <th>Date</th><th>Type</th><th>Symbol</th><th class="num">Quantity</th><th class="num">Price</th>
-              <th class="num">Fees</th><th class="num">Taxes</th><th>Notes</th><th></th>
+              <th i18n="@@portfolioDashboard.date">Date</th><th i18n="@@portfolioDashboard.type">Type</th><th i18n="@@portfolioDashboard.symbol">Symbol</th><th class="num" i18n="@@portfolioDashboard.quantity">Quantity</th><th class="num" i18n="@@portfolioDashboard.price">Price</th>
+              <th class="num" i18n="@@portfolioDashboard.fees">Fees</th><th class="num" i18n="@@portfolioDashboard.taxes">Taxes</th><th i18n="@@portfolioDashboard.notes">Notes</th><th></th>
             </tr>
           </thead>
           <tbody>
             @for (t of transactions(); track t.id) {
               <tr>
-                <td data-label="Date">{{ t.tradeDate | date: 'mediumDate' }}</td>
-                <td data-label="Type">{{ typeLabel(t.type) }}</td>
-                <td data-label="Symbol">{{ t.symbol }}</td>
-                <td data-label="Quantity" class="num">{{ t.quantity | number: '1.0-6' }}</td>
-                <td data-label="Price" class="num">{{ t.price | number: '1.0-4' }}</td>
-                <td data-label="Fees" class="num">{{ t.fees | number: '1.0-2' }}</td>
-                <td data-label="Taxes" class="num">{{ t.taxes | number: '1.0-2' }}</td>
-                <td data-label="Notes">{{ t.notes }}</td>
+                <td data-label="Date" i18n-data-label="@@portfolioDashboard.date">{{ t.tradeDate | date: 'mediumDate' }}</td>
+                <td data-label="Type" i18n-data-label="@@portfolioDashboard.type">{{ typeLabel(t.type) }}</td>
+                <td data-label="Symbol" i18n-data-label="@@portfolioDashboard.symbol">{{ t.symbol }}</td>
+                <td data-label="Quantity" i18n-data-label="@@portfolioDashboard.quantity" class="num">{{ t.quantity | number: '1.0-6' }}</td>
+                <td data-label="Price" i18n-data-label="@@portfolioDashboard.price" class="num">{{ t.price | number: '1.0-4' }}</td>
+                <td data-label="Fees" i18n-data-label="@@portfolioDashboard.fees" class="num">{{ t.fees | number: '1.0-2' }}</td>
+                <td data-label="Taxes" i18n-data-label="@@portfolioDashboard.taxes" class="num">{{ t.taxes | number: '1.0-2' }}</td>
+                <td data-label="Notes" i18n-data-label="@@portfolioDashboard.notes">{{ t.notes }}</td>
                 <td class="actions-col">
-                  <button type="button" class="btn btn--ghost btn--small" (click)="editing.set(t)">Edit</button>
-                  <button type="button" class="btn btn--danger btn--small" (click)="deleteTransaction(t)">Delete</button>
+                  <button type="button" class="btn btn--ghost btn--small" (click)="editing.set(t)" i18n="@@portfolioDashboard.edit">Edit</button>
+                  <button type="button" class="btn btn--danger btn--small" (click)="deleteTransaction(t)" i18n="@@portfolioDashboard.delete">Delete</button>
                 </td>
               </tr>
             }

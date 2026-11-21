@@ -14,25 +14,25 @@ import { RESEARCH_STATE_LABELS } from './brief-list';
 const POLL_MS = 2000;
 
 const KINDS: Record<BriefItemKind, { label: string; tone: string }> = {
-  PORTFOLIO_FACT: { label: 'Investary data', tone: 'info' },
-  SOURCE_CLAIM: { label: 'From source', tone: 'neutral' },
-  AI_INTERPRETATION: { label: 'AI interpretation', tone: 'warning' },
-  SYSTEM_NOTE: { label: 'Note', tone: 'muted' },
+  PORTFOLIO_FACT: { label: $localize`:@@briefDetail.kinds.PORTFOLIO_FACT:Investary data`, tone: 'info' },
+  SOURCE_CLAIM: { label: $localize`:@@briefDetail.kinds.SOURCE_CLAIM:From source`, tone: 'neutral' },
+  AI_INTERPRETATION: { label: $localize`:@@briefDetail.kinds.AI_INTERPRETATION:AI interpretation`, tone: 'warning' },
+  SYSTEM_NOTE: { label: $localize`:@@briefDetail.kinds.SYSTEM_NOTE:Note`, tone: 'muted' },
 };
 
 const EVIDENCE: Record<EvidenceStatus, { label: string; tone: string }> = {
-  SUPPORTED: { label: 'Supported', tone: 'success' },
-  PARTIAL: { label: 'Partially supported', tone: 'warning' },
-  INSUFFICIENT: { label: 'Insufficient evidence', tone: 'danger' },
+  SUPPORTED: { label: $localize`:@@briefDetail.evidence.SUPPORTED:Supported`, tone: 'success' },
+  PARTIAL: { label: $localize`:@@briefDetail.evidence.PARTIAL:Partially supported`, tone: 'warning' },
+  INSUFFICIENT: { label: $localize`:@@briefDetail.evidence.INSUFFICIENT:Insufficient evidence`, tone: 'danger' },
 };
 
 const PENDING_STATES: Record<string, string> = {
-  NOT_TRACKED: 'waiting to be indexed',
-  PENDING: 'waiting to be indexed',
-  PROCESSING: 'being indexed',
-  FAILED: 'indexing failed',
-  SKIPPED: 'no extractable text',
-  OUTDATED: 'being re-indexed',
+  NOT_TRACKED: $localize`:@@briefDetail.pending.waiting:waiting to be indexed`,
+  PENDING: $localize`:@@briefDetail.pending.waiting:waiting to be indexed`,
+  PROCESSING: $localize`:@@briefDetail.pending.PROCESSING:being indexed`,
+  FAILED: $localize`:@@briefDetail.pending.FAILED:indexing failed`,
+  SKIPPED: $localize`:@@briefDetail.pending.SKIPPED:no extractable text`,
+  OUTDATED: $localize`:@@briefDetail.pending.OUTDATED:being re-indexed`,
 };
 
 /**
@@ -52,6 +52,9 @@ export class BriefDetail {
   readonly id = input.required<string>();
 
   protected readonly kinds = KINDS;
+  protected readonly generalBrief = $localize`:@@briefs.generalBrief:General brief`;
+  protected readonly noTitle = $localize`:@@briefDetail.noTitle:(no title)`;
+  protected readonly deletedSource = $localize`:@@briefDetail.deletedSource:(deleted source)`;
   protected readonly stateLabels = RESEARCH_STATE_LABELS;
   protected readonly brief = signal<Brief | null>(null);
   protected readonly loading = signal(true);
@@ -95,10 +98,14 @@ export class BriefDetail {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(errorMessage(err, 'Could not load the brief.'));
+        this.error.set(errorMessage(err, $localize`:@@briefDetail.error.loadBrief:Could not load the brief.`));
         this.loading.set(false);
       },
     });
+  }
+
+  protected showSourceLabel(label: string): string {
+    return $localize`:@@researchAssistant.showSource:Show source ${label}:label:`;
   }
 
   protected segments(item: BriefItem): AnswerSegment[] {
@@ -140,7 +147,7 @@ export class BriefDetail {
       },
       error: (err) => {
         this.regenerating.set(false);
-        this.regenerateError.set(errorMessage(err, 'Could not start the regeneration.'));
+        this.regenerateError.set(errorMessage(err, $localize`:@@briefDetail.error.startRegeneration:Could not start the regeneration.`));
       },
     });
   }
@@ -162,7 +169,7 @@ export class BriefDetail {
         },
         error: (err) => {
           this.regenerating.set(false);
-          this.regenerateError.set(errorMessage(err, 'Could not read the regeneration status.'));
+          this.regenerateError.set(errorMessage(err, $localize`:@@briefDetail.error.readRegenerationStatus:Could not read the regeneration status.`));
         },
       });
     }, POLL_MS);

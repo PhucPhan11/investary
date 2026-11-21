@@ -18,7 +18,7 @@ import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
   selector: 'app-document-detail',
   imports: [DatePipe, RouterLink, Alert, IndexStatus, WorkflowStatusPanel, FileSizePipe, ReportTypeLabelPipe],
   template: `
-    <a routerLink="/documents" class="link back-link">← Document library</a>
+    <a routerLink="/documents" class="link back-link" i18n="@@documentDetail.documentLibrary">← Document library</a>
     @if (error(); as message) {
       <app-alert kind="error">{{ message }}</app-alert>
     }
@@ -27,17 +27,17 @@ import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
         <div class="detail-header__main">
           <h1 class="page-title">{{ d.originalFilename }}</h1>
           <dl class="meta">
-            <div><dt>Brokerage</dt><dd>{{ d.brokerageCompany || '—' }}</dd></div>
-            <div><dt>Report type</dt><dd>{{ d.reportType | reportTypeLabel }}</dd></div>
-            <div><dt>Ticker</dt><dd>{{ d.ticker || '—' }}</dd></div>
-            <div><dt>Published</dt><dd>{{ d.publishedOn ? (d.publishedOn | date: 'mediumDate') : '—' }}</dd></div>
-            <div><dt>Uploaded</dt><dd>{{ d.uploadedAt | date: 'medium' }}</dd></div>
-            <div><dt>Size</dt><dd>{{ d.fileSize | fileSize }}</dd></div>
+            <div><dt i18n="@@documentDetail.brokerage">Brokerage</dt><dd>{{ d.brokerageCompany || '—' }}</dd></div>
+            <div><dt i18n="@@documentDetail.reportType">Report type</dt><dd>{{ d.reportType | reportTypeLabel }}</dd></div>
+            <div><dt i18n="@@documentDetail.ticker">Ticker</dt><dd>{{ d.ticker || '—' }}</dd></div>
+            <div><dt i18n="@@documentDetail.published">Published</dt><dd>{{ d.publishedOn ? (d.publishedOn | date: 'mediumDate') : '—' }}</dd></div>
+            <div><dt i18n="@@documentDetail.uploaded">Uploaded</dt><dd>{{ d.uploadedAt | date: 'medium' }}</dd></div>
+            <div><dt i18n="@@documentDetail.size">Size</dt><dd>{{ d.fileSize | fileSize }}</dd></div>
           </dl>
-          <p class="muted small mono">SHA-256 {{ d.sha256Checksum }}</p>
+          <p class="muted small mono" i18n="@@documentDetail.sha256">SHA-256 {{ d.sha256Checksum }}</p>
         </div>
         <div class="detail-header__actions">
-          <a class="btn btn--primary btn--small" [href]="downloadUrl(d.id)" download>Download PDF</a>
+          <a class="btn btn--primary btn--small" [href]="downloadUrl(d.id)" download i18n="@@documentDetail.downloadPdf">Download PDF</a>
         </div>
       </section>
 
@@ -46,17 +46,17 @@ import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
 
       <section class="card">
         <div class="card__header">
-          <h2 class="card__title">Source emails</h2>
-          <span class="muted">Where this report came from</span>
+          <h2 class="card__title" i18n="@@documentDetail.sourceEmails">Source emails</h2>
+          <span class="muted" i18n="@@documentDetail.whereThisReportCame">Where this report came from</span>
         </div>
         @if (sources().length === 0) {
-          <p class="muted">Uploaded directly — not linked to an imported email.</p>
+          <p class="muted" i18n="@@documentDetail.uploadedDirectlyNotLinked">Uploaded directly — not linked to an imported email.</p>
         } @else {
           <ul class="recent-list">
             @for (email of sources(); track email.id) {
               <li class="recent-list__item">
                 <div class="recent-list__main">
-                  <a class="recent-list__name link-plain" [routerLink]="['/emails', email.id]">{{ email.subject || '(no subject)' }}</a>
+                  <a class="recent-list__name link-plain" [routerLink]="['/emails', email.id]">{{ email.subject || noSubject }}</a>
                   <span class="recent-list__meta">{{ email.senderName || email.senderAddress }}</span>
                 </div>
                 <div class="recent-list__side">{{ (email.sentAt ?? email.importedAt) | date: 'mediumDate' }}</div>
@@ -66,13 +66,14 @@ import { ReportTypeLabelPipe } from '../../shared/pipes/report-type-label.pipe';
         }
       </section>
     } @else if (!error()) {
-      <p class="muted">Loading document…</p>
+      <p class="muted" i18n="@@documentDetail.loadingDocument">Loading document…</p>
     }
   `,
 })
 export class DocumentDetail {
   private readonly documents = inject(DocumentApiService);
   private readonly emails = inject(EmailApiService);
+  protected readonly noSubject = $localize`:@@emails.noSubject:(no subject)`;
 
   /** Route parameter, bound by the router. */
   readonly id = input.required<string>();
@@ -89,7 +90,7 @@ export class DocumentDetail {
           this.document.set(document);
           this.sources.set(sources.content);
         },
-        error: (err) => this.error.set(errorMessage(err, 'Could not load the document.')),
+        error: (err) => this.error.set(errorMessage(err, $localize`:@@documentDetail.error.loadDocument:Could not load the document.`)),
       });
     });
   }

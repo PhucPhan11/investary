@@ -44,9 +44,9 @@ export class TransactionForm {
   readonly cancelled = output<void>();
 
   protected readonly types: { value: TransactionType; label: string }[] = [
-    { value: 'BUY', label: 'Buy' },
-    { value: 'SELL', label: 'Sell' },
-    { value: 'OPENING_POSITION', label: 'Opening position' },
+    { value: 'BUY', label: $localize`:@@transactionForm.buy:Buy` },
+    { value: 'SELL', label: $localize`:@@transactionForm.sell:Sell` },
+    { value: 'OPENING_POSITION', label: $localize`:@@transactionForm.openingPosition:Opening position` },
   ];
   protected readonly instrumentTypes: InstrumentType[] = ['STOCK', 'ETF', 'FUND', 'BOND', 'OTHER'];
   protected readonly maxDate = marketToday();
@@ -81,17 +81,18 @@ export class TransactionForm {
   protected problems(): string[] {
     const d = this.draft;
     const problems: string[] = [];
-    if (!d.instrumentId) problems.push('Choose an instrument.');
-    if (!d.tradeDate) problems.push('Enter the trade date.');
-    else if (d.tradeDate > this.maxDate) problems.push('The trade date cannot be in the future.');
-    if (d.quantity === null || !(d.quantity > 0)) problems.push('Quantity must be greater than 0.');
-    if (d.price === null || d.price < 0) problems.push('Price must be 0 or more.');
-    if ((d.fees ?? 0) < 0 || (d.taxes ?? 0) < 0) problems.push('Fees and taxes cannot be negative.');
+    if (!d.instrumentId) problems.push($localize`:@@transactionForm.chooseInstrument:Choose an instrument.`);
+    if (!d.tradeDate) problems.push($localize`:@@transactionForm.enterTradeDate:Enter the trade date.`);
+    else if (d.tradeDate > this.maxDate) problems.push($localize`:@@transactionForm.tradeDateCannotBe:The trade date cannot be in the future.`);
+    if (d.quantity === null || !(d.quantity > 0)) problems.push($localize`:@@transactionForm.quantityMustBeGreater:Quantity must be greater than 0.`);
+    if (d.price === null || d.price < 0) problems.push($localize`:@@transactionForm.priceMustBe0:Price must be 0 or more.`);
+    if ((d.fees ?? 0) < 0 || (d.taxes ?? 0) < 0) problems.push($localize`:@@transactionForm.feesTaxesCannotBe:Fees and taxes cannot be negative.`);
     return problems;
   }
 
   protected priceLabel(): string {
-    return this.draft.type === 'OPENING_POSITION' ? `Cost per unit (${this.currency()})` : `Price per unit (${this.currency()})`;
+    return this.draft.type === 'OPENING_POSITION' ? $localize`:@@transactionForm.costPerUnit:Cost per unit (${this.currency()}:currency:)`
+      : $localize`:@@transactionForm.pricePerUnit:Price per unit (${this.currency()}:currency:)`;
   }
 
   protected submit(): void {
@@ -125,7 +126,7 @@ export class TransactionForm {
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(errorMessage(err, 'Could not save the transaction.'));
+        this.error.set(errorMessage(err, $localize`:@@transactionForm.error.saveTransaction:Could not save the transaction.`));
       },
     });
   }
@@ -150,7 +151,7 @@ export class TransactionForm {
           this.addingInstrument.set(false);
           this.newInstrument = { symbol: '', name: '', instrumentType: 'STOCK', aliases: '' };
         },
-        error: (err) => this.error.set(errorMessage(err, 'Could not create the instrument.')),
+        error: (err) => this.error.set(errorMessage(err, $localize`:@@transactionForm.error.createInstrument:Could not create the instrument.`)),
       });
   }
 

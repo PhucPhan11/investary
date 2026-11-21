@@ -1,17 +1,17 @@
-<a class="back-link link" [routerLink]="existing() ? ['/journal', existing()!.id] : ['/journal']">← Back</a>
+<a class="back-link link" [routerLink]="existing() ? ['/journal', existing()!.id] : ['/journal']" i18n="@@decisionForm.back">← Back</a>
 
 <section class="page-header">
   <div>
     <h1 class="page-title">
-      @if (!id()) { New decision } @else if (amending()) { Amend decision } @else { Edit draft }
+      @if (!id()) { <ng-container i18n="@@decisionForm.newDecision">New decision</ng-container> } @else if (amending()) { <ng-container i18n="@@decisionForm.amendDecision">Amend decision</ng-container> } @else { <ng-container i18n="@@decisionForm.editDraft">Edit draft</ng-container> }
     </h1>
     <p class="page-subtitle">
       @if (amending()) {
-        This decision is finalized. Type, portfolio, instrument, date and intended figures are fixed; each amendment is
-        kept in the history with your reason.
+        <ng-container i18n="@@decisionForm.amendIntro">This decision is finalized. Type, portfolio, instrument, date and intended figures are fixed; each amendment is
+        kept in the history with your reason.</ng-container>
       } @else {
-        A draft stays editable. Finalizing it stores the portfolio and investor snapshot. Intended figures are notes,
-        never orders.
+        <ng-container i18n="@@decisionForm.draftIntro">A draft stays editable. Finalizing it stores the portfolio and investor snapshot. Intended figures are notes,
+        never orders.</ng-container>
       }
     </p>
   </div>
@@ -22,12 +22,12 @@
 }
 
 @if (loading()) {
-  <p class="muted">Loading decision…</p>
+  <p class="muted" i18n="@@decisionForm.loadingDecision">Loading decision…</p>
 } @else {
   <form class="card" (ngSubmit)="save()" data-testid="decision-form">
     <div class="form-grid">
       <label class="field">
-        <span class="field__label">Type</span>
+        <span class="field__label" i18n="@@decisionForm.type">Type</span>
         <select class="input" name="decisionType" [(ngModel)]="model.decisionType" [disabled]="amending()">
           @for (t of types; track t) {
             <option [value]="t">{{ typeLabels[t] }}</option>
@@ -35,86 +35,94 @@
         </select>
       </label>
       <label class="field">
-        <span class="field__label">Portfolio</span>
+        <span class="field__label" i18n="@@decisionForm.portfolio">Portfolio</span>
         <select class="input" name="portfolioId" [(ngModel)]="model.portfolioId" [disabled]="amending()">
-          <option value="">Watchlist (no portfolio)</option>
+          <option value="" i18n="@@decisionForm.watchlistNoPortfolio">Watchlist (no portfolio)</option>
           @for (p of portfolios(); track p.id) {
             <option [value]="p.id">{{ p.name }}</option>
           }
         </select>
       </label>
       <label class="field">
-        <span class="field__label">Instrument</span>
+        <span class="field__label" i18n="@@decisionForm.instrument">Instrument</span>
         <select class="input" name="instrumentId" [(ngModel)]="model.instrumentId" [disabled]="amending()">
-          <option value="">{{ model.decisionType === 'REBALANCE' ? 'Whole portfolio' : 'Choose…' }}</option>
+          <option value="">{{ model.decisionType === 'REBALANCE' ? wholePortfolio : choose }}</option>
           @for (i of instruments(); track i.id) {
             <option [value]="i.id">{{ i.symbol }} · {{ i.name }}</option>
           }
         </select>
       </label>
       <label class="field">
-        <span class="field__label">Decision date</span>
+        <span class="field__label" i18n="@@decisionForm.decisionDate">Decision date</span>
         <input class="input" type="date" name="decisionDate" [(ngModel)]="model.decisionDate" [disabled]="amending()" />
       </label>
       <label class="field field--wide">
-        <span class="field__label">Title</span>
+        <span class="field__label" i18n="@@decisionForm.title">Title</span>
         <input class="input" name="title" maxlength="300" required [(ngModel)]="model.title" />
       </label>
       <label class="field field--wide">
-        <span class="field__label">Rationale (required to finalize)</span>
+        <span class="field__label" i18n="@@decisionForm.rationaleRequiredFinalize">Rationale (required to finalize)</span>
         <textarea class="input" name="rationale" rows="4" [(ngModel)]="model.rationale"></textarea>
       </label>
       <label class="field field--wide">
-        <span class="field__label">Expected outcome</span>
+        <span class="field__label" i18n="@@decisionForm.expectedOutcome">Expected outcome</span>
         <textarea class="input" name="expectedOutcome" rows="2" [(ngModel)]="model.expectedOutcome"></textarea>
       </label>
       <label class="field">
-        <span class="field__label">Time horizon</span>
-        <input class="input" name="timeHorizon" maxlength="200" placeholder="e.g. 12 months" [(ngModel)]="model.timeHorizon" />
+        <span class="field__label" i18n="@@decisionForm.timeHorizon">Time horizon</span>
+        <input class="input" name="timeHorizon" maxlength="200" placeholder="e.g. 12 months" i18n-placeholder="@@decisionForm.eG12Months" [(ngModel)]="model.timeHorizon" />
       </label>
       <label class="field">
-        <span class="field__label">Review date</span>
+        <span class="field__label" i18n="@@decisionForm.reviewDate">Review date</span>
         <input class="input" type="date" name="reviewDate" [(ngModel)]="model.reviewDate" />
       </label>
       <label class="field field--wide">
-        <span class="field__label">Main assumptions</span>
+        <span class="field__label" i18n="@@decisionForm.mainAssumptions">Main assumptions</span>
         <textarea class="input" name="mainAssumptions" rows="2" [(ngModel)]="model.mainAssumptions"></textarea>
       </label>
       <label class="field field--wide">
-        <span class="field__label">Risks</span>
+        <span class="field__label" i18n="@@decisionForm.risks">Risks</span>
         <textarea class="input" name="risks" rows="2" [(ngModel)]="model.risks"></textarea>
       </label>
       <label class="field field--wide">
-        <span class="field__label">What would prove this wrong (invalidation conditions)</span>
+        <span class="field__label" i18n="@@decisionForm.whatWouldProveThis">What would prove this wrong (invalidation conditions)</span>
         <textarea class="input" name="invalidationConditions" rows="2" [(ngModel)]="model.invalidationConditions"></textarea>
       </label>
       <label class="field">
-        <span class="field__label">Intended quantity</span>
+        <span class="field__label" i18n="@@decisionForm.intendedQuantity">Intended quantity</span>
         <input class="input" type="number" min="0" step="any" name="intendedQuantity" [(ngModel)]="model.intendedQuantity" [disabled]="amending()" />
       </label>
       <label class="field">
-        <span class="field__label">Intended allocation %</span>
+        <span class="field__label" i18n="@@decisionForm.intendedAllocation">Intended allocation %</span>
         <input class="input" type="number" min="0" max="100" step="any" name="intendedAllocationPct" [(ngModel)]="model.intendedAllocationPct" [disabled]="amending()" />
       </label>
       <label class="field">
-        <span class="field__label">Intended price</span>
+        <span class="field__label" i18n="@@decisionForm.intendedPrice">Intended price</span>
         <input class="input" type="number" min="0" step="any" name="intendedPrice" [(ngModel)]="model.intendedPrice" [disabled]="amending()" />
       </label>
       <label class="field field--wide">
-        <span class="field__label">Notes</span>
+        <span class="field__label" i18n="@@decisionForm.notes">Notes</span>
         <textarea class="input" name="notes" rows="2" [(ngModel)]="model.notes"></textarea>
       </label>
       @if (amending()) {
         <label class="field field--wide">
-          <span class="field__label">Reason for this amendment</span>
+          <span class="field__label" i18n="@@decisionForm.reasonThisAmendment">Reason for this amendment</span>
           <input class="input" name="amendmentReason" maxlength="2000" required [(ngModel)]="model.amendmentReason" />
         </label>
       }
     </div>
-    <p class="muted small">Intended quantity, allocation and price are intentions only; they are never treated as executed trades.</p>
+    <p class="muted small" i18n="@@decisionForm.intendedQuantityAllocationPrice">Intended quantity, allocation and price are intentions only; they are never treated as executed trades.</p>
     <div class="actions">
       <button type="submit" class="btn btn--primary" [disabled]="saving()">
-        {{ saving() ? 'Saving…' : !id() ? 'Create draft' : amending() ? 'Save amendment' : 'Save draft' }}
+        @if (saving()) {
+          <ng-container i18n="@@common.saving">Saving…</ng-container>
+        } @else if (!id()) {
+          <ng-container i18n="@@decisionForm.createDraft">Create draft</ng-container>
+        } @else if (amending()) {
+          <ng-container i18n="@@decisionForm.saveAmendment">Save amendment</ng-container>
+        } @else {
+          <ng-container i18n="@@decisionForm.saveDraft">Save draft</ng-container>
+        }
       </button>
     </div>
   </form>

@@ -1,7 +1,7 @@
 <section class="page-header">
   <div>
-    <h1 class="page-title">Document library</h1>
-    <p class="page-subtitle">Brokerage research reports stored in your local Investary library.</p>
+    <h1 class="page-title" i18n="@@nav.documents">Document library</h1>
+    <p class="page-subtitle" i18n="@@documentLibrary.subtitle">Brokerage research reports stored in your local Investary library.</p>
   </div>
 </section>
 
@@ -16,51 +16,55 @@
 
 <section class="card">
   <div class="card__header">
-    <h2 class="card__title">Documents</h2>
+    <h2 class="card__title" i18n="@@documentLibrary.documents">Documents</h2>
     @if (page(); as p) {
-      <span class="muted">{{ p.totalElements }} total</span>
+      <span class="muted" i18n="@@common.totalCount">{{ p.totalElements }} total</span>
     }
   </div>
 
   @if (loading() && !page()) {
-    <p class="muted">Loading documents…</p>
+    <p class="muted" i18n="@@documents.loading">Loading documents…</p>
   } @else if (page()?.totalElements === 0) {
-    <app-empty-state title="Your library is empty">Upload your first PDF research report above.</app-empty-state>
+    <app-empty-state title="Your library is empty" i18n-title="@@documentLibrary.emptyTitle"><ng-container i18n="@@documentLibrary.empty">Upload your first PDF research report above.</ng-container></app-empty-state>
   } @else if (page(); as p) {
     <div class="table-wrap" [class.table-wrap--loading]="loading()">
       <table class="table">
         <thead>
           <tr>
-            <th scope="col">File name</th>
-            <th scope="col">Brokerage</th>
-            <th scope="col">Report type</th>
-            <th scope="col">Uploaded</th>
-            <th scope="col" class="num">Size</th>
-            <th scope="col" class="actions-col"><span class="visually-hidden">Actions</span></th>
+            <th scope="col" i18n="@@documents.fileName">File name</th>
+            <th scope="col" i18n="@@documents.brokerage">Brokerage</th>
+            <th scope="col" i18n="@@documents.reportType">Report type</th>
+            <th scope="col" i18n="@@documents.uploaded">Uploaded</th>
+            <th scope="col" class="num" i18n="@@documents.size">Size</th>
+            <th scope="col" class="actions-col"><span class="visually-hidden" i18n="@@common.actions">Actions</span></th>
           </tr>
         </thead>
         <tbody>
           @for (doc of p.content; track doc.id) {
             <tr>
-              <td data-label="File name">
+              <td data-label="File name" i18n-data-label="@@documents.fileName">
                 <a class="filename link-plain" [routerLink]="['/documents', doc.id]">{{ doc.originalFilename }}</a>
                 @if (doc.ticker) {
                   <span class="tag">{{ doc.ticker }}</span>
                 }
               </td>
-              <td data-label="Brokerage">{{ doc.brokerageCompany || '—' }}</td>
-              <td data-label="Report type">{{ doc.reportType | reportTypeLabel }}</td>
-              <td data-label="Uploaded">{{ doc.uploadedAt | date: 'medium' }}</td>
-              <td data-label="Size" class="num">{{ doc.fileSize | fileSize }}</td>
+              <td data-label="Brokerage" i18n-data-label="@@documents.brokerage">{{ doc.brokerageCompany || '—' }}</td>
+              <td data-label="Report type" i18n-data-label="@@documents.reportType">{{ doc.reportType | reportTypeLabel }}</td>
+              <td data-label="Uploaded" i18n-data-label="@@documents.uploaded">{{ doc.uploadedAt | date: 'medium' }}</td>
+              <td data-label="Size" i18n-data-label="@@documents.size" class="num">{{ doc.fileSize | fileSize }}</td>
               <td class="actions-col">
-                <a class="btn btn--small btn--ghost" [href]="api.downloadUrl(doc.id)" download>Download</a>
+                <a class="btn btn--small btn--ghost" [href]="api.downloadUrl(doc.id)" download i18n="@@common.download">Download</a>
                 <button
                   type="button"
                   class="btn btn--small btn--danger"
                   [disabled]="deletingId() === doc.id"
                   (click)="remove(doc)"
                 >
-                  {{ deletingId() === doc.id ? 'Deleting…' : 'Delete' }}
+                  @if (deletingId() === doc.id) {
+                    <ng-container i18n="@@common.deleting">Deleting…</ng-container>
+                  } @else {
+                    <ng-container i18n="@@common.delete">Delete</ng-container>
+                  }
                 </button>
               </td>
             </tr>

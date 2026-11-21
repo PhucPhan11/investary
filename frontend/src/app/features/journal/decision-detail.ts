@@ -66,6 +66,8 @@ function display(value: unknown): string {
   templateUrl: './decision-detail.html',
 })
 export class DecisionDetail implements OnInit {
+  protected readonly wholePortfolio = $localize`:@@journal.wholePortfolio:Whole portfolio`;
+  protected readonly watchlist = $localize`:@@journal.watchlist:Watchlist`;
   private readonly api = inject(JournalApiService);
   private readonly portfolioApi = inject(PortfolioApiService);
   private readonly documentApi = inject(DocumentApiService);
@@ -125,7 +127,7 @@ export class DecisionDetail implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(errorMessage(err, 'Could not load the decision.'));
+        this.error.set(errorMessage(err, $localize`:@@decisionDetail.error.loadDecision:Could not load the decision.`));
         this.loading.set(false);
       },
     });
@@ -152,7 +154,7 @@ export class DecisionDetail implements OnInit {
       return;
     }
     if (!this.reason.trim()) {
-      this.actionError.set('Give a reason to cancel the decision.');
+      this.actionError.set($localize`:@@decisionDetail.giveReasonCancelDecision:Give a reason to cancel the decision.`);
       return;
     }
     this.run(this.api.cancel(d.id, d.version, this.reason.trim()));
@@ -175,7 +177,7 @@ export class DecisionDetail implements OnInit {
     } else if (kind === 'EMAIL' || kind === 'RESEARCH_ITEM') {
       this.emailApi.list({ size: 50 }).subscribe({
         next: (page) => {
-          const options = page.content.map((e) => ({ id: e.id, label: `${e.subject ?? '(no subject)'} · ${e.senderName ?? ''}` }));
+          const options = page.content.map((e) => ({ id: e.id, label: `${e.subject ?? $localize`:@@decisionDetail.noSubject:(no subject)`} · ${e.senderName ?? ''}` }));
           if (kind === 'EMAIL') {
             this.sources.set(options);
           } else {
@@ -188,7 +190,7 @@ export class DecisionDetail implements OnInit {
       const portfolioId = this.decision()?.portfolioId;
       if (portfolioId) {
         this.intelligenceApi.assessments(portfolioId).subscribe({
-          next: (items) => this.sources.set(items.map((a) => ({ id: a.id, label: `Assessment of ${a.createdAt}` }))),
+          next: (items) => this.sources.set(items.map((a) => ({ id: a.id, label: $localize`:@@decisionDetail.assessmentOf:Assessment of ${a.createdAt}:date:` }))),
           error: () => this.sources.set([]),
         });
       }
@@ -214,7 +216,7 @@ export class DecisionDetail implements OnInit {
       return;
     }
     if (!sourceId) {
-      this.actionError.set('Choose a source or enter its id.');
+      this.actionError.set($localize`:@@decisionDetail.chooseSourceOrEnter:Choose a source or enter its id.`);
       return;
     }
     this.run(
@@ -234,7 +236,7 @@ export class DecisionDetail implements OnInit {
 
   protected removeEvidence(evidenceId: string): void {
     const d = this.decision();
-    const reason = typeof window !== 'undefined' ? window.prompt('Why are you removing this evidence?') : null;
+    const reason = typeof window !== 'undefined' ? window.prompt($localize`:@@decisionDetail.whyAreYouRemoving:Why are you removing this evidence?`) : null;
     if (d && reason?.trim()) {
       this.run(this.api.removeEvidence(d.id, evidenceId, d.version, reason.trim()));
     }
@@ -246,7 +248,7 @@ export class DecisionDetail implements OnInit {
     if (portfolioId) {
       this.portfolioApi.transactions(portfolioId, 0, 100).subscribe({
         next: (page) => this.transactions.set(page.content),
-        error: (err) => this.actionError.set(errorMessage(err, 'Could not load the portfolio transactions.')),
+        error: (err) => this.actionError.set(errorMessage(err, $localize`:@@decisionDetail.error.loadPortfolioTransactions:Could not load the portfolio transactions.`)),
       });
     }
   }
@@ -254,7 +256,7 @@ export class DecisionDetail implements OnInit {
   protected linkTransaction(): void {
     const d = this.decision();
     if (!d || !this.linkForm.transactionId) {
-      this.actionError.set('Choose a transaction to link.');
+      this.actionError.set($localize`:@@decisionDetail.chooseTransactionLink:Choose a transaction to link.`);
       return;
     }
     this.run(this.api.linkTransaction(d.id, this.linkForm.transactionId, d.version, this.linkForm.note.trim() || null), () => {
@@ -265,7 +267,7 @@ export class DecisionDetail implements OnInit {
 
   protected unlink(linkId: string): void {
     const d = this.decision();
-    const reason = typeof window !== 'undefined' ? window.prompt('Why are you unlinking this transaction?') : null;
+    const reason = typeof window !== 'undefined' ? window.prompt($localize`:@@decisionDetail.whyAreYouUnlinking:Why are you unlinking this transaction?`) : null;
     if (d && reason?.trim()) {
       this.run(this.api.unlinkTransaction(d.id, linkId, d.version, reason.trim()));
     }
@@ -288,7 +290,7 @@ export class DecisionDetail implements OnInit {
       },
       error: (err) => {
         this.busy.set(false);
-        this.actionError.set(errorMessage(err, 'The change could not be saved.'));
+        this.actionError.set(errorMessage(err, $localize`:@@decisionDetail.error.changeBeSaved:The change could not be saved.`));
       },
     });
   }

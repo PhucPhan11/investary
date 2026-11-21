@@ -1,5 +1,5 @@
-# Stops what "Investary (all) - dev up" started: the backend (java on 8080), the frontend dev server
-# (node on 4200) and PostgreSQL. The container and its data volume are kept. Used by the
+# Stops what "Investary (all) - dev up" started: the backend (java on 8080), the frontend dev servers
+# (node on 4200 for Vietnamese, 4201 for English) and PostgreSQL. The container and its data volume are kept. Used by the
 # "Investary (all) - dev down" run configuration.
 $ErrorActionPreference = 'Stop'
 
@@ -23,7 +23,8 @@ function Stop-Listener([int] $Port, [string] $ExpectedName, [string] $Label) {
 }
 
 Stop-Listener -Port 8080 -ExpectedName 'java' -Label 'Backend'
-Stop-Listener -Port 4200 -ExpectedName 'node' -Label 'Frontend'
+Stop-Listener -Port 4200 -ExpectedName 'node' -Label 'Frontend (vi)'
+Stop-Listener -Port 4201 -ExpectedName 'node' -Label 'Frontend (en)'
 
 docker compose -f "$PSScriptRoot/docker-compose.yml" stop
 exit $LASTEXITCODE

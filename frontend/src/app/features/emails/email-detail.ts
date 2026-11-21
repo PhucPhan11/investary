@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnDestroy, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, LOCALE_ID, OnDestroy, computed, effect, inject, input, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -7,6 +7,8 @@ import { forkJoin } from 'rxjs';
 import { DocumentApiService } from '../../core/api/document-api.service';
 import { EmailApiService } from '../../core/api/email-api.service';
 import { errorMessage } from '../../core/api/error-message';
+import { toLanguage } from '../../core/i18n/language';
+import { hiddenResearchItemCount, localizeResearchItems } from '../../core/i18n/research-language';
 import {
   EmailDetail as EmailDetailModel,
   LinkedDocument,
@@ -26,11 +28,11 @@ const POLL_INTERVAL_MS = 2000;
 const HIDDEN_BY_DEFAULT = new Set(['NAVIGATION', 'PROMOTION']);
 
 export const ITEM_TYPE_LABELS: Record<ResearchItemType, string> = {
-  MARKET_UPDATE: 'Market update',
-  MACRO_UPDATE: 'Macro update',
-  INDUSTRY_UPDATE: 'Industry update',
-  COMPANY_NEWS: 'Company news',
-  STOCK_RECOMMENDATION: 'Stock recommendation (source)',
+  MARKET_UPDATE: $localize`:@@researchItemType.MARKET_UPDATE:Market update`,
+  MACRO_UPDATE: $localize`:@@researchItemType.MACRO_UPDATE:Macro update`,
+  INDUSTRY_UPDATE: $localize`:@@researchItemType.INDUSTRY_UPDATE:Industry update`,
+  COMPANY_NEWS: $localize`:@@researchItemType.COMPANY_NEWS:Company news`,
+  STOCK_RECOMMENDATION: $localize`:@@researchItemType.STOCK_RECOMMENDATION:Stock recommendation (source)`,
 };
 
 @Component({
@@ -57,6 +59,12 @@ export class EmailDetail implements OnDestroy {
   protected readonly notice = signal<string | null>(null);
   protected readonly tab = signal<'text' | 'html'>('text');
   protected readonly showAllLinks = signal(false);
+  protected readonly showAllItems = signal(false);
+  /** Ids of items whose original text is shown instead of the source-provided translation. */
+  protected readonly originalShown = signal<Set<string>>(new Set());
+  protected readonly language = toLanguage(inject(LOCALE_ID));
+  protected readonly sourceLabel = $localize`:@@emails.detail.items.theSource:The source`;
+  protected readonly noTextLabel = $localize`:@@emails.detail.content.noText:(no readable text)`;
   protected readonly requesting = signal<Set<string>>(new Set());
 
   protected readonly visibleLinks = computed(() =>
@@ -68,6 +76,8 @@ export class EmailDetail implements OnDestroy {
     this.sanitizer.bypassSecurityTrustResourceUrl(this.api.htmlUrl(this.id())),
   );
   protected readonly itemTypeLabels = ITEM_TYPE_LABELS;
+  protected readonly visibleItems = computed(() => localizeResearchItems(this.items(), this.language, this.showAllItems()));
+  protected readonly hiddenItemCount = computed(() => hiddenResearchItemCount(this.items(), this.language));
 
   constructor() {
     effect(() => this.load(this.id()));
@@ -95,7 +105,7 @@ export class EmailDetail implements OnDestroy {
         this.schedulePoll();
       },
       error: (err) => {
-        this.error.set(errorMessage(err, 'Could not load the email.'));
+        this.error.set(errorMessage(err, $localize`:@@emails.detail.loadError:Could not load the email.`));
         this.loading.set(false);
       },
     });
@@ -112,7 +122,7 @@ export class EmailDetail implements OnDestroy {
       },
       error: (err) => {
         this.setRequesting(link.id, false);
-        this.notice.set(errorMessage(err, 'The download could not be started.'));
+        this.notice.set(errorMessage(err, $localize`:@@emails.detail.downloadError:The download could not be started.`));
       },
     });
   }
@@ -131,12 +141,13 @@ export class EmailDetail implements OnDestroy {
 
   protected deleteEmail(): void {
     const email = this.email();
-    if (!email || !confirm(`Delete "${email.subject || 'this email'}"? Downloaded reports stay in the document library.`)) {
+    const subject = email?.subject || $localize`:@@emails.detail.thisEmail:this email`;
+    if (!email || !confirm($localize`:@@emails.detail.confirmDelete:Delete "${subject}:subject:"? Downloaded reports stay in the document library.`)) {
       return;
     }
     this.api.delete(email.id).subscribe({
       next: () => this.router.navigate(['/emails']),
-      error: (err) => this.error.set(errorMessage(err, 'Could not delete the email.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@emails.detail.deleteError:Could not delete the email.`)),
     });
   }
 
@@ -150,6 +161,20 @@ export class EmailDetail implements OnDestroy {
     return translations
       ? Object.entries(translations).map(([language, t]) => ({ language, recommendation: t.sourceRecommendation ?? null }))
       : [];
+  }
+
+  protected showsOriginal(itemId: string): boolean {
+    return this.originalShown().has(itemId);
+  }
+
+  protected toggleOriginal(itemId: string): void {
+    this.originalShown.update((current) => {
+      const next = new Set(current);
+      if (!next.delete(itemId)) {
+        next.add(itemId);
+      }
+      return next;
+    });
   }
 
   /** While any download is queued or running, refresh links and documents every few seconds. */

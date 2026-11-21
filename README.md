@@ -117,7 +117,7 @@ $env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.10.7-hotspot'; cd b
 
 `spring-boot:run` activates the **`dev`** profile, which:
 - reads `POSTGRES_*` from `infrastructure/.env`
-- allows CORS from `http://localhost:4200`
+- allows CORS from `http://localhost:4200` and `http://localhost:4201`
 - logs in plain text
 
 Flyway migrates the schema on startup. An existing Phase 1 database is upgraded in place (V1 → V2).
@@ -127,10 +127,30 @@ Flyway migrates the schema on startup. An existing Phase 1 database is upgraded 
 ```bash
 cd frontend
 npm install
-npm start
+npm start            # Vietnamese UI on http://localhost:4200 (default)
+npm run start:en     # English UI on http://localhost:4201 (optional, in a second terminal)
 ```
 
 The Angular dev server proxies `/api` to `http://localhost:8080` (`frontend/proxy.conf.json`).
+
+#### Languages (Vietnamese / English)
+
+The UI is translated at build time with `@angular/localize` (ADR 0014). English is the source language in
+the code; Vietnamese comes from `frontend/src/locale/messages.vi.xlf` and is the default.
+
+- `ng serve` serves one language at a time, so development runs two servers: Vietnamese on 4200 and English
+  on 4201. The **VI | EN** switch in the header opens the same page on the other server (it reloads the page).
+- `npm run build` builds both languages: `dist/investary-frontend/browser/vi/` and `.../en/`, each with its own
+  base href (`/vi/`, `/en/`). There the switch links between `/vi/…` and `/en/…`.
+- Dates and numbers follow the language (`20/11/2026`, `1.234,5` in Vietnamese).
+- Only the interface is translated. Research content (email text, PDFs, research items, AI answers, briefs,
+  backend messages) stays in its source language. When a brokerage email carries the same research in several
+  languages (TCBS: Vietnamese and English), the email page shows the items in the UI language and offers
+  "Show all languages"; a translation published by the source (for example `structuredData.translations.en`) is
+  shown labelled "Source-provided translation". Investary never machine-translates research.
+- Adding UI text: give it a custom id (`i18n="@@area.key"` in templates, `` $localize`:@@area.key:Text` `` in
+  TypeScript), run `npm run extract-i18n`, and add the Vietnamese `<target>` to `messages.vi.xlf`. The `vi` build
+  fails on a missing translation.
 
 ### Running from IntelliJ IDEA
 
@@ -141,12 +161,13 @@ Debug and Compound configurations.
 | Configuration | What it does |
 |---------------|--------------|
 | **Investary (all) - dev up** | Starts *Backend (dev)* (and Postgres before it) and *Frontend (npm start)* together |
-| **Investary (all) - dev down** | `infrastructure/stop-dev.ps1`: stops the backend (java on 8080), the frontend (node on 4200) and Postgres (`docker compose stop`; data is kept) |
+| **Investary (all) - dev down** | `infrastructure/stop-dev.ps1`: stops the backend (java on 8080), the frontend (node on 4200 and 4201) and Postgres (`docker compose stop`; data is kept) |
 | Postgres (docker compose) | `infrastructure/start-postgres.ps1` → `docker compose -f infrastructure/docker-compose.yml up -d --wait` (runs automatically before the backend) |
 | Backend (dev) | `spring-boot:run` with the `dev` profile, through the Maven wrapper |
 | Backend (debug) | Same as above, with the debug agent listening on `localhost:5005` |
 | Attach backend debugger (5005) | Remote JVM Debug; start it after *Backend (debug)* is up |
-| Frontend (npm start) | Angular dev server on http://localhost:4200 |
+| Frontend (npm start) | Angular dev server on http://localhost:4200 (Vietnamese) |
+| Frontend EN (npm run start:en) | Angular dev server on http://localhost:4201 (English) |
 | Backend tests (verify) | `mvnw verify` (needs Docker for the Testcontainers tests) |
 | Frontend tests | `npm test -- --watch=false` |
 | Harness check | `node scripts/check-harness.mjs` (see "Working with AI coding agents") |
@@ -194,7 +215,7 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_DOWNLOAD_MAX_SIZE` | `50MB` | Largest downloaded report |
 | `INVESTARY_DOWNLOAD_TEMP_DIR` | `~/.investary/tmp` | Partial downloads before validation |
 | `INVESTARY_DOWNLOAD_WORKER_ENABLED` | `true` | Run the background download worker |
-| `INVESTARY_CORS_ALLOWED_ORIGINS` | none (dev: `http://localhost:4200`) | Comma-separated browser origins |
+| `INVESTARY_CORS_ALLOWED_ORIGINS` | none (dev: `http://localhost:4200,http://localhost:4201`) | Comma-separated browser origins |
 | `INVESTARY_LOG_FORMAT` | `ecs` (dev: plain text) | Structured console logging format |
 | `INVESTARY_AI_EMBEDDING_PROVIDER` / `INVESTARY_AI_CHAT_PROVIDER` | `none` | `ollama` to enable the knowledge base / assistant |
 | `INVESTARY_OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama endpoint |

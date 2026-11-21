@@ -3,59 +3,75 @@
 }
 
 <section class="card">
-  <h2 class="card__title">Brokerage sources</h2>
-  <p class="small muted">
+  <h2 class="card__title" i18n="@@sourceRules.brokerageSources">Brokerage sources</h2>
+  <p class="small muted" i18n="@@sourceRules.intro">
     A message is imported only if the address in its <em>From</em> header (never the display name) matches an enabled
     source. Domains include their sub-domains. Brokerage ratings in imported emails are the brokerage's statements, not
     Investary advice.
   </p>
 
   @if (loading()) {
-    <p class="muted" role="status">Loading sources…</p>
+    <p class="muted" role="status" i18n="@@sourceRules.loadingSources">Loading sources…</p>
   } @else if (rules().length === 0) {
-    <app-empty-state title="No sources yet">
-      Add a brokerage, e.g. TCBS with domain <code>tcbs.com.vn</code>. Nothing is imported until a source exists.
+    <app-empty-state title="No sources yet" i18n-title="@@sourceRules.noSourcesYet">
+      <ng-container i18n="@@sourceRules.empty">Add a brokerage, e.g. TCBS with domain <code>tcbs.com.vn</code>. Nothing is imported until a source exists.</ng-container>
     </app-empty-state>
   } @else {
     <div class="table-wrap">
       <table class="table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Senders</th>
-            <th>Subject filter</th>
-            <th>Options</th>
+            <th i18n="@@sourceRules.name">Name</th>
+            <th i18n="@@sourceRules.senders">Senders</th>
+            <th i18n="@@sourceRules.subjectFilter">Subject filter</th>
+            <th i18n="@@sourceRules.options">Options</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           @for (rule of rules(); track rule.id) {
             <tr [attr.data-rule]="rule.name">
-              <td data-label="Name">{{ rule.name }}</td>
-              <td class="small" data-label="Senders">{{ senders(rule) }}</td>
-              <td class="small" data-label="Subject filter">
+              <td data-label="Name" i18n-data-label="@@sourceRules.name">{{ rule.name }}</td>
+              <td class="small" data-label="Senders" i18n-data-label="@@sourceRules.senders">{{ senders(rule) }}</td>
+              <td class="small" data-label="Subject filter" i18n-data-label="@@sourceRules.subjectFilter">
                 {{ rule.subjectKeywords.join(', ') || (rule.gmailQuery ? 'Gmail search: ' + rule.gmailQuery : 'Any subject') }}
               </td>
-              <td data-label="Options">
+              <td data-label="Options" i18n-data-label="@@sourceRules.options">
                 <span class="badge" [class.badge--success]="rule.enabled" [class.badge--muted]="!rule.enabled">
-                  {{ rule.enabled ? 'Enabled' : 'Disabled' }}
+                  @if (rule.enabled) {
+                    <ng-container i18n="@@common.enabled">Enabled</ng-container>
+                  } @else {
+                    <ng-container i18n="@@common.disabled">Disabled</ng-container>
+                  }
                 </span>
                 <span class="badge" [class.badge--info]="rule.autoImport" [class.badge--warning]="!rule.autoImport">
-                  {{ rule.autoImport ? 'Auto import' : 'Record only' }}
+                  @if (rule.autoImport) {
+                    <ng-container i18n="@@sourceRules.autoImport">Auto import</ng-container>
+                  } @else {
+                    <ng-container i18n="@@sourceRules.recordOnly">Record only</ng-container>
+                  }
                 </span>
                 @if (rule.autoPdfDownload) {
-                  <span class="badge badge--info">Auto PDF download</span>
+                  <span class="badge badge--info" i18n="@@sourceRules.autoPdfDownload">Auto PDF download</span>
                 }
                 @for (w of rule.warnings; track w) {
-                  <span class="badge badge--warning" [title]="warningText[w] ?? w">⚠ {{ w === 'PUBLIC_MAIL_DOMAIN' ? 'Public mailbox' : w === 'MANY_DOMAINS' ? 'Many domains' : 'No subject filter' }}</span>
+                  <span class="badge badge--warning" [title]="warningText[w] ?? w">⚠ @switch (w) {
+                    @case ('PUBLIC_MAIL_DOMAIN') { <ng-container i18n="@@sourceRules.publicMailbox">Public mailbox</ng-container> }
+                    @case ('MANY_DOMAINS') { <ng-container i18n="@@sourceRules.manyDomains">Many domains</ng-container> }
+                    @default { <ng-container i18n="@@sourceRules.noSubjectFilter">No subject filter</ng-container> }
+                  }</span>
                 }
               </td>
               <td class="actions-col">
                 <button type="button" class="btn btn--ghost btn--small" (click)="toggleEnabled(rule)">
-                  {{ rule.enabled ? 'Disable' : 'Enable' }}
+                  @if (rule.enabled) {
+                    <ng-container i18n="@@sourceRules.disable">Disable</ng-container>
+                  } @else {
+                    <ng-container i18n="@@sourceRules.enable">Enable</ng-container>
+                  }
                 </button>
-                <button type="button" class="btn btn--ghost btn--small" (click)="edit(rule)">Edit</button>
-                <button type="button" class="btn btn--danger btn--small" (click)="remove(rule)">Delete</button>
+                <button type="button" class="btn btn--ghost btn--small" (click)="edit(rule)" i18n="@@sourceRules.edit">Edit</button>
+                <button type="button" class="btn btn--danger btn--small" (click)="remove(rule)" i18n="@@sourceRules.delete">Delete</button>
               </td>
             </tr>
           }
@@ -67,37 +83,37 @@
 
 <section class="card">
   <form class="form-grid" (ngSubmit)="save()" novalidate>
-    <h3 class="card__title field--wide">{{ editingId() ? 'Edit source' : 'Add source' }}</h3>
+    <h3 class="card__title field--wide">@if (editingId()) {<ng-container i18n="@@sourceRules.editSource">Edit source</ng-container>} @else {<ng-container i18n="@@sourceRules.addSource">Add source</ng-container>}</h3>
     <label class="field">
-      <span class="field__label">Name</span>
+      <span class="field__label" i18n="@@sourceRules.name">Name</span>
       <input class="input" name="name" maxlength="100" [(ngModel)]="draft.name" placeholder="TCBS" />
       @if (errors()['name']; as e) {
         <span class="field__error">{{ e }}</span>
       }
     </label>
     <label class="field">
-      <span class="field__label">Gmail search (optional)</span>
+      <span class="field__label" i18n="@@sourceRules.gmailSearchOptional">Gmail search (optional)</span>
       <input class="input" name="gmailQuery" maxlength="500" [(ngModel)]="draft.gmailQuery" placeholder="-category:promotions" />
       @if (errors()['gmailQuery']; as e) {
         <span class="field__error">{{ e }}</span>
       }
     </label>
     <label class="field">
-      <span class="field__label">Sender addresses (one per line)</span>
+      <span class="field__label" i18n="@@sourceRules.senderAddressesOnePer">Sender addresses (one per line)</span>
       <textarea class="input" name="senderAddresses" rows="3" [(ngModel)]="draft.senderAddresses" placeholder="research@tcbs.com.vn"></textarea>
       @if (errors()['senderAddresses']; as e) {
         <span class="field__error">{{ e }}</span>
       }
     </label>
     <label class="field">
-      <span class="field__label">Sender domains (one per line)</span>
+      <span class="field__label" i18n="@@sourceRules.senderDomainsOnePer">Sender domains (one per line)</span>
       <textarea class="input" name="senderDomains" rows="3" [(ngModel)]="draft.senderDomains" placeholder="tcbs.com.vn"></textarea>
       @if (errors()['senderDomains']; as e) {
         <span class="field__error">{{ e }}</span>
       }
     </label>
     <label class="field field--wide">
-      <span class="field__label">Subject keywords (optional, any of them)</span>
+      <span class="field__label" i18n="@@sourceRules.subjectKeywordsOptionalAny">Subject keywords (optional, any of them)</span>
       <textarea class="input" name="subjectKeywords" rows="2" [(ngModel)]="draft.subjectKeywords" placeholder="Bản tin"></textarea>
       @if (errors()['subjectKeywords']; as e) {
         <span class="field__error">{{ e }}</span>
@@ -105,29 +121,33 @@
     </label>
     @if (publicDomains().length > 0 || broadDomains()) {
       <div class="field field--wide broad-warning" role="alert" data-testid="broad-warning">
-        <p>
+        <p i18n="@@sourceRules.broadWarning">
           <strong>Broad rule:</strong> {{ (broadDomains() ?? publicDomains()).join(', ') }} is a public mailbox service. The rule
           would import mail from anyone using it, not only the brokerage. Prefer the brokerage's full sender address.
         </p>
         <label class="small">
-          <input type="checkbox" name="acknowledged" [(ngModel)]="acknowledged" /> I understand; import from this domain anyway
+          <input type="checkbox" name="acknowledged" [(ngModel)]="acknowledged" /> <ng-container i18n="@@sourceRules.acknowledge">I understand; import from this domain anyway</ng-container>
         </label>
       </div>
     }
     <div class="field field--wide checkbox-row">
-      <label class="small"><input type="checkbox" name="enabled" [(ngModel)]="draft.enabled" /> Enabled</label>
-      <label class="small"><input type="checkbox" name="autoImport" [(ngModel)]="draft.autoImport" /> Import automatically</label>
+      <label class="small"><input type="checkbox" name="enabled" [(ngModel)]="draft.enabled" /> <ng-container i18n="@@common.enabled">Enabled</ng-container></label>
+      <label class="small"><input type="checkbox" name="autoImport" [(ngModel)]="draft.autoImport" /> <ng-container i18n="@@sourceRules.importAutomatically">Import automatically</ng-container></label>
       <label class="small">
         <input type="checkbox" name="autoPdfDownload" [checked]="draft.autoPdfDownload" (change)="toggleAutoPdf($event)" />
-        Download linked PDF reports automatically
+        <ng-container i18n="@@sourceRules.downloadAutomatically">Download linked PDF reports automatically</ng-container>
       </label>
     </div>
     <div class="actions field--wide">
       <button type="submit" class="btn btn--primary" [disabled]="saving()">
-        {{ editingId() ? 'Save source' : 'Add source' }}
+        @if (editingId()) {
+          <ng-container i18n="@@sourceRules.saveSource">Save source</ng-container>
+        } @else {
+          <ng-container i18n="@@sourceRules.addSource">Add source</ng-container>
+        }
       </button>
       @if (editingId()) {
-        <button type="button" class="btn btn--ghost" (click)="cancel()">Cancel</button>
+        <button type="button" class="btn btn--ghost" (click)="cancel()" i18n="@@sourceRules.cancel">Cancel</button>
       }
     </div>
   </form>

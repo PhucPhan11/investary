@@ -29,7 +29,8 @@ A personal, local, single-user investment research assistant. It has three parts
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
-- Frontend: Angular 22 (standalone, signals, zoneless, Vitest, SCSS, no UI library), in `frontend/`.
+- Frontend: Angular 22 (standalone, signals, zoneless, Vitest, SCSS, no UI library), in `frontend/`. UI in Vietnamese
+  (default) and English via build-time Angular i18n (the @angular/localize package, ADR 0014).
 - Infra: `infrastructure/docker-compose.yml` (PostgreSQL 17 + pgvector), config from `infrastructure/.env`.
 - AI: Spring AI 2.0 model interfaces only (`EmbeddingModel`, `ChatModel`); provider by config, default
   `none` (local default: Ollama). No vector-store starter; the schema is ours (`V3`).
@@ -122,7 +123,8 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 | Start Postgres | `docker compose -f infrastructure/docker-compose.yml up -d --wait` |
 | Backend run (dev profile) | `cd backend && ./mvnw spring-boot:run` |
 | Backend tests | `cd backend && ./mvnw verify` |
-| Frontend run | `cd frontend && npm start` |
+| Frontend run | `cd frontend && npm start` (Vietnamese, 4200); `npm run start:en` (English, 4201) |
+| Frontend i18n extract | `cd frontend && npm run extract-i18n` (then add targets to `frontend/src/locale/messages.vi.xlf`) |
 | Frontend tests | `cd frontend && npm test -- --watch=false` |
 | Frontend build | `cd frontend && npm run build` |
 | Harness checks | `node scripts/check-harness.mjs` |
@@ -158,6 +160,8 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
     different models or dimensions.
   - Tests must not call a real AI provider: use `FakeAiConfiguration` + `classpath:fake-ai.properties`.
   - Never present a brokerage rating as Investary's recommendation.
+  - Never machine-translate research content. The UI may show a translation only when the source published it
+    (`structuredData.translations`), labelled as such (ADR 0014).
 - **Portfolios:**
   - Holdings are computed from transactions by `HoldingCalculator` (weighted-average cost, BigDecimal
     `DECIMAL128`, chronological replay). Never store derived holdings; round only for display (`Money`).
@@ -241,3 +245,4 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - The `.gitignore` storage rule hid the Java `storage` packages → `docs/failures/0010-gitignore-storage-hides-java-packages.md`
 - Shell heredocs dropping Java regex escapes → `docs/failures/0011-shell-heredoc-drops-java-escapes.md`
 - Angular specs that mutate plain objects do not re-render → `docs/failures/0012-angular-spec-plain-object-mutation.md`
+- Translated `ng-container` messages losing the space between them → `docs/failures/0013-angular-i18n-lost-space.md`

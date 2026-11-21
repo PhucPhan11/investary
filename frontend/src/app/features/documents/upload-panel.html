@@ -1,7 +1,7 @@
 <form class="card upload" [formGroup]="form" (ngSubmit)="submit()" novalidate>
   <div class="card__header">
-    <h2 class="card__title">Upload research report</h2>
-    <span class="muted">PDF only · max {{ maxUploadBytes | fileSize }}</span>
+    <h2 class="card__title" i18n="@@uploadPanel.title">Upload research report</h2>
+    <span class="muted" i18n="@@uploadPanel.limit">PDF only · max {{ maxUploadBytes | fileSize }}</span>
   </div>
 
   <label
@@ -23,33 +23,33 @@
       <span class="dropzone__file">{{ selected.name }}</span>
       <span class="muted">{{ selected.size | fileSize }}</span>
     } @else {
-      <span class="dropzone__hint"><strong>Choose a PDF</strong> or drag it here</span>
+      <span class="dropzone__hint" i18n="@@uploadPanel.choose"><strong>Choose a PDF</strong> or drag it here</span>
     }
   </label>
 
   <div class="form-grid">
     <label class="field">
-      <span class="field__label">Brokerage company</span>
-      <input class="input" formControlName="brokerageCompany" placeholder="e.g. SSI Research" maxlength="200" />
+      <span class="field__label" i18n="@@uploadPanel.brokerage">Brokerage company</span>
+      <input class="input" formControlName="brokerageCompany" placeholder="e.g. SSI Research" i18n-placeholder="@@uploadPanel.brokeragePlaceholder" maxlength="200" />
     </label>
     <label class="field">
-      <span class="field__label">Report type</span>
+      <span class="field__label" i18n="@@documents.reportType">Report type</span>
       <select class="input" formControlName="reportType">
-        <option value="">Not specified</option>
+        <option value="" i18n="@@common.notSpecified">Not specified</option>
         @for (type of reportTypes; track type.value) {
           <option [value]="type.value">{{ type.label }}</option>
         }
       </select>
     </label>
     <label class="field">
-      <span class="field__label">Ticker</span>
-      <input class="input" formControlName="ticker" placeholder="e.g. VNM" maxlength="15" />
+      <span class="field__label" i18n="@@common.ticker">Ticker</span>
+      <input class="input" formControlName="ticker" placeholder="e.g. VNM" i18n-placeholder="@@uploadPanel.tickerPlaceholder" maxlength="15" />
       @if (form.controls.ticker.invalid && form.controls.ticker.touched) {
-        <span class="field__error">Use 1–15 letters, digits, "." or "-".</span>
+        <span class="field__error" i18n="@@uploadPanel.tickerError">Use 1–15 letters, digits, "." or "-".</span>
       }
     </label>
     <label class="field">
-      <span class="field__label">Publication date</span>
+      <span class="field__label" i18n="@@uploadPanel.publishedOn">Publication date</span>
       <input class="input" type="date" formControlName="publishedOn" />
     </label>
   </div>
@@ -66,10 +66,14 @@
 
   <div class="actions">
     @if (file()) {
-      <button type="button" class="btn btn--ghost" (click)="clearFile()" [disabled]="progress() !== null">Clear</button>
+      <button type="button" class="btn btn--ghost" (click)="clearFile()" [disabled]="progress() !== null" i18n="@@common.clear">Clear</button>
     }
     <button type="submit" class="btn btn--primary" [disabled]="!file() || progress() !== null">
-      {{ progress() !== null ? 'Uploading… ' + progress() + '%' : 'Upload' }}
+      @if (progress() !== null) {
+        <ng-container i18n="@@uploadPanel.uploading">Uploading… {{ progress() }}%</ng-container>
+      } @else {
+        <ng-container i18n="@@uploadPanel.upload">Upload</ng-container>
+      }
     </button>
   </div>
 </form>

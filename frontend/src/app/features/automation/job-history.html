@@ -7,12 +7,12 @@
 
 <section class="card">
   <div class="card__header">
-    <h2 class="card__title">Job history</h2>
-    <div class="tabs" role="group" aria-label="Job kind">
-      <button type="button" class="tabs__tab" [class.tabs__tab--active]="kind() === 'research'" (click)="switchKind('research')">
+    <h2 class="card__title" i18n="@@jobHistory.jobHistory">Job history</h2>
+    <div class="tabs" role="group" aria-label="Job kind" i18n-aria-label="@@jobHistory.jobKind">
+      <button type="button" class="tabs__tab" [class.tabs__tab--active]="kind() === 'research'" (click)="switchKind('research')" i18n="@@jobHistory.researchProcessing">
         Research processing
       </button>
-      <button type="button" class="tabs__tab" [class.tabs__tab--active]="kind() === 'brief'" (click)="switchKind('brief')">
+      <button type="button" class="tabs__tab" [class.tabs__tab--active]="kind() === 'brief'" (click)="switchKind('brief')" i18n="@@jobHistory.briefGeneration">
         Brief generation
       </button>
     </div>
@@ -20,9 +20,9 @@
 
   <form class="filters" (ngSubmit)="applyFilters()">
     <label class="field">
-      <span class="field__label">Status</span>
+      <span class="field__label" i18n="@@jobHistory.status">Status</span>
       <select class="input" name="status" [(ngModel)]="filters.status">
-        <option value="">Any</option>
+        <option value="" i18n="@@jobHistory.any">Any</option>
         @for (s of statuses; track s) {
           <option [value]="s">{{ s }}</option>
         }
@@ -30,26 +30,26 @@
     </label>
     @if (kind() === 'research') {
       <label class="field">
-        <span class="field__label">Type</span>
+        <span class="field__label" i18n="@@jobHistory.type">Type</span>
         <select class="input" name="type" [(ngModel)]="filters.type">
-          <option value="">Any</option>
+          <option value="" i18n="@@jobHistory.any">Any</option>
           @for (t of types; track t) {
             <option [value]="t">{{ typeLabels[t] }}</option>
           }
         </select>
       </label>
       <label class="field">
-        <span class="field__label">Source</span>
+        <span class="field__label" i18n="@@jobHistory.source">Source</span>
         <select class="input" name="sourceType" [(ngModel)]="filters.sourceType">
-          <option value="">Emails and documents</option>
-          <option value="EMAIL">Emails</option>
-          <option value="DOCUMENT">Library documents</option>
+          <option value="" i18n="@@jobHistory.emailsDocuments">Emails and documents</option>
+          <option value="EMAIL" i18n="@@jobHistory.emails">Emails</option>
+          <option value="DOCUMENT" i18n="@@jobHistory.libraryDocuments">Library documents</option>
         </select>
       </label>
       <label class="field">
-        <span class="field__label">Gmail source rule</span>
+        <span class="field__label" i18n="@@jobHistory.gmailSourceRule">Gmail source rule</span>
         <select class="input" name="ruleId" [(ngModel)]="filters.ruleId">
-          <option value="">Any</option>
+          <option value="" i18n="@@jobHistory.any">Any</option>
           @for (r of rules(); track r.id) {
             <option [value]="r.id">{{ r.name }}</option>
           }
@@ -57,63 +57,67 @@
       </label>
     }
     <label class="field">
-      <span class="field__label">From</span>
+      <span class="field__label" i18n="@@jobHistory.from">From</span>
       <input class="input" type="date" name="from" [(ngModel)]="filters.from" />
     </label>
     <label class="field">
-      <span class="field__label">To</span>
+      <span class="field__label" i18n="@@jobHistory.text">To</span>
       <input class="input" type="date" name="to" [(ngModel)]="filters.to" />
     </label>
     <div class="actions">
-      <button type="submit" class="btn btn--primary btn--small">Apply</button>
-      <button type="button" class="btn btn--ghost btn--small" (click)="clearFilters()">Clear</button>
+      <button type="submit" class="btn btn--primary btn--small" i18n="@@jobHistory.apply">Apply</button>
+      <button type="button" class="btn btn--ghost btn--small" (click)="clearFilters()" i18n="@@jobHistory.clear">Clear</button>
     </div>
   </form>
-  <p class="small muted">Dates are creation dates (Asia/Ho_Chi_Minh for research jobs, the brief time zone for brief jobs). {{ total() }} job(s).</p>
+  <p class="small muted" i18n="@@jobHistory.datesAreCreationDates">Dates are creation dates (Asia/Ho_Chi_Minh for research jobs, the brief time zone for brief jobs). {{ total() }} job(s).</p>
 
   <div class="table-wrap" [class.table-wrap--loading]="loading()">
     @if (kind() === 'research') {
       @if (!loading() && jobs().length === 0) {
-        <app-empty-state title="No jobs">No research-processing job matches these filters.</app-empty-state>
+        <app-empty-state title="No jobs" i18n-title="@@jobHistory.noJobs">No research-processing job matches these filters.</app-empty-state>
       } @else {
         <table class="table">
           <thead>
             <tr>
-              <th>Job</th>
-              <th>Type</th>
-              <th>Source</th>
-              <th>Started</th>
-              <th>Completed</th>
-              <th>Status</th>
-              <th class="num">Attempts</th>
-              <th>Error</th>
+              <th i18n="@@jobHistory.job">Job</th>
+              <th i18n="@@jobHistory.type">Type</th>
+              <th i18n="@@jobHistory.source">Source</th>
+              <th i18n="@@jobHistory.started">Started</th>
+              <th i18n="@@jobHistory.completed">Completed</th>
+              <th i18n="@@jobHistory.status">Status</th>
+              <th class="num" i18n="@@jobHistory.attempts">Attempts</th>
+              <th i18n="@@jobHistory.error">Error</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             @for (job of jobs(); track job.id) {
               <tr [attr.data-job]="job.id">
-                <td data-label="Job"><a class="link mono small" [routerLink]="['/automation/jobs', job.id]">{{ job.id.slice(0, 8) }}</a></td>
-                <td data-label="Type">{{ typeLabels[job.type] }}</td>
-                <td data-label="Source" class="small">
+                <td data-label="Job" i18n-data-label="@@jobHistory.job"><a class="link mono small" [routerLink]="['/automation/jobs', job.id]">{{ job.id.slice(0, 8) }}</a></td>
+                <td data-label="Type" i18n-data-label="@@jobHistory.type">{{ typeLabels[job.type] }}</td>
+                <td data-label="Source" i18n-data-label="@@jobHistory.source" class="small">
                   @if (sourceLink(job); as link) {
                     <a class="link" [routerLink]="link">{{ job.sourceTitle }}</a>
                   } @else {
-                    <span class="muted">(deleted source)</span>
+                    <span class="muted" i18n="@@jobHistory.deletedSource">(deleted source)</span>
                   }
                 </td>
-                <td data-label="Started">{{ job.startedAt ? (job.startedAt | date: 'short') : '—' }}</td>
-                <td data-label="Completed">{{ job.completedAt ? (job.completedAt | date: 'short') : '—' }}</td>
-                <td data-label="Status"><app-status-badge [value]="job.status" /></td>
-                <td class="num" data-label="Attempts">{{ job.attempts }}/{{ job.maxAttempts }}</td>
-                <td class="small" data-label="Error">{{ job.errorCode ? job.errorCode + ': ' + (job.errorSummary ?? '') : '' }}</td>
+                <td data-label="Started" i18n-data-label="@@jobHistory.started">{{ job.startedAt ? (job.startedAt | date: 'short') : '—' }}</td>
+                <td data-label="Completed" i18n-data-label="@@jobHistory.completed">{{ job.completedAt ? (job.completedAt | date: 'short') : '—' }}</td>
+                <td data-label="Status" i18n-data-label="@@jobHistory.status"><app-status-badge [value]="job.status" /></td>
+                <td class="num" data-label="Attempts" i18n-data-label="@@jobHistory.attempts">{{ job.attempts }}/{{ job.maxAttempts }}</td>
+                <td class="small" data-label="Error" i18n-data-label="@@jobHistory.error">{{ job.errorCode ? job.errorCode + ': ' + (job.errorSummary ?? '') : '' }}</td>
                 <td class="actions-col">
                   @if (job.retryable) {
                     <button type="button" class="btn btn--ghost btn--small" [disabled]="retrying() === job.id" (click)="retry(job)">
-                      {{ retrying() === job.id ? 'Retrying…' : 'Retry' }}
+                      @if (retrying() === job.id) {
+                        <ng-container i18n="@@common.retrying">Retrying…</ng-container>
+                      } @else {
+                        <ng-container i18n="@@common.retry">Retry</ng-container>
+                      }
                     </button>
                   } @else if (job.status === 'FAILED' && job.retryBlockedReason) {
-                    <span class="small muted" [title]="blockedText[job.retryBlockedReason] ?? ''">No retry</span>
+                    <span class="small muted" [title]="blockedText[job.retryBlockedReason] ?? ''" i18n="@@jobHistory.noRetry">No retry</span>
                   }
                 </td>
               </tr>
@@ -123,40 +127,40 @@
       }
     } @else {
       @if (!loading() && briefJobs().length === 0) {
-        <app-empty-state title="No brief jobs">No brief-generation job matches these filters.</app-empty-state>
+        <app-empty-state title="No brief jobs" i18n-title="@@jobHistory.noBriefJobs">No brief-generation job matches these filters.</app-empty-state>
       } @else {
         <table class="table">
           <thead>
             <tr>
-              <th>Business date</th>
-              <th>Trigger</th>
-              <th>Created</th>
-              <th>Completed</th>
-              <th>Status</th>
-              <th class="num">Attempts</th>
-              <th>Error</th>
+              <th i18n="@@jobHistory.businessDate">Business date</th>
+              <th i18n="@@jobHistory.trigger">Trigger</th>
+              <th i18n="@@jobHistory.created">Created</th>
+              <th i18n="@@jobHistory.completed">Completed</th>
+              <th i18n="@@jobHistory.status">Status</th>
+              <th class="num" i18n="@@jobHistory.attempts">Attempts</th>
+              <th i18n="@@jobHistory.error">Error</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             @for (job of briefJobs(); track job.id) {
               <tr [attr.data-brief-job]="job.id">
-                <td data-label="Business date">
+                <td data-label="Business date" i18n-data-label="@@jobHistory.businessDate">
                   @if (job.briefId) {
                     <a class="link" [routerLink]="['/briefs', job.briefId]">{{ job.businessDate }}</a>
                   } @else {
                     {{ job.businessDate }}
                   }
                 </td>
-                <td data-label="Trigger">{{ job.triggerType }}</td>
-                <td data-label="Created">{{ job.createdAt | date: 'short' }}</td>
-                <td data-label="Completed">{{ job.completedAt ? (job.completedAt | date: 'short') : '—' }}</td>
-                <td data-label="Status"><app-status-badge [value]="job.status" /></td>
-                <td class="num" data-label="Attempts">{{ job.attempts }}/{{ job.maxAttempts }}</td>
-                <td class="small" data-label="Error">{{ job.errorCode ? job.errorCode + ': ' + (job.errorSummary ?? '') : '' }}</td>
+                <td data-label="Trigger" i18n-data-label="@@jobHistory.trigger">{{ job.triggerType }}</td>
+                <td data-label="Created" i18n-data-label="@@jobHistory.created">{{ job.createdAt | date: 'short' }}</td>
+                <td data-label="Completed" i18n-data-label="@@jobHistory.completed">{{ job.completedAt ? (job.completedAt | date: 'short') : '—' }}</td>
+                <td data-label="Status" i18n-data-label="@@jobHistory.status"><app-status-badge [value]="job.status" /></td>
+                <td class="num" data-label="Attempts" i18n-data-label="@@jobHistory.attempts">{{ job.attempts }}/{{ job.maxAttempts }}</td>
+                <td class="small" data-label="Error" i18n-data-label="@@jobHistory.error">{{ job.errorCode ? job.errorCode + ': ' + (job.errorSummary ?? '') : '' }}</td>
                 <td class="actions-col">
                   @if (job.status === 'FAILED') {
-                    <button type="button" class="btn btn--ghost btn--small" [disabled]="retrying() === job.id" (click)="retryBrief(job)">
+                    <button type="button" class="btn btn--ghost btn--small" [disabled]="retrying() === job.id" (click)="retryBrief(job)" i18n="@@jobHistory.retry">
                       Retry
                     </button>
                   }

@@ -32,7 +32,12 @@
             ],
             "styles": [
               "src/styles.scss"
-            ]
+            ],
+            "polyfills": [
+              "@angular/localize/init"
+            ],
+            "localize": true,
+            "i18nMissingTranslation": "error"
           },
           "configurations": {
             "production": {
@@ -54,6 +59,24 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "vi": {
+              "localize": [
+                "vi"
+              ],
+              "baseHref": "/",
+              "define": {
+                "INVESTARY_ALT_LANGUAGE_URL": "\"http://localhost:4201\""
+              }
+            },
+            "en": {
+              "localize": [
+                "en"
+              ],
+              "baseHref": "/",
+              "define": {
+                "INVESTARY_ALT_LANGUAGE_URL": "\"http://localhost:4200\""
+              }
             }
           },
           "defaultConfiguration": "production"
@@ -62,10 +85,15 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "investary-frontend:build:production"
+              "buildTarget": "investary-frontend:build:production,vi"
             },
             "development": {
-              "buildTarget": "investary-frontend:build:development"
+              "buildTarget": "investary-frontend:build:development,vi",
+              "port": 4200
+            },
+            "en": {
+              "buildTarget": "investary-frontend:build:development,en",
+              "port": 4201
             }
           },
           "defaultConfiguration": "development",
@@ -75,6 +103,21 @@
         },
         "test": {
           "builder": "@angular/build:unit-test"
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n",
+          "options": {
+            "buildTarget": "investary-frontend:build:development"
+          }
+        }
+      },
+      "i18n": {
+        "sourceLocale": "en",
+        "locales": {
+          "vi": {
+            "translation": "src/locale/messages.vi.xlf",
+            "baseHref": "/vi/"
+          }
         }
       }
     }

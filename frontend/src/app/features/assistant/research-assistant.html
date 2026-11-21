@@ -1,7 +1,7 @@
 <header class="page-header">
   <div>
-    <h1 class="page-title">Research assistant</h1>
-    <p class="page-subtitle">
+    <h1 class="page-title" i18n="@@researchAssistant.researchAssistant">Research assistant</h1>
+    <p class="page-subtitle" i18n="@@researchAssistant.askAboutYourImported">
       Ask about your imported reports and emails. Answers cite their sources; brokerage recommendations are
       third-party opinions, not advice.
     </p>
@@ -14,66 +14,70 @@
 @if (status(); as s) {
   @if (!s.chat.available || !s.embedding.available) {
     <app-alert kind="info">
-      The AI provider is not configured
-      ({{ !s.embedding.available ? 'embeddings' : '' }}{{ !s.embedding.available && !s.chat.available ? ' and ' : '' }}{{ !s.chat.available ? 'chat' : '' }}).
-      Set <code>INVESTARY_AI_EMBEDDING_PROVIDER</code> and <code>INVESTARY_AI_CHAT_PROVIDER</code> as described in the README.
+      @if (!s.embedding.available && !s.chat.available) {
+        <ng-container i18n="@@researchAssistant.notConfiguredBoth">The AI provider is not configured (embeddings and chat).</ng-container>
+      } @else if (!s.embedding.available) {
+        <ng-container i18n="@@researchAssistant.notConfiguredEmbeddings">The AI provider is not configured (embeddings).</ng-container>
+      } @else {
+        <ng-container i18n="@@researchAssistant.notConfiguredChat">The AI provider is not configured (chat).</ng-container>
+      }
+      <ng-container i18n="@@researchAssistant.configureHint">Set <code>INVESTARY_AI_EMBEDDING_PROVIDER</code> and <code>INVESTARY_AI_CHAT_PROVIDER</code> as described in the README.</ng-container>
     </app-alert>
   }
   <p class="muted small kb-summary">
-    Knowledge base: {{ s.searchableSources }} searchable source{{ s.searchableSources === 1 ? '' : 's' }}
-    ({{ s.searchableChunks }} passages)
-    @if (s.sources.PENDING + s.sources.PROCESSING > 0) { · {{ s.sources.PENDING + s.sources.PROCESSING }} waiting to be indexed }
-    @if (s.sources.FAILED > 0) { · {{ s.sources.FAILED }} failed }
-    @if (s.sources.SKIPPED > 0) { · {{ s.sources.SKIPPED }} skipped }
-    @if (s.staleSources > 0) { · {{ s.staleSources }} need reindexing }
-    @if (s.untrackedSources > 0) { · {{ s.untrackedSources }} not tracked yet }
+    <ng-container i18n="@@researchAssistant.kbSummary">Knowledge base: {s.searchableSources, plural, =1 {1 searchable source} other {{{ s.searchableSources }} searchable sources}} ({{ s.searchableChunks }} passages)</ng-container>
+    @if (s.sources.PENDING + s.sources.PROCESSING > 0) { · <ng-container i18n="@@researchAssistant.kbWaiting">{{ s.sources.PENDING + s.sources.PROCESSING }} waiting to be indexed</ng-container> }
+    @if (s.sources.FAILED > 0) { · <ng-container i18n="@@researchAssistant.kbFailed">{{ s.sources.FAILED }} failed</ng-container> }
+    @if (s.sources.SKIPPED > 0) { · <ng-container i18n="@@researchAssistant.kbSkipped">{{ s.sources.SKIPPED }} skipped</ng-container> }
+    @if (s.staleSources > 0) { · <ng-container i18n="@@researchAssistant.kbStale">{{ s.staleSources }} need reindexing</ng-container> }
+    @if (s.untrackedSources > 0) { · <ng-container i18n="@@researchAssistant.kbUntracked">{{ s.untrackedSources }} not tracked yet</ng-container> }
   </p>
 }
 
 <div class="assistant">
   <section class="assistant__chat">
     <form class="card assistant__form" (ngSubmit)="ask()">
-      <div class="mode-switch" role="radiogroup" aria-label="Assistant mode">
+      <div class="mode-switch" role="radiogroup" aria-label="Assistant mode" i18n-aria-label="@@researchAssistant.assistantMode">
         <label class="mode-switch__option">
           <input type="radio" name="mode" value="GENERAL" [checked]="mode() === 'GENERAL'" (change)="mode.set('GENERAL')" />
-          General research
+          <ng-container i18n="@@researchAssistant.modeGeneral">General research</ng-container>
         </label>
         <label class="mode-switch__option">
           <input type="radio" name="mode" value="PORTFOLIO" [checked]="mode() === 'PORTFOLIO'" (change)="mode.set('PORTFOLIO')" />
-          Portfolio-aware
+          <ng-container i18n="@@researchAssistant.modePortfolio">Portfolio-aware</ng-container>
         </label>
       </div>
       @if (mode() === 'PORTFOLIO') {
         @if (portfoliosError(); as message) {
           <app-alert kind="error">{{ message }}</app-alert>
         } @else if (portfolios().length === 0) {
-          <app-alert kind="info">Create a portfolio first (<a class="link" routerLink="/portfolios">Portfolios</a>).</app-alert>
+          <app-alert kind="info"><ng-container i18n="@@researchAssistant.createPortfolioFirst">Create a portfolio first (<a class="link" routerLink="/portfolios">Portfolios</a>).</ng-container></app-alert>
         } @else {
           <label class="field">
-            <span class="field__label">Portfolio</span>
+            <span class="field__label" i18n="@@researchAssistant.portfolio">Portfolio</span>
             <select class="input" name="portfolioId" [(ngModel)]="portfolioId">
-              <option value="">Choose a portfolio…</option>
+              <option value="" i18n="@@researchAssistant.choosePortfolio">Choose a portfolio…</option>
               @for (p of portfolios(); track p.id) {
                 <option [value]="p.id">{{ p.name }}</option>
               }
             </select>
           </label>
           @if (!portfolioId) {
-            <p class="muted small" data-testid="choose-portfolio">Choose which portfolio the question is about.</p>
+            <p class="muted small" data-testid="choose-portfolio" i18n="@@researchAssistant.chooseWhichPortfolioQuestion">Choose which portfolio the question is about.</p>
           }
-          <p class="muted small">
+          <p class="muted small" i18n="@@researchAssistant.usesYourProfileGoals">
             Uses your profile, goals and computed holdings with the research library. The assistant only reads your data.
           </p>
         }
       }
       <label class="field">
-        <span class="field__label">Question</span>
+        <span class="field__label" i18n="@@researchAssistant.question">Question</span>
         <textarea
           class="input assistant__question"
           name="question"
           rows="3"
           maxlength="1000"
-          placeholder="Ví dụ: Những rủi ro chính của SCS theo báo cáo gần nhất là gì?"
+          placeholder="e.g. What are the main risks for SCS according to the latest report?" i18n-placeholder="@@researchAssistant.questionPlaceholder"
           [(ngModel)]="question"
           (keydown.control.enter)="ask()"
         ></textarea>
@@ -81,9 +85,9 @@
 
       @if (mode() === 'GENERAL') {
       <fieldset class="assistant__filters">
-        <legend class="field__label">Filters (optional)</legend>
+        <legend class="field__label" i18n="@@researchAssistant.filtersOptional">Filters (optional)</legend>
         <label class="field">
-          <span class="field__label">Brokerage</span>
+          <span class="field__label" i18n="@@researchAssistant.brokerage">Brokerage</span>
           <input class="input" name="brokerage" list="brokerage-options" [(ngModel)]="filters.brokerage" />
           <datalist id="brokerage-options">
             @for (b of brokerages; track b) {
@@ -92,23 +96,23 @@
           </datalist>
         </label>
         <label class="field">
-          <span class="field__label">Ticker</span>
+          <span class="field__label" i18n="@@researchAssistant.ticker">Ticker</span>
           <input class="input" name="ticker" maxlength="10" [(ngModel)]="filters.ticker" />
         </label>
         <label class="field">
-          <span class="field__label">Source</span>
+          <span class="field__label" i18n="@@researchAssistant.source">Source</span>
           <select class="input" name="sourceType" [(ngModel)]="filters.sourceType">
-            <option value="">PDFs and emails</option>
-            <option value="DOCUMENT">PDF reports</option>
-            <option value="EMAIL">Emails</option>
+            <option value="" i18n="@@researchAssistant.pdfsEmails">PDFs and emails</option>
+            <option value="DOCUMENT" i18n="@@researchAssistant.pdfReports">PDF reports</option>
+            <option value="EMAIL" i18n="@@researchAssistant.emails">Emails</option>
           </select>
         </label>
         <label class="field">
-          <span class="field__label">From</span>
+          <span class="field__label" i18n="@@researchAssistant.from">From</span>
           <input class="input" type="date" name="from" [(ngModel)]="filters.from" />
         </label>
         <label class="field">
-          <span class="field__label">To</span>
+          <span class="field__label" i18n="@@researchAssistant.text">To</span>
           <input class="input" type="date" name="to" [(ngModel)]="filters.to" />
         </label>
       </fieldset>
@@ -116,16 +120,20 @@
 
       <div class="actions">
         <button type="submit" class="btn btn--primary" [disabled]="!canAsk()">
-          {{ asking() ? 'Asking…' : 'Ask' }}
+          @if (asking()) {
+            <ng-container i18n="@@researchAssistant.asking">Asking…</ng-container>
+          } @else {
+            <ng-container i18n="@@researchAssistant.ask">Ask</ng-container>
+          }
         </button>
-        <button type="button" class="btn btn--ghost btn--small" (click)="clearFilters()">Clear filters</button>
-        <span class="muted small">Ctrl+Enter to ask · each question is answered independently</span>
+        <button type="button" class="btn btn--ghost btn--small" (click)="clearFilters()" i18n="@@researchAssistant.clearFilters">Clear filters</button>
+        <span class="muted small" i18n="@@researchAssistant.ctrlEnterAskEach">Ctrl+Enter to ask · each question is answered independently</span>
       </div>
     </form>
 
     @if (turns().length === 0) {
       <div class="card">
-        <p class="muted">Try one of these:</p>
+        <p class="muted" i18n="@@researchAssistant.tryOneThese">Try one of these:</p>
         <ul class="assistant__examples">
           @for (example of examples; track example) {
             <li><button type="button" class="link-button" (click)="ask(example)">{{ example }}</button></li>
@@ -140,7 +148,7 @@
           <div class="turn__question">
             <strong>{{ turn.question }}</strong>
             @if (turn.portfolio; as p) {
-              <span class="muted small">Portfolio: {{ p.name }}</span>
+              <span class="muted small" i18n="@@researchAssistant.portfolio2">Portfolio: {{ p.name }}</span>
             }
             @if (hasFilters(turn.filters)) {
               <span class="muted small">{{ describeFilters(turn.filters) }}</span>
@@ -148,7 +156,7 @@
           </div>
           @switch (turn.state) {
             @case ('loading') {
-              <p class="muted" role="status">Searching sources and writing an answer…</p>
+              <p class="muted" role="status" i18n="@@researchAssistant.searchingSourcesWritingAnswer">Searching sources and writing an answer…</p>
             }
             @case ('error') {
               <app-alert kind="error">{{ turn.error }}</app-alert>
@@ -158,7 +166,7 @@
                 <div class="turn__answer">
                   @if (turn.portfolio; as p) {
                     <details class="portfolio-facts">
-                      <summary class="small">Portfolio data used (computed by Investary, not AI)</summary>
+                      <summary class="small" i18n="@@researchAssistant.portfolioDataUsedComputed">Portfolio data used (computed by Investary, not AI)</summary>
                       <pre class="portfolio-facts__text">{{ p.facts }}</pre>
                     </details>
                   }
@@ -171,7 +179,7 @@
                             type="button"
                             class="cite"
                             [class.cite--active]="selectedTurn()?.id === turn.id && highlighted() === label"
-                            [attr.aria-label]="'Show source ' + label"
+                            [attr.aria-label]="showSourceLabel(label)"
                             (click)="showSource(turn, label)"
                           >{{ label }}</button>
                         }
@@ -179,7 +187,7 @@
                     }
                   </p>
                   @if (a.coverageGaps.length) {
-                    <p class="turn__note">No indexed evidence from: {{ a.coverageGaps.join(', ') }}.</p>
+                    <p class="turn__note" i18n="@@researchAssistant.noIndexedEvidenceFrom">No indexed evidence from: {{ a.coverageGaps.join(', ') }}.</p>
                   }
                   @if (a.warnings.length) {
                     <ul class="turn__warnings">
@@ -189,7 +197,7 @@
                     </ul>
                   }
                   <p class="turn__disclaimer">
-                    @if (a.newestEvidenceDate) { Newest evidence: {{ a.newestEvidenceDate | date: 'mediumDate' }}. }
+                    @if (a.newestEvidenceDate) { <ng-container i18n="@@researchAssistant.newestEvidence">Newest evidence: {{ a.newestEvidenceDate | date: 'mediumDate' }}.</ng-container> }
                     {{ a.disclaimer }}
                   </p>
                 </div>
@@ -201,11 +209,11 @@
     </ol>
   </section>
 
-  <aside class="assistant__sources card" aria-label="Sources">
+  <aside class="assistant__sources card" aria-label="Sources" i18n-aria-label="@@researchAssistant.sources">
     <div class="card__header">
-      <h2 class="card__title">Sources</h2>
+      <h2 class="card__title" i18n="@@researchAssistant.sources">Sources</h2>
       @if (selectedTurn(); as t) {
-        <span class="muted small">{{ t.answer?.citations?.length ?? 0 }} cited</span>
+        <span class="muted small" i18n="@@researchAssistant.cited">{{ t.answer?.citations?.length ?? 0 }} cited</span>
       }
     </div>
     @if (selectedTurn(); as t) {
@@ -215,7 +223,7 @@
             <li class="source" [id]="citationAnchor(t.id, c.label)" [class.source--active]="highlighted() === c.label">
               <div class="source__head">
                 <span class="cite cite--static">{{ c.label }}</span>
-                <span class="tag tag--plain">{{ c.sourceType === 'DOCUMENT' ? 'PDF' : 'Email' }}</span>
+                <span class="tag tag--plain">@if (c.sourceType === 'DOCUMENT') {PDF} @else {<ng-container i18n="@@common.email">Email</ng-container>}</span>
                 @if (c.publisher) {
                   <span class="tag">{{ c.publisher }}</span>
                 }
@@ -223,7 +231,11 @@
               <a class="source__title link" [routerLink]="sourceLink(c)">{{ c.title }}</a>
               <p class="source__meta muted small">
                 @if (c.publishedAt) {
-                  {{ c.dateBasis === 'EMAIL_SENT' ? 'Email date' : 'Published' }} {{ c.publishedAt | date: 'mediumDate' }}
+                  @if (c.dateBasis === 'EMAIL_SENT') {
+                    <ng-container i18n="@@researchAssistant.emailDate">Email date {{ c.publishedAt | date: 'mediumDate' }}</ng-container>
+                  } @else {
+                    <ng-container i18n="@@researchAssistant.publishedDate">Published {{ c.publishedAt | date: 'mediumDate' }}</ng-container>
+                  }
                 }
                 @if (c.location) { · {{ c.location }} }
                 @if (c.sourceType === 'EMAIL' && (c.senderName || c.senderAddress)) { · {{ c.senderName || c.senderAddress }} }
@@ -233,10 +245,10 @@
           }
         </ol>
       } @else {
-        <p class="muted small">This answer cites no sources.</p>
+        <p class="muted small" i18n="@@researchAssistant.thisAnswerCitesNo">This answer cites no sources.</p>
       }
     } @else {
-      <p class="muted small">Sources supporting an answer appear here.</p>
+      <p class="muted small" i18n="@@researchAssistant.sourcesSupportingAnswerAppear">Sources supporting an answer appear here.</p>
     }
   </aside>
 </div>

@@ -62,7 +62,7 @@ export class JobDetailPage {
       },
       error: (err) => {
         this.retrying.set(false);
-        this.error.set(errorMessage(err, 'The job could not be retried.'));
+        this.error.set(errorMessage(err, $localize`:@@jobDetail.error.jobBeRetried:The job could not be retried.`));
         this.load(job.id);
       },
     });
@@ -80,7 +80,7 @@ export class JobDetailPage {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(errorMessage(err, 'Could not load the job.'));
+        this.error.set(errorMessage(err, $localize`:@@jobDetail.error.loadJob:Could not load the job.`));
       },
     });
   }

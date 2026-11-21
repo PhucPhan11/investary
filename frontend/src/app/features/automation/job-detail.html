@@ -1,38 +1,42 @@
-<a class="back-link" routerLink="/automation/jobs">← All jobs</a>
+<a class="back-link" routerLink="/automation/jobs" i18n="@@jobDetail.allJobs">← All jobs</a>
 
 @if (error(); as message) {
   <app-alert kind="error" [dismissible]="true" (dismissed)="error.set(null)">{{ message }}</app-alert>
 }
 
 @if (loading()) {
-  <p class="muted" role="status">Loading job…</p>
+  <p class="muted" role="status" i18n="@@jobDetail.loadingJob">Loading job…</p>
 } @else if (detail(); as d) {
   <section class="card">
     <div class="card__header">
-      <h2 class="card__title">{{ typeLabels[d.job.type] }} job</h2>
+      <h2 class="card__title" i18n="@@jobDetail.job">{{ typeLabels[d.job.type] }} job</h2>
       <app-status-badge [value]="d.job.status" />
     </div>
     <dl class="meta">
-      <dt>Job id</dt>
+      <dt i18n="@@jobDetail.jobId">Job id</dt>
       <dd class="mono small">{{ d.job.id }}</dd>
-      <dt>Source</dt>
+      <dt i18n="@@jobDetail.source">Source</dt>
       <dd>
         @if (sourceLink(); as link) {
           <a class="link" [routerLink]="link">{{ d.job.sourceTitle }}</a>
-          ({{ d.job.sourceType === 'DOCUMENT' ? 'library document' : 'email' }})
+          @if (d.job.sourceType === 'DOCUMENT') {
+            <ng-container i18n="@@jobDetail.libraryDocument">(library document)</ng-container>
+          } @else {
+            <ng-container i18n="@@jobDetail.email">(email)</ng-container>
+          }
         } @else {
-          <span class="muted">The source was deleted.</span>
+          <span class="muted" i18n="@@jobDetail.sourceWasDeleted">The source was deleted.</span>
         }
       </dd>
-      <dt>Created</dt>
+      <dt i18n="@@jobDetail.created">Created</dt>
       <dd>{{ d.job.createdAt | date: 'medium' }}</dd>
-      <dt>Started / completed</dt>
+      <dt i18n="@@jobDetail.startedCompleted">Started / completed</dt>
       <dd>{{ d.job.startedAt ? (d.job.startedAt | date: 'medium') : '—' }} / {{ d.job.completedAt ? (d.job.completedAt | date: 'medium') : '—' }}</dd>
-      <dt>Attempts</dt>
-      <dd>{{ d.job.attempts }} of {{ d.job.maxAttempts }} · {{ d.job.manualRetries ?? 0 }} manual retr{{ d.job.manualRetries === 1 ? 'y' : 'ies' }}</dd>
+      <dt i18n="@@jobDetail.attempts">Attempts</dt>
+      <dd><ng-container i18n="@@jobDetail.attemptsValue">{{ d.job.attempts }} of {{ d.job.maxAttempts }} · {d.job.manualRetries ?? 0, plural, =1 {1 manual retry} other {{{ d.job.manualRetries ?? 0 }} manual retries}}</ng-container></dd>
       @if (d.job.inputTokens !== null || d.job.outputTokens !== null) {
-        <dt>Tokens (provider-reported)</dt>
-        <dd>{{ d.job.inputTokens ?? 0 }} in · {{ d.job.outputTokens ?? 0 }} out</dd>
+        <dt i18n="@@jobDetail.tokensProviderReported">Tokens (provider-reported)</dt>
+        <dd i18n="@@jobDetail.out">{{ d.job.inputTokens ?? 0 }} in · {{ d.job.outputTokens ?? 0 }} out</dd>
       }
     </dl>
     @if (d.job.errorCode) {
@@ -41,21 +45,25 @@
     <div class="actions">
       @if (d.job.retryable) {
         <button type="button" class="btn btn--primary" [disabled]="retrying()" (click)="retry()">
-          {{ retrying() ? 'Retrying…' : 'Retry this step' }}
+          @if (retrying()) {
+            <ng-container i18n="@@common.retrying">Retrying…</ng-container>
+          } @else {
+            <ng-container i18n="@@jobDetail.retryStep">Retry this step</ng-container>
+          }
         </button>
       } @else if (d.job.status === 'FAILED' && d.job.retryBlockedReason) {
         <p class="small muted">{{ blockedText[d.job.retryBlockedReason] ?? d.job.retryBlockedReason }}</p>
       } @else if (d.job.status === 'PENDING' || d.job.status === 'RUNNING' || d.job.status === 'WAITING') {
-        <p class="small muted" role="status">The job is in progress; this page refreshes until it finishes.</p>
+        <p class="small muted" role="status" i18n="@@jobDetail.jobProgressThisPage">The job is in progress; this page refreshes until it finishes.</p>
       }
     </div>
-    <p class="small muted">A retry reruns only this step. Completed steps, the imported email and downloaded reports are reused.</p>
+    <p class="small muted" i18n="@@jobDetail.retryRerunsOnlyThis">A retry reruns only this step. Completed steps, the imported email and downloaded reports are reused.</p>
   </section>
 
   @if (d.workflow; as w) {
     <section class="card">
       <div class="card__header">
-        <h2 class="card__title">Workflow stages</h2>
+        <h2 class="card__title" i18n="@@jobDetail.workflowStages">Workflow stages</h2>
         <app-status-badge [value]="'WORKFLOW_' + w.status" />
       </div>
       <ol class="workflow-stages">
@@ -73,31 +81,35 @@
   }
 
   <section class="card">
-    <h2 class="card__title">Attempt history</h2>
+    <h2 class="card__title" i18n="@@jobDetail.attemptHistory">Attempt history</h2>
     @if (d.attempts.length === 0) {
-      <p class="small muted">No attempts recorded (jobs created before Milestone 4 keep only their latest state).</p>
+      <p class="small muted" i18n="@@jobDetail.noAttemptsRecordedJobs">No attempts recorded (jobs created before Milestone 4 keep only their latest state).</p>
     } @else {
       <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
-              <th>Attempt</th>
-              <th>Trigger</th>
-              <th>Started</th>
-              <th>Finished</th>
-              <th>Result</th>
-              <th>Error</th>
+              <th i18n="@@jobDetail.attempt">Attempt</th>
+              <th i18n="@@jobDetail.trigger">Trigger</th>
+              <th i18n="@@jobDetail.started">Started</th>
+              <th i18n="@@jobDetail.finished">Finished</th>
+              <th i18n="@@jobDetail.result">Result</th>
+              <th i18n="@@jobDetail.error">Error</th>
             </tr>
           </thead>
           <tbody>
             @for (a of d.attempts; track $index) {
               <tr>
-                <td data-label="Attempt">{{ a.trigger === 'MANUAL_RETRY' ? '—' : a.attempt }}</td>
-                <td data-label="Trigger">{{ a.trigger === 'MANUAL_RETRY' ? 'Manual retry' : a.trigger === 'AUTO' ? 'Automatic' : 'Lease recovery' }}</td>
-                <td data-label="Started">{{ a.startedAt | date: 'medium' }}</td>
-                <td data-label="Finished">{{ a.finishedAt ? (a.finishedAt | date: 'medium') : '—' }}</td>
-                <td data-label="Result">{{ a.result }}</td>
-                <td class="small" data-label="Error">{{ a.errorCode ? a.errorCode + ': ' + (a.errorSummary ?? '') : '' }}</td>
+                <td data-label="Attempt" i18n-data-label="@@jobDetail.attempt">{{ a.trigger === 'MANUAL_RETRY' ? '—' : a.attempt }}</td>
+                <td data-label="Trigger" i18n-data-label="@@jobDetail.trigger">@switch (a.trigger) {
+                    @case ('MANUAL_RETRY') { <ng-container i18n="@@jobDetail.manualRetry">Manual retry</ng-container> }
+                    @case ('AUTO') { <ng-container i18n="@@jobDetail.automatic">Automatic</ng-container> }
+                    @default { <ng-container i18n="@@jobDetail.leaseRecovery">Lease recovery</ng-container> }
+                  }</td>
+                <td data-label="Started" i18n-data-label="@@jobDetail.started">{{ a.startedAt | date: 'medium' }}</td>
+                <td data-label="Finished" i18n-data-label="@@jobDetail.finished">{{ a.finishedAt ? (a.finishedAt | date: 'medium') : '—' }}</td>
+                <td data-label="Result" i18n-data-label="@@jobDetail.result">{{ a.result }}</td>
+                <td class="small" data-label="Error" i18n-data-label="@@jobDetail.error">{{ a.errorCode ? a.errorCode + ': ' + (a.errorSummary ?? '') : '' }}</td>
               </tr>
             }
           </tbody>

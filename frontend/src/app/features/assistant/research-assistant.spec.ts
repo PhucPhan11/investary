@@ -160,7 +160,7 @@ describe('ResearchAssistant', () => {
 
     el.querySelector<HTMLButtonElement>('.link-button')!.click();
     const request = http.expectOne('/api/v1/research/ask');
-    expect(request.request.body).toEqual({ question: 'TCBS đang khuyến nghị gì về cổ phiếu SCS?' });
+    expect(request.request.body).toEqual({ question: 'What is TCBS recommending for SCS shares?' });
     fixture.detectChanges();
     expect(el.textContent).toContain('Searching sources');
 

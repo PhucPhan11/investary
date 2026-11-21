@@ -41,9 +41,9 @@ interface Turn {
 }
 
 const EVIDENCE: Record<EvidenceStatus, { label: string; tone: string }> = {
-  SUPPORTED: { label: 'Supported by sources', tone: 'success' },
-  PARTIAL: { label: 'Partially supported', tone: 'warning' },
-  INSUFFICIENT: { label: 'Insufficient evidence', tone: 'danger' },
+  SUPPORTED: { label: $localize`:@@evidence.SUPPORTED:Supported by sources`, tone: 'success' },
+  PARTIAL: { label: $localize`:@@evidence.PARTIAL:Partially supported`, tone: 'warning' },
+  INSUFFICIENT: { label: $localize`:@@evidence.INSUFFICIENT:Insufficient evidence`, tone: 'danger' },
 };
 
 /**
@@ -63,9 +63,9 @@ export class ResearchAssistant {
 
   protected readonly brokerages = ['TCBS', 'SSI', 'VNDIRECT', 'VCBS'];
   protected readonly examples = [
-    'TCBS đang khuyến nghị gì về cổ phiếu SCS?',
-    'Những rủi ro chính của SCS theo báo cáo gần nhất là gì?',
-    'Báo cáo nào đề cập đến tác động của sân bay Long Thành?',
+    $localize`:@@researchAssistant.example1:What is TCBS recommending for SCS shares?`,
+    $localize`:@@researchAssistant.example2:What are the main risks for SCS according to the latest report?`,
+    $localize`:@@researchAssistant.example3:Which reports mention the impact of Long Thanh airport?`,
   ];
 
   protected question = '';
@@ -98,7 +98,7 @@ export class ResearchAssistant {
   constructor() {
     this.knowledge.status().subscribe({
       next: (status) => this.status.set(status),
-      error: (err) => this.statusError.set(errorMessage(err, 'Could not load the knowledge base status.')),
+      error: (err) => this.statusError.set(errorMessage(err, $localize`:@@researchAssistant.error.loadKnowledgeBaseStatus:Could not load the knowledge base status.`)),
     });
     this.portfolioApi.list().subscribe({
       next: (list) => {
@@ -107,7 +107,7 @@ export class ResearchAssistant {
           this.portfolioId = list[0].id;
         }
       },
-      error: (err) => this.portfoliosError.set(errorMessage(err, 'Could not load portfolios.')),
+      error: (err) => this.portfoliosError.set(errorMessage(err, $localize`:@@researchAssistant.error.loadPortfolios:Could not load portfolios.`)),
     });
   }
 
@@ -141,7 +141,7 @@ export class ResearchAssistant {
         this.selectedTurnId.set(turn.id);
         this.highlighted.set(null);
       },
-      error: (err) => this.update(turn.id, { state: 'error', error: errorMessage(err, 'The assistant could not answer.') }),
+      error: (err) => this.update(turn.id, { state: 'error', error: errorMessage(err, $localize`:@@researchAssistant.error.assistantAnswer:The assistant could not answer.`) }),
     });
   }
 
@@ -172,7 +172,7 @@ export class ResearchAssistant {
         this.selectedTurnId.set(turn.id);
         this.highlighted.set(null);
       },
-      error: (err) => this.update(turn.id, { state: 'error', error: errorMessage(err, 'The assistant could not answer.') }),
+      error: (err) => this.update(turn.id, { state: 'error', error: errorMessage(err, $localize`:@@researchAssistant.error.assistantAnswer:The assistant could not answer.`) }),
     });
   }
 
@@ -180,6 +180,10 @@ export class ResearchAssistant {
     this.selectedTurnId.set(turn.id);
     this.highlighted.set(label);
     document.getElementById(this.citationAnchor(turn.id, label))?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  protected showSourceLabel(label: string): string {
+    return $localize`:@@researchAssistant.showSource:Show source ${label}:label:`;
   }
 
   protected evidence(status: EvidenceStatus) {
@@ -200,11 +204,15 @@ export class ResearchAssistant {
 
   protected describeFilters(filters: ResearchFilters): string {
     return [
-      filters.ticker && `ticker ${filters.ticker}`,
+      filters.ticker && $localize`:@@researchAssistant.filterTicker:ticker ${filters.ticker}:ticker:`,
       filters.brokerage,
-      filters.sourceType === 'DOCUMENT' ? 'PDF reports' : filters.sourceType === 'EMAIL' ? 'emails' : null,
-      filters.from && `from ${filters.from}`,
-      filters.to && `to ${filters.to}`,
+      filters.sourceType === 'DOCUMENT'
+        ? $localize`:@@researchAssistant.filterPdf:PDF reports`
+        : filters.sourceType === 'EMAIL'
+          ? $localize`:@@researchAssistant.filterEmails:emails`
+          : null,
+      filters.from && $localize`:@@researchAssistant.filterFrom:from ${filters.from}:date:`,
+      filters.to && $localize`:@@researchAssistant.filterTo:to ${filters.to}:date:`,
     ]
       .filter(Boolean)
       .join(' · ');

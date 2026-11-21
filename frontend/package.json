@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "start:en": "ng serve --configuration en",
+    "extract-i18n": "ng extract-i18n --output-path src/locale --format xlf2"
   },
   "private": true,
   "packageManager": "npm@11.17.0",
@@ -24,6 +26,7 @@
     "@angular/build": "^22.2.5",
     "@angular/cli": "^22.2.5",
     "@angular/compiler-cli": "^22.2.0",
+    "@angular/localize": "^22.2.3",
     "jsdom": "^30.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",

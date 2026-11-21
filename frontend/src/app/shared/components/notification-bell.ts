@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { NotificationApiService, notificationLink } from '../../core/api/notification-api.service';
@@ -21,7 +21,7 @@ const POLL_MS = 60_000;
         class="bell__button"
         [attr.aria-expanded]="open()"
         aria-controls="notification-panel"
-        [attr.aria-label]="unread() > 0 ? 'Notifications, ' + unread() + ' unread' : 'Notifications'"
+        [attr.aria-label]="buttonLabel()"
         (click)="toggle()"
       >
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -33,15 +33,15 @@ const POLL_MS = 60_000;
         }
       </button>
       @if (open()) {
-        <div id="notification-panel" class="bell__panel" role="dialog" aria-label="Notifications">
+        <div id="notification-panel" class="bell__panel" role="dialog" aria-label="Notifications" i18n-aria-label="@@notifications.title">
           <div class="bell__head">
-            <strong>Notifications</strong>
-            <button type="button" class="link-button small" [disabled]="unread() === 0" (click)="readAll()">Mark all read</button>
+            <strong i18n="@@notifications.title">Notifications</strong>
+            <button type="button" class="link-button small" [disabled]="unread() === 0" (click)="readAll()" i18n="@@notifications.markAllRead">Mark all read</button>
           </div>
           @if (error()) {
             <p class="small link-error">{{ error() }}</p>
           } @else if (items().length === 0) {
-            <p class="small muted">No notifications yet.</p>
+            <p class="small muted" i18n="@@notifications.empty">No notifications yet.</p>
           } @else {
             <ul class="notification-items">
               @for (n of items(); track n.id) {
@@ -55,14 +55,18 @@ const POLL_MS = 60_000;
                   <span class="notification-item__meta small muted">
                     {{ n.createdAt | date: 'short' }} ·
                     <button type="button" class="link-button small" (click)="setRead(n, !n.read)">
-                      {{ n.read ? 'Mark unread' : 'Mark read' }}
+                      @if (n.read) {
+                        <ng-container i18n="@@notifications.markUnread">Mark unread</ng-container>
+                      } @else {
+                        <ng-container i18n="@@notifications.markRead">Mark read</ng-container>
+                      }
                     </button>
                   </span>
                 </li>
               }
             </ul>
           }
-          <a class="link small" routerLink="/notifications" (click)="open.set(false)">View all notifications</a>
+          <a class="link small" routerLink="/notifications" (click)="open.set(false)" i18n="@@notifications.viewAll">View all notifications</a>
         </div>
       }
     </div>
@@ -77,6 +81,11 @@ export class NotificationBell {
   protected readonly items = signal<AppNotification[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly link = notificationLink;
+  protected readonly buttonLabel = computed(() =>
+    this.unread() > 0
+      ? $localize`:@@notifications.buttonUnread:Notifications, ${this.unread()}:count: unread`
+      : $localize`:@@notifications.title:Notifications`,
+  );
 
   constructor() {
     this.refreshCount();
@@ -139,7 +148,7 @@ export class NotificationBell {
         this.items.set(page.content);
         this.error.set(null);
       },
-      error: () => this.error.set('Notifications could not be loaded.'),
+      error: () => this.error.set($localize`:@@notifications.loadError:Notifications could not be loaded.`),
     });
   }
 }

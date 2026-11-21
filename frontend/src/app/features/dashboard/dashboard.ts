@@ -24,6 +24,7 @@ export class Dashboard implements OnInit {
 
   protected readonly emailCount = signal<number | null>(null);
   protected readonly loading = signal(true);
+  protected readonly unknownBrokerage = $localize`:@@documents.unknownBrokerage:Unknown brokerage`;
   protected readonly error = signal<string | null>(null);
   protected readonly page = signal<Page<ResearchDocument> | null>(null);
 

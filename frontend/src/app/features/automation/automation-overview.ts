@@ -12,30 +12,30 @@ import { StatusBadge } from '../../shared/components/status-badge';
 
 /** Reasons the OAuth callback can report (fixed codes, never Google's text). */
 const CONNECT_ERRORS: Record<string, string> = {
-  ACCESS_DENIED: 'Access was not granted in Google.',
-  INVALID_STATE: 'The connection attempt expired or did not start in this browser. Please try again.',
-  TOKEN_EXCHANGE_FAILED: 'Google did not accept the authorization. Check the OAuth client configuration.',
-  SCOPE_NOT_GRANTED: 'Read-only Gmail access was not granted. Tick the Gmail permission on the consent screen.',
-  NO_REFRESH_TOKEN: 'Google returned no offline access. Remove Investary at myaccount.google.com/permissions and connect again.',
-  ACCOUNT_LIMIT: 'Another Gmail account is already connected. Disconnect it first.',
-  NOT_CONFIGURED: 'Gmail is not configured on the server.',
-  GOOGLE_ERROR: 'Google reported an error. Please try again.',
+  ACCESS_DENIED: $localize`:@@automationOverview.connectErrors.ACCESS_DENIED:Access was not granted in Google.`,
+  INVALID_STATE: $localize`:@@automationOverview.connectErrors.INVALID_STATE:The connection attempt expired or did not start in this browser. Please try again.`,
+  TOKEN_EXCHANGE_FAILED: $localize`:@@automationOverview.connectErrors.TOKEN_EXCHANGE_FAILED:Google did not accept the authorization. Check the OAuth client configuration.`,
+  SCOPE_NOT_GRANTED: $localize`:@@automationOverview.connectErrors.SCOPE_NOT_GRANTED:Read-only Gmail access was not granted. Tick the Gmail permission on the consent screen.`,
+  NO_REFRESH_TOKEN: $localize`:@@automationOverview.connectErrors.NO_REFRESH_TOKEN:Google returned no offline access. Remove Investary at myaccount.google.com/permissions and connect again.`,
+  ACCOUNT_LIMIT: $localize`:@@automationOverview.connectErrors.ACCOUNT_LIMIT:Another Gmail account is already connected. Disconnect it first.`,
+  NOT_CONFIGURED: $localize`:@@automationOverview.connectErrors.NOT_CONFIGURED:Gmail is not configured on the server.`,
+  GOOGLE_ERROR: $localize`:@@automationOverview.connectErrors.GOOGLE_ERROR:Google reported an error. Please try again.`,
 };
 
 export const COMPONENT_LABELS: Record<ComponentHealth['component'], string> = {
-  GMAIL: 'Gmail connection',
-  RESEARCH_INGESTION: 'Research ingestion',
-  DOCUMENT_PROCESSING: 'Document processing',
-  KNOWLEDGE_INDEXING: 'Knowledge indexing',
-  BRIEF_GENERATION: 'Brief generation',
+  GMAIL: $localize`:@@automationOverview.componentLabels.GMAIL:Gmail connection`,
+  RESEARCH_INGESTION: $localize`:@@automationOverview.componentLabels.RESEARCH_INGESTION:Research ingestion`,
+  DOCUMENT_PROCESSING: $localize`:@@automationOverview.componentLabels.DOCUMENT_PROCESSING:Document processing`,
+  KNOWLEDGE_INDEXING: $localize`:@@automationOverview.componentLabels.KNOWLEDGE_INDEXING:Knowledge indexing`,
+  BRIEF_GENERATION: $localize`:@@automationOverview.componentLabels.BRIEF_GENERATION:Brief generation`,
 };
 
 const UNAVAILABLE_COMPONENTS = Object.keys(COMPONENT_LABELS) as ComponentHealth['component'][];
 
 export const PERIOD_LABELS: Record<OverviewPeriod, string> = {
-  '24h': 'Last 24 hours',
-  '7d': 'Last 7 days',
-  '30d': 'Last 30 days',
+  '24h': $localize`:@@automationOverview.periodLabels.24h:Last 24 hours`,
+  '7d': $localize`:@@automationOverview.periodLabels.7d:Last 7 days`,
+  '30d': $localize`:@@automationOverview.periodLabels.30d:Last 30 days`,
 };
 
 const POLL_MS = 2000;
@@ -85,7 +85,7 @@ export class AutomationOverview implements OnInit {
       ? UNAVAILABLE_COMPONENTS.map((component) => ({
           component,
           state: 'UNAVAILABLE' as const,
-          reason: 'The backend could not be reached',
+          reason: $localize`:@@automationOverview.backendCouldNotBe:The backend could not be reached`,
           lastActivityAt: null,
           checkedAt: new Date().toISOString(),
         }))
@@ -99,7 +99,7 @@ export class AutomationOverview implements OnInit {
   ngOnInit(): void {
     const result = this.gmailResult();
     if (result === 'connected') {
-      this.notice.set('Gmail connected. Run "Sync now" or wait for the next scheduled sync.');
+      this.notice.set($localize`:@@automationOverview.gmailConnectedRunSync:Gmail connected. Run "Sync now" or wait for the next scheduled sync.`);
     } else if (result === 'error') {
       this.error.set(CONNECT_ERRORS[this.reason() ?? ''] ?? CONNECT_ERRORS['GOOGLE_ERROR']);
     }
@@ -127,7 +127,7 @@ export class AutomationOverview implements OnInit {
       },
       error: (err) => {
         this.overview.set(null);
-        this.overviewError.set(errorMessage(err, 'Could not load the automation overview.'));
+        this.overviewError.set(errorMessage(err, $localize`:@@automationOverview.error.loadAutomationOverview:Could not load the automation overview.`));
         this.overviewLoading.set(false);
       },
     });
@@ -140,26 +140,26 @@ export class AutomationOverview implements OnInit {
       next: (response) => this.navigateTo(response.authorizationUrl),
       error: (err) => {
         this.busy.set(false);
-        this.error.set(errorMessage(err, 'Could not start the Gmail connection.'));
+        this.error.set(errorMessage(err, $localize`:@@automationOverview.error.startGmailConnection:Could not start the Gmail connection.`));
       },
     });
   }
 
   protected disconnect(): void {
-    if (!confirm('Disconnect Gmail? Investary revokes its access; emails already imported stay.')) {
+    if (!confirm($localize`:@@automationOverview.disconnectGmailInvestaryRevokes:Disconnect Gmail? Investary revokes its access; emails already imported stay.`)) {
       return;
     }
     this.busy.set(true);
     this.gmail.disconnect().subscribe({
       next: () => {
         this.busy.set(false);
-        this.notice.set('Gmail disconnected.');
+        this.notice.set($localize`:@@automationOverview.gmailDisconnected:Gmail disconnected.`);
         this.loadStatus();
         this.loadOverview();
       },
       error: (err) => {
         this.busy.set(false);
-        this.error.set(errorMessage(err, 'Could not disconnect Gmail.'));
+        this.error.set(errorMessage(err, $localize`:@@automationOverview.error.disconnectGmail:Could not disconnect Gmail.`));
       },
     });
   }
@@ -170,13 +170,13 @@ export class AutomationOverview implements OnInit {
     this.gmail.sync().subscribe({
       next: () => {
         this.busy.set(false);
-        this.notice.set('Sync started.');
+        this.notice.set($localize`:@@automationOverview.syncStarted:Sync started.`);
         this.loadStatus();
         this.loadRuns(0);
       },
       error: (err) => {
         this.busy.set(false);
-        this.error.set(errorMessage(err, 'Could not start the sync.'));
+        this.error.set(errorMessage(err, $localize`:@@automationOverview.error.startSync:Could not start the sync.`));
         this.loadStatus();
       },
     });
@@ -189,7 +189,7 @@ export class AutomationOverview implements OnInit {
         this.runsPage.set(result.page);
         this.runsTotalPages.set(result.totalPages);
       },
-      error: (err) => this.error.set(errorMessage(err, 'Could not load the sync history.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@automationOverview.error.loadSyncHistory:Could not load the sync history.`)),
     });
   }
 
@@ -212,7 +212,7 @@ export class AutomationOverview implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(errorMessage(err, 'Could not load the Gmail status.'));
+        this.error.set(errorMessage(err, $localize`:@@automationOverview.error.loadGmailStatus:Could not load the Gmail status.`));
       },
     });
   }

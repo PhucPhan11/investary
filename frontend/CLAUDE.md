@@ -23,6 +23,21 @@
 - **AI answers** are plain text: split them with `answerSegments()` and render citation markers as buttons;
   never `innerHTML`. Citations link to `/documents/:id` or `/emails/:id`.
 
+## Languages (ADR 0014)
+
+- Build-time Angular i18n (@angular/localize): English source, Vietnamese in `src/locale/messages.vi.xlf` (default). `npm start`
+  serves Vietnamese on 4200, `npm run start:en` English on 4201; `npm run build` builds both (dist folders browser/vi and browser/en).
+- **Every UI string needs a custom id**: `i18n="@@area.key"` (plus `i18n-placeholder` / `i18n-title` /
+  `i18n-aria-label` / `i18n-data-label` on attributes) in templates, `` $localize`:@@area.key:Text` `` in TypeScript
+  (placeholders `${value}:name:`). Never build text from string literals in ternaries inside templates; use `@if`
+  blocks with one message each, and ICU `{n, plural, =1 {…} other {…}}` for plurals.
+- After adding or changing text: `npm run extract-i18n`, then add or update the `<target>` in `messages.vi.xlf` for
+  every changed id. The `vi` build fails on a missing translation. Do not nest `i18n` elements.
+- An `@if` block whose first child is an `<ng-container i18n>` loses the space before it; add `{{ ' ' }}` when it follows
+  other text.
+- Do not translate research content (email text, PDFs, research items, AI output); see `core/i18n/research-language.ts`.
+- Specs run in the source locale, so they assert English text.
+
 ## Tests (Vitest via `ng test`)
 
 - Use `provideHttpClient()`, `provideHttpClientTesting()` and `HttpTestingController`, and call

@@ -27,38 +27,38 @@ export const EVIDENCE_KINDS: EvidenceKind[] = ['DOCUMENT', 'EMAIL', 'RESEARCH_IT
 export const EVIDENCE_ROLES: EvidenceRole[] = ['SUPPORTING', 'CONTRADICTING', 'BACKGROUND'];
 
 export const DECISION_TYPE_LABELS: Record<DecisionType, string> = {
-  BUY: 'Buy',
-  SELL: 'Sell',
-  HOLD: 'Hold',
-  REBALANCE: 'Rebalance',
-  OBSERVE: 'Observe',
+  BUY: $localize`:@@journal.decisionTypeLabels.BUY:Buy`,
+  SELL: $localize`:@@journal.decisionTypeLabels.SELL:Sell`,
+  HOLD: $localize`:@@journal.decisionTypeLabels.HOLD:Hold`,
+  REBALANCE: $localize`:@@journal.decisionTypeLabels.REBALANCE:Rebalance`,
+  OBSERVE: $localize`:@@journal.decisionTypeLabels.OBSERVE:Observe`,
 };
 
 export const EVIDENCE_KIND_LABELS: Record<EvidenceKind, string> = {
-  DOCUMENT: 'PDF document',
-  EMAIL: 'Email',
-  RESEARCH_ITEM: 'Research item',
-  CITATION: 'Citation (knowledge chunk)',
-  IMPACT_ASSESSMENT: 'Impact assessment',
+  DOCUMENT: $localize`:@@journal.evidenceKindLabels.DOCUMENT:PDF document`,
+  EMAIL: $localize`:@@journal.evidenceKindLabels.EMAIL:Email`,
+  RESEARCH_ITEM: $localize`:@@journal.evidenceKindLabels.RESEARCH_ITEM:Research item`,
+  CITATION: $localize`:@@journal.evidenceKindLabels.CITATION:Citation (knowledge chunk)`,
+  IMPACT_ASSESSMENT: $localize`:@@journal.evidenceKindLabels.IMPACT_ASSESSMENT:Impact assessment`,
 };
 
 export const EVIDENCE_ROLE_LABELS: Record<EvidenceRole, string> = {
-  SUPPORTING: 'Supporting',
-  CONTRADICTING: 'Contradicting',
-  BACKGROUND: 'Background',
+  SUPPORTING: $localize`:@@journal.evidenceRoleLabels.SUPPORTING:Supporting`,
+  CONTRADICTING: $localize`:@@journal.evidenceRoleLabels.CONTRADICTING:Contradicting`,
+  BACKGROUND: $localize`:@@journal.evidenceRoleLabels.BACKGROUND:Background`,
 };
 
 export const REVISION_LABELS: Record<RevisionKind, string> = {
-  CREATED: 'Created',
-  EDITED: 'Draft edited',
-  FINALIZED: 'Finalized',
-  AMENDED: 'Amended',
-  EXECUTED: 'Marked executed',
-  CANCELLED: 'Cancelled',
-  EVIDENCE_ATTACHED: 'Evidence attached',
-  EVIDENCE_REMOVED: 'Evidence removed',
-  TRANSACTION_LINKED: 'Transaction linked',
-  TRANSACTION_UNLINKED: 'Transaction unlinked',
+  CREATED: $localize`:@@journal.revisionLabels.CREATED:Created`,
+  EDITED: $localize`:@@journal.revisionLabels.EDITED:Draft edited`,
+  FINALIZED: $localize`:@@journal.revisionLabels.FINALIZED:Finalized`,
+  AMENDED: $localize`:@@journal.revisionLabels.AMENDED:Amended`,
+  EXECUTED: $localize`:@@journal.revisionLabels.EXECUTED:Marked executed`,
+  CANCELLED: $localize`:@@journal.revisionLabels.CANCELLED:Cancelled`,
+  EVIDENCE_ATTACHED: $localize`:@@journal.revisionLabels.EVIDENCE_ATTACHED:Evidence attached`,
+  EVIDENCE_REMOVED: $localize`:@@journal.revisionLabels.EVIDENCE_REMOVED:Evidence removed`,
+  TRANSACTION_LINKED: $localize`:@@journal.revisionLabels.TRANSACTION_LINKED:Transaction linked`,
+  TRANSACTION_UNLINKED: $localize`:@@journal.revisionLabels.TRANSACTION_UNLINKED:Transaction unlinked`,
 };
 
 /** Fields fixed once a decision is finalized (they describe what the snapshot captured). */

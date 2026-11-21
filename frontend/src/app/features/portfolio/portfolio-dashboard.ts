@@ -22,10 +22,10 @@ import { ResearchInsights } from './research-insights';
 import { TransactionForm, marketToday } from './transaction-form';
 
 export const VALUATION: Record<ValuationStatus, { label: string; tone: string; text: string }> = {
-  AVAILABLE: { label: 'Valued', tone: 'success', text: 'Every holding has a recent manual price.' },
-  STALE: { label: 'Prices stale', tone: 'warning', text: 'Every holding is priced, but some prices are old.' },
-  PARTIAL: { label: 'Partially valued', tone: 'warning', text: 'Some holdings have no price; totals cover priced holdings only.' },
-  UNAVAILABLE: { label: 'No prices', tone: 'neutral', text: 'No price observations yet; only cost-basis figures are shown.' },
+  AVAILABLE: { label: $localize`:@@portfolioDashboard.valuation.AVAILABLE:Valued`, tone: 'success', text: $localize`:@@portfolioDashboard.everyHoldingHasRecent:Every holding has a recent manual price.` },
+  STALE: { label: $localize`:@@portfolioDashboard.valuation.STALE:Prices stale`, tone: 'warning', text: $localize`:@@portfolioDashboard.everyHoldingPricedBut:Every holding is priced, but some prices are old.` },
+  PARTIAL: { label: $localize`:@@portfolioDashboard.valuation.PARTIAL:Partially valued`, tone: 'warning', text: $localize`:@@portfolioDashboard.someHoldingsHaveNo:Some holdings have no price; totals cover priced holdings only.` },
+  UNAVAILABLE: { label: $localize`:@@portfolioDashboard.valuation.UNAVAILABLE:No prices`, tone: 'neutral', text: $localize`:@@portfolioDashboard.noPriceObservationsYet:No price observations yet; only cost-basis figures are shown.` },
 };
 
 /**
@@ -38,6 +38,7 @@ export const VALUATION: Record<ValuationStatus, { label: string; tone: string; t
   templateUrl: './portfolio-dashboard.html',
 })
 export class PortfolioDashboard {
+  protected readonly defaultDescription = $localize`:@@portfolioDashboard.defaultDescription:Holdings computed from your transactions (weighted average cost).`;
   private readonly api = inject(PortfolioApiService);
   private readonly instrumentApi = inject(InstrumentApiService);
 
@@ -75,7 +76,7 @@ export class PortfolioDashboard {
 
   protected onSaved(): void {
     this.editing.set(null);
-    this.notice.set('Transaction saved; holdings recalculated.');
+    this.notice.set($localize`:@@portfolioDashboard.transactionSavedHoldingsRecalculated:Transaction saved; holdings recalculated.`);
     this.reload();
   }
 
@@ -84,15 +85,15 @@ export class PortfolioDashboard {
   }
 
   protected deleteTransaction(t: Transaction): void {
-    if (!confirm(`Delete the ${t.type} of ${t.quantity} ${t.symbol} on ${t.tradeDate}?`)) {
+    if (!confirm($localize`:@@portfolioDashboard.confirmDeleteTransaction:Delete the ${this.typeLabel(t.type)}:type: of ${t.quantity}:quantity: ${t.symbol}:symbol: on ${t.tradeDate}:date:?`)) {
       return;
     }
     this.api.deleteTransaction(this.id(), t.id).subscribe({
       next: () => {
-        this.notice.set('Transaction deleted; holdings recalculated.');
+        this.notice.set($localize`:@@portfolioDashboard.transactionDeletedHoldingsRecalculated:Transaction deleted; holdings recalculated.`);
         this.reload();
       },
-      error: (err) => this.error.set(errorMessage(err, 'Could not delete the transaction.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@portfolioDashboard.error.deleteTransaction:Could not delete the transaction.`)),
     });
   }
 
@@ -112,10 +113,10 @@ export class PortfolioDashboard {
       .subscribe({
         next: () => {
           this.pricing.set(null);
-          this.notice.set(`Price for ${holding.symbol} saved.`);
+          this.notice.set($localize`:@@portfolioDashboard.priceSaved:Price for ${holding.symbol}:symbol: saved.`);
           this.load(this.id());
         },
-        error: (err) => this.error.set(errorMessage(err, 'Could not save the price.')),
+        error: (err) => this.error.set(errorMessage(err, $localize`:@@portfolioDashboard.error.savePrice:Could not save the price.`)),
       });
   }
 
@@ -124,7 +125,7 @@ export class PortfolioDashboard {
   }
 
   protected typeLabel(type: string): string {
-    return type === 'OPENING_POSITION' ? 'Opening position' : type === 'BUY' ? 'Buy' : type === 'SELL' ? 'Sell' : type;
+    return type === 'OPENING_POSITION' ? $localize`:@@portfolioDashboard.openingPosition:Opening position` : type === 'BUY' ? $localize`:@@portfolioDashboard.buy:Buy` : type === 'SELL' ? $localize`:@@portfolioDashboard.sell:Sell` : type;
   }
 
   private load(id: string): void {
@@ -148,7 +149,7 @@ export class PortfolioDashboard {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(errorMessage(err, 'Could not load the portfolio.'));
+        this.error.set(errorMessage(err, $localize`:@@portfolioDashboard.error.loadPortfolio:Could not load the portfolio.`));
       },
     });
   }

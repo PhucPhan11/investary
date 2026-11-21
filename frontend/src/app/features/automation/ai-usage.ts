@@ -9,13 +9,13 @@ import { Alert } from '../../shared/components/alert';
 import { EmptyState } from '../../shared/components/empty-state';
 
 export const PURPOSE_LABELS: Record<string, string> = {
-  ASSESSMENT: 'Impact assessments',
-  BRIEF: 'Daily briefs',
-  RESEARCH_ASSISTANT: 'Research assistant',
-  PORTFOLIO_ASSISTANT: 'Portfolio assistant',
-  INDEXING: 'Indexing',
-  SEARCH: 'Search queries',
-  OTHER: 'Other',
+  ASSESSMENT: $localize`:@@aiUsage.purposeLabels.ASSESSMENT:Impact assessments`,
+  BRIEF: $localize`:@@aiUsage.purposeLabels.BRIEF:Daily briefs`,
+  RESEARCH_ASSISTANT: $localize`:@@aiUsage.purposeLabels.RESEARCH_ASSISTANT:Research assistant`,
+  PORTFOLIO_ASSISTANT: $localize`:@@aiUsage.purposeLabels.PORTFOLIO_ASSISTANT:Portfolio assistant`,
+  INDEXING: $localize`:@@aiUsage.purposeLabels.INDEXING:Indexing`,
+  SEARCH: $localize`:@@aiUsage.purposeLabels.SEARCH:Search queries`,
+  OTHER: $localize`:@@aiUsage.purposeLabels.OTHER:Other`,
 };
 
 /** AI usage: provider requests, failures and provider-reported tokens; limits against today's use. No costs are invented. */
@@ -82,7 +82,7 @@ export class AiUsagePage implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(errorMessage(err, 'Could not load the AI usage.'));
+        this.error.set(errorMessage(err, $localize`:@@aiUsage.error.loadAiUsage:Could not load the AI usage.`));
       },
     });
   }

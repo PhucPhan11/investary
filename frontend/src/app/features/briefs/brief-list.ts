@@ -17,9 +17,9 @@ import { StatusBadge } from '../../shared/components/status-badge';
 const POLL_MS = 2000;
 
 export const RESEARCH_STATE_LABELS: Record<ResearchState, string> = {
-  NEW_RESEARCH: 'New research',
-  NO_MATERIAL_RESEARCH: 'No material new research',
-  PENDING_ONLY: 'Research still processing',
+  NEW_RESEARCH: $localize`:@@briefList.researchStateLabels.NEW_RESEARCH:New research`,
+  NO_MATERIAL_RESEARCH: $localize`:@@briefList.researchStateLabels.NO_MATERIAL_RESEARCH:No material new research`,
+  PENDING_ONLY: $localize`:@@briefList.researchStateLabels.PENDING_ONLY:Research still processing`,
 };
 
 /** Daily briefs: list with filters, and manual generation that polls the generation job. */
@@ -70,7 +70,7 @@ export class BriefList {
         this.recentJobs.set(page.content);
         this.jobsError.set(null);
       },
-      error: (err) => this.jobsError.set(errorMessage(err, 'Could not load the generation status.')),
+      error: (err) => this.jobsError.set(errorMessage(err, $localize`:@@briefList.error.loadGenerationStatus:Could not load the generation status.`)),
     });
   }
 
@@ -82,7 +82,7 @@ export class BriefList {
         this.poll(retried.id);
         this.loadJobs();
       },
-      error: (err) => this.jobsError.set(errorMessage(err, 'The brief job could not be retried.')),
+      error: (err) => this.jobsError.set(errorMessage(err, $localize`:@@briefList.error.briefJobBeRetried:The brief job could not be retried.`)),
     });
   }
 
@@ -96,7 +96,7 @@ export class BriefList {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(errorMessage(err, 'Could not load the briefs.'));
+        this.error.set(errorMessage(err, $localize`:@@briefList.error.loadBriefs:Could not load the briefs.`));
         this.loading.set(false);
       },
     });
@@ -117,7 +117,7 @@ export class BriefList {
       },
       error: (err) => {
         this.generating.set(false);
-        this.generateError.set(errorMessage(err, 'Could not start the brief.'));
+        this.generateError.set(errorMessage(err, $localize`:@@briefList.error.startBrief:Could not start the brief.`));
       },
     });
   }
@@ -138,7 +138,7 @@ export class BriefList {
         },
         error: (err) => {
           this.generating.set(false);
-          this.generateError.set(errorMessage(err, 'Could not read the generation status.'));
+          this.generateError.set(errorMessage(err, $localize`:@@briefList.error.readGenerationStatus:Could not read the generation status.`));
         },
       });
     }, POLL_MS);
@@ -152,6 +152,6 @@ export class BriefList {
   }
 
   protected scope(item: BriefListItem): string {
-    return item.portfolioName ?? (item.portfolioId ? 'Portfolio' : 'General brief');
+    return item.portfolioName ?? (item.portfolioId ? $localize`:@@briefList.portfolio:Portfolio` : $localize`:@@briefList.generalBrief:General brief`);
   }
 }

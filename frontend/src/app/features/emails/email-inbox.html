@@ -1,7 +1,7 @@
 <section class="page-header">
   <div>
-    <h1 class="page-title">Email research</h1>
-    <p class="page-subtitle">Brokerage emails, their research links and the reports downloaded from them.</p>
+    <h1 class="page-title" i18n="@@emailInbox.emailResearch">Email research</h1>
+    <p class="page-subtitle" i18n="@@emailInbox.brokerageEmailsTheirResearch">Brokerage emails, their research links and the reports downloaded from them.</p>
   </div>
 </section>
 
@@ -16,21 +16,21 @@
 
 <section class="card">
   <div class="card__header">
-    <h2 class="card__title">Imported emails</h2>
+    <h2 class="card__title" i18n="@@emailInbox.importedEmails">Imported emails</h2>
     @if (page(); as p) {
-      <span class="muted">{{ p.totalElements }} total</span>
+      <span class="muted" i18n="@@emailInbox.total">{{ p.totalElements }} total</span>
     }
   </div>
 
   <div class="filters">
     <label class="field">
-      <span class="field__label">Search subject</span>
+      <span class="field__label" i18n="@@emailInbox.searchSubject">Search subject</span>
       <input class="input" type="search" placeholder="e.g. Cơ hội đầu tư" [value]="query()" (input)="onSearch($any($event.target).value)" />
     </label>
     <label class="field">
-      <span class="field__label">Sender</span>
+      <span class="field__label" i18n="@@emailInbox.sender">Sender</span>
       <select class="input" [value]="sender()" (change)="onSenderChange($any($event.target).value)">
-        <option value="">All senders</option>
+        <option value="" i18n="@@emailInbox.allSenders">All senders</option>
         @for (s of senders(); track s.address) {
           <option [value]="s.address">{{ s.name ? s.name + ' · ' : '' }}{{ s.address }} ({{ s.messages }})</option>
         }
@@ -39,45 +39,49 @@
   </div>
 
   @if (loading() && !page()) {
-    <p class="muted">Loading emails…</p>
+    <p class="muted" i18n="@@emailInbox.loadingEmails">Loading emails…</p>
   } @else if (page()?.totalElements === 0) {
     @if (query() || sender()) {
-      <app-empty-state title="No matching emails">Try a different search or sender.</app-empty-state>
+      <app-empty-state title="No matching emails" i18n-title="@@emailInbox.noMatchingEmails">Try a different search or sender.</app-empty-state>
     } @else {
-      <app-empty-state title="No emails imported yet">Import a brokerage .eml file above to extract its research links.</app-empty-state>
+      <app-empty-state title="No emails imported yet" i18n-title="@@emailInbox.noEmailsImportedYet">Import a brokerage .eml file above to extract its research links.</app-empty-state>
     }
   } @else if (page(); as p) {
     <div class="table-wrap" [class.table-wrap--loading]="loading()">
       <table class="table">
         <thead>
           <tr>
-            <th scope="col">Subject</th>
-            <th scope="col">Sender</th>
-            <th scope="col">Date</th>
-            <th scope="col" class="num">Research links</th>
-            <th scope="col" class="num">Reports</th>
-            <th scope="col">Status</th>
-            <th scope="col" class="actions-col"><span class="visually-hidden">Actions</span></th>
+            <th scope="col" i18n="@@emailInbox.subject">Subject</th>
+            <th scope="col" i18n="@@emailInbox.sender">Sender</th>
+            <th scope="col" i18n="@@emailInbox.date">Date</th>
+            <th scope="col" class="num" i18n="@@emailInbox.researchLinks">Research links</th>
+            <th scope="col" class="num" i18n="@@emailInbox.reports">Reports</th>
+            <th scope="col" i18n="@@emailInbox.status">Status</th>
+            <th scope="col" class="actions-col"><span class="visually-hidden" i18n="@@emailInbox.actions">Actions</span></th>
           </tr>
         </thead>
         <tbody>
           @for (email of p.content; track email.id) {
             <tr>
-              <td data-label="Subject">
-                <a class="filename link-plain" [routerLink]="['/emails', email.id]">{{ email.subject || '(no subject)' }}</a>
+              <td data-label="Subject" i18n-data-label="@@emailInbox.subject">
+                <a class="filename link-plain" [routerLink]="['/emails', email.id]">{{ email.subject || noSubject }}</a>
                 @if (email.brokerage) {
                   <span class="tag">{{ email.brokerage }}</span>
                 }
               </td>
-              <td data-label="Sender">{{ email.senderName || email.senderAddress || '—' }}</td>
-              <td data-label="Date">{{ (email.sentAt ?? email.importedAt) | date: 'mediumDate' }}</td>
-              <td data-label="Research links" class="num">{{ email.statistics.researchLinks }}</td>
-              <td data-label="Reports" class="num">{{ email.statistics.documents }}</td>
-              <td data-label="Status"><app-status-badge [value]="processing(email)" /></td>
+              <td data-label="Sender" i18n-data-label="@@emailInbox.sender">{{ email.senderName || email.senderAddress || '—' }}</td>
+              <td data-label="Date" i18n-data-label="@@emailInbox.date">{{ (email.sentAt ?? email.importedAt) | date: 'mediumDate' }}</td>
+              <td data-label="Research links" i18n-data-label="@@emailInbox.researchLinks" class="num">{{ email.statistics.researchLinks }}</td>
+              <td data-label="Reports" i18n-data-label="@@emailInbox.reports" class="num">{{ email.statistics.documents }}</td>
+              <td data-label="Status" i18n-data-label="@@emailInbox.status"><app-status-badge [value]="processing(email)" /></td>
               <td class="actions-col">
-                <a class="btn btn--small btn--ghost" [routerLink]="['/emails', email.id]">Open</a>
+                <a class="btn btn--small btn--ghost" [routerLink]="['/emails', email.id]" i18n="@@emailInbox.open">Open</a>
                 <button type="button" class="btn btn--small btn--danger" [disabled]="deletingId() === email.id" (click)="remove(email)">
-                  {{ deletingId() === email.id ? 'Deleting…' : 'Delete' }}
+                  @if (deletingId() === email.id) {
+                    <ng-container i18n="@@common.deleting">Deleting…</ng-container>
+                  } @else {
+                    <ng-container i18n="@@common.delete">Delete</ng-container>
+                  }
                 </button>
               </td>
             </tr>

@@ -41,19 +41,19 @@ export class DocumentLibrary implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(errorMessage(err, 'Could not load documents.'));
+        this.error.set(errorMessage(err, $localize`:@@documentLibrary.error.loadDocuments:Could not load documents.`));
         this.loading.set(false);
       },
     });
   }
 
   protected onUploaded(document: ResearchDocument): void {
-    this.success.set(`"${document.originalFilename}" was uploaded.`);
+    this.success.set($localize`:@@documentLibrary.uploaded:"${document.originalFilename}:filename:" was uploaded.`);
     this.load(0);
   }
 
   protected remove(document: ResearchDocument): void {
-    if (!confirm(`Delete "${document.originalFilename}"? This cannot be undone.`)) {
+    if (!confirm($localize`:@@documentLibrary.confirmDelete:Delete "${document.originalFilename}:filename:"? This cannot be undone.`)) {
       return;
     }
     this.deletingId.set(document.id);
@@ -62,7 +62,7 @@ export class DocumentLibrary implements OnInit {
     this.api.delete(document.id).subscribe({
       next: () => {
         this.deletingId.set(null);
-        this.success.set(`"${document.originalFilename}" was deleted.`);
+        this.success.set($localize`:@@documentLibrary.deleted:"${document.originalFilename}:filename:" was deleted.`);
         const current = this.page();
         // Step back a page when the last item on a non-first page was removed.
         const pageIndex = current && current.content.length === 1 && current.page > 0 ? current.page - 1 : (current?.page ?? 0);
@@ -70,7 +70,7 @@ export class DocumentLibrary implements OnInit {
       },
       error: (err) => {
         this.deletingId.set(null);
-        this.error.set(errorMessage(err, 'Could not delete the document.'));
+        this.error.set(errorMessage(err, $localize`:@@documentLibrary.error.deleteDocument:Could not delete the document.`));
       },
     });
   }

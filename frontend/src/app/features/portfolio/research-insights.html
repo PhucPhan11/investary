@@ -1,16 +1,16 @@
-<section class="card insights" aria-label="Research insights">
+<section class="card insights" aria-label="Research insights" i18n-aria-label="@@researchInsights.researchInsights">
   <div class="card__header">
-    <h2 class="card__title">Research insights</h2>
+    <h2 class="card__title" i18n="@@researchInsights.researchInsights">Research insights</h2>
     <div class="actions">
       <button type="button" class="btn btn--small" [disabled]="busy() !== null" (click)="findResearch()">
-        {{ busy() === 'research' ? 'Matching…' : 'Find relevant research' }}
+        @if (busy() === 'research') {<ng-container i18n="@@researchInsights.matchingBusy">Matching…</ng-container>} @else {<ng-container i18n="@@researchInsights.findResearch">Find relevant research</ng-container>}
       </button>
       <button type="button" class="btn btn--primary btn--small" [disabled]="busy() !== null" (click)="runAssessment()">
-        {{ busy() === 'assessment' ? 'Assessing…' : 'Run impact assessment' }}
+        @if (busy() === 'assessment') {<ng-container i18n="@@researchInsights.assessing">Assessing…</ng-container>} @else {<ng-container i18n="@@researchInsights.runAssessment">Run impact assessment</ng-container>}
       </button>
     </div>
   </div>
-  <p class="muted small">
+  <p class="muted small" i18n="@@researchInsights.matchingDeterministicTickerName">
     Matching is deterministic (ticker, name, publication date). An AI interpretation is added only when a chat model is
     configured, and only with citations to the matched evidence. Nothing here is a trading signal.
   </p>
@@ -20,27 +20,27 @@
   }
 
   @if (research(); as r) {
-    <h3 class="insights__heading">Relevant research</h3>
+    <h3 class="insights__heading" i18n="@@researchInsights.relevantResearch">Relevant research</h3>
     @if (r.searchMode === 'LEXICAL_ONLY') {
-      <p class="muted small">No embedding model configured: matched by text and ticker only.</p>
+      <p class="muted small" i18n="@@researchInsights.noEmbeddingModelConfigured">No embedding model configured: matched by text and ticker only.</p>
     }
     <ul class="insights__list">
       @for (h of r.holdings; track h.instrumentId) {
         <li class="insight">
           <div class="insight__head">
             <strong>{{ h.symbol }}</strong>
-            <span class="muted small">{{ h.direct.length }} direct · {{ h.mentions.length }} mentions</span>
+            <span class="muted small" i18n="@@researchInsights.directMentions">{{ h.direct.length }} direct · {{ h.mentions.length }} mentions</span>
             @if (h.newestEvidenceDate) {
-              <span class="muted small">newest {{ h.newestEvidenceDate | date: 'mediumDate' }}</span>
+              <span class="muted small" i18n="@@researchInsights.newest">newest {{ h.newestEvidenceDate | date: 'mediumDate' }}</span>
             }
           </div>
           @if (!h.direct.length && !h.mentions.length) {
-            <p class="muted small">No research in the library mentions {{ h.symbol }}.</p>
+            <p class="muted small" i18n="@@researchInsights.noResearchLibraryMentions">No research in the library mentions {{ h.symbol }}.</p>
           }
           <ul class="evidence">
             @for (e of h.direct.concat(h.mentions); track e.chunkId) {
               <li>
-                <span class="tag">{{ e.matchKind === 'DIRECT' ? 'Direct' : 'Mention' }}</span>
+                <span class="tag">@if (e.matchKind === 'DIRECT') {<ng-container i18n="@@researchInsights.direct">Direct</ng-container>} @else {<ng-container i18n="@@researchInsights.mention">Mention</ng-container>}</span>
                 <a class="link" [routerLink]="link(e)">{{ e.title }}</a>
                 <span class="muted small">
                   {{ e.publisher }}
@@ -48,7 +48,7 @@
                   @if (e.location) { · {{ e.location }} }
                 </span>
                 @if (e.outdated) {
-                  <span class="badge badge--warning">Older than {{ r.freshDays }} days</span>
+                  <span class="badge badge--warning" i18n="@@researchInsights.olderThanDays">Older than {{ r.freshDays }} days</span>
                 }
               </li>
             }
@@ -57,7 +57,7 @@
       }
     </ul>
     @if (r.marketContext.length) {
-      <h4 class="insights__subheading">Market context</h4>
+      <h4 class="insights__subheading" i18n="@@researchInsights.marketContext">Market context</h4>
       <ul class="evidence">
         @for (e of r.marketContext; track e.chunkId) {
           <li>
@@ -69,17 +69,17 @@
     }
   }
 
-  <h3 class="insights__heading">Impact assessments</h3>
+  <h3 class="insights__heading" i18n="@@researchInsights.impactAssessments">Impact assessments</h3>
   @if (assessments().length === 0) {
-    <p class="muted small">No saved assessments yet.</p>
+    <p class="muted small" i18n="@@researchInsights.noSavedAssessmentsYet">No saved assessments yet.</p>
   } @else {
     <ul class="assessment-list">
       @for (a of assessments(); track a.id) {
         <li>
           <button type="button" class="link-button" (click)="open(a.id)">{{ a.createdAt | date: 'medium' }}</button>
-          <span class="muted small">{{ a.itemCount }} holdings · {{ a.aiStatus === 'COMPLETED' ? 'with AI interpretation' : 'matching only' }}</span>
+          <span class="muted small">@if (a.aiStatus === 'COMPLETED') {<ng-container i18n="@@researchInsights.holdingsWithAi">{{ a.itemCount }} holdings · with AI interpretation</ng-container>} @else {<ng-container i18n="@@researchInsights.holdingsMatchingOnly">{{ a.itemCount }} holdings · matching only</ng-container>}</span>
           @if (a.stale) {
-            <span class="badge badge--warning" [title]="staleText(a.staleReasons)">Stale: {{ staleText(a.staleReasons) }}</span>
+            <span class="badge badge--warning" [title]="staleText(a.staleReasons)" i18n="@@researchInsights.stale">Stale: {{ staleText(a.staleReasons) }}</span>
           }
         </li>
       }
@@ -89,41 +89,41 @@
   @if (selected(); as a) {
     <div class="assessment">
       <div class="insight__head">
-        <strong>Assessment of {{ a.createdAt | date: 'medium' }}</strong>
+        <strong i18n="@@researchInsights.assessment">Assessment of {{ a.createdAt | date: 'medium' }}</strong>
         @if (a.stale) {
-          <span class="badge badge--warning">Stale: {{ staleText(a.staleReasons) }}</span>
+          <span class="badge badge--warning" i18n="@@researchInsights.stale">Stale: {{ staleText(a.staleReasons) }}</span>
         }
       </div>
       @if (a.aiStatus === 'NOT_CONFIGURED') {
-        <p class="muted small">No AI model is configured; categories come from deterministic matching only.</p>
+        <p class="muted small" i18n="@@researchInsights.noAiModelConfigured">No AI model is configured; categories come from deterministic matching only.</p>
       }
       @if (a.overallSummary) {
-        <p class="assessment__overall"><span class="tag tag--plain">AI interpretation</span> {{ a.overallSummary }}</p>
+        <p class="assessment__overall"><span class="tag tag--plain" i18n="@@researchInsights.aiInterpretation">AI interpretation</span> {{ a.overallSummary }}</p>
       }
       <table class="table">
         <thead>
-          <tr><th>Holding</th><th>Category</th><th>Summary</th><th>Evidence</th></tr>
+          <tr><th i18n="@@researchInsights.holding">Holding</th><th i18n="@@researchInsights.category">Category</th><th i18n="@@researchInsights.summary">Summary</th><th i18n="@@researchInsights.evidence">Evidence</th></tr>
         </thead>
         <tbody>
           @for (item of a.items; track item.instrumentId) {
             <tr>
-              <td data-label="Holding"><strong>{{ item.symbol }}</strong></td>
-              <td data-label="Category">
+              <td data-label="Holding" i18n-data-label="@@researchInsights.holding"><strong>{{ item.symbol }}</strong></td>
+              <td data-label="Category" i18n-data-label="@@researchInsights.category">
                 <span [class]="'badge badge--' + category(item.category).tone">{{ category(item.category).label }}</span>
                 @if (item.category !== item.deterministicCategory) {
-                  <span class="muted small">(matching: {{ category(item.deterministicCategory).label }})</span>
+                  <span class="muted small" i18n="@@researchInsights.matching">(matching: {{ category(item.deterministicCategory).label }})</span>
                 }
               </td>
-              <td data-label="Summary">
+              <td data-label="Summary" i18n-data-label="@@researchInsights.summary">
                 @if (item.aiInterpretation) {
-                  <span class="tag tag--plain">AI</span>
+                  <span class="tag tag--plain" i18n="@@researchInsights.ai">AI</span>
                 }
                 {{ item.summary }}
                 @if (item.evidenceStatus === 'PARTIAL') {
-                  <span class="badge badge--warning">Partially supported</span>
+                  <span class="badge badge--warning" i18n="@@researchInsights.partiallySupported">Partially supported</span>
                 }
               </td>
-              <td data-label="Evidence">
+              <td data-label="Evidence" i18n-data-label="@@researchInsights.evidence">
                 @for (e of item.evidence; track e.chunkId) {
                   <a class="link small evidence-link" [routerLink]="link(e)" [title]="e.excerpt">
                     {{ e.label ?? '' }} {{ e.publisher }} {{ e.publishedAt }}

@@ -6,7 +6,7 @@ import { Component, input, output } from '@angular/core';
     <div [class]="'alert alert--' + kind()" [attr.role]="kind() === 'error' ? 'alert' : 'status'">
       <span class="alert__text"><ng-content /></span>
       @if (dismissible()) {
-        <button type="button" class="alert__close" aria-label="Dismiss" (click)="dismissed.emit()">×</button>
+        <button type="button" class="alert__close" aria-label="Dismiss" i18n-aria-label="@@common.dismiss" (click)="dismissed.emit()">×</button>
       }
     </div>
   `,

@@ -1345,9 +1345,36 @@ h3 {
   margin-top: 0.4rem;
 }
 
+.lang-switch {
+  display: inline-flex;
+  margin-left: auto;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  &__option {
+    padding: 0.3rem 0.55rem;
+    color: rgb(255 255 255 / 75%);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: #fff;
+      background: var(--navy-700);
+    }
+
+    &--active {
+      color: #fff;
+      background: var(--green-600);
+    }
+  }
+}
+
 .bell {
   position: relative;
-  margin-left: auto;
+  margin-left: -1rem;
 
   &__button {
     position: relative;
@@ -1465,6 +1492,10 @@ h3 {
 
   .topbar__toggle {
     display: inline-block;
+  }
+
+  .lang-switch {
+    margin-left: 0;
   }
 
   .bell {

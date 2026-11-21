@@ -10,7 +10,7 @@ spring:
 
 investary:
   cors:
-    allowed-origins: ${INVESTARY_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+    allowed-origins: ${INVESTARY_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4201}
 
 logging:
   structured:

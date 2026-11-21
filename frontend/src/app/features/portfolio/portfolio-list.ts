@@ -16,8 +16,8 @@ import { EmptyState } from '../../shared/components/empty-state';
   template: `
     <header class="page-header">
       <div>
-        <h1 class="page-title">Portfolios</h1>
-        <p class="page-subtitle">
+        <h1 class="page-title" i18n="@@portfolioList.portfolios">Portfolios</h1>
+        <p class="page-subtitle" i18n="@@portfolioList.holdingsAreComputedFrom">
           Holdings are computed from the transactions you enter. Prices are manual observations; Investary has no live
           market data and gives no trading advice.
         </p>
@@ -29,35 +29,35 @@ import { EmptyState } from '../../shared/components/empty-state';
     }
 
     <form class="card form-grid" (ngSubmit)="create()">
-      <h2 class="card__title">New portfolio</h2>
+      <h2 class="card__title" i18n="@@portfolioList.newPortfolio">New portfolio</h2>
       <label class="field">
-        <span class="field__label">Name</span>
+        <span class="field__label" i18n="@@portfolioList.name">Name</span>
         <input class="input" name="name" maxlength="200" required [(ngModel)]="name" />
       </label>
       <label class="field">
-        <span class="field__label">Base currency</span>
+        <span class="field__label" i18n="@@portfolioList.baseCurrency">Base currency</span>
         <input class="input" name="currency" maxlength="3" [(ngModel)]="currency" />
       </label>
       <label class="field field--wide">
-        <span class="field__label">Description (optional)</span>
+        <span class="field__label" i18n="@@portfolioList.descriptionOptional">Description (optional)</span>
         <input class="input" name="description" maxlength="2000" [(ngModel)]="description" />
       </label>
       <div class="actions">
         <button type="submit" class="btn btn--primary" [disabled]="saving() || !name.trim()">
-          {{ saving() ? 'Creating…' : 'Create portfolio' }}
+          @if (saving()) {<ng-container i18n="@@portfolioList.creating">Creating…</ng-container>} @else {<ng-container i18n="@@portfolioList.createPortfolio">Create portfolio</ng-container>}
         </button>
       </div>
     </form>
 
     @if (loading()) {
-      <p class="muted" role="status">Loading portfolios…</p>
+      <p class="muted" role="status" i18n="@@portfolioList.loadingPortfolios">Loading portfolios…</p>
     } @else if (portfolios().length === 0) {
-      <app-empty-state title="No portfolios yet">Create a portfolio, then add opening positions or trades.</app-empty-state>
+      <app-empty-state title="No portfolios yet" i18n-title="@@portfolioList.noPortfoliosYet">Create a portfolio, then add opening positions or trades.</app-empty-state>
     } @else {
       <div class="card">
         <table class="table">
           <thead>
-            <tr><th>Name</th><th>Currency</th><th class="num">Transactions</th><th>Updated</th></tr>
+            <tr><th i18n="@@portfolioList.name">Name</th><th i18n="@@portfolioList.currency">Currency</th><th class="num" i18n="@@portfolioList.transactions">Transactions</th><th i18n="@@portfolioList.updated">Updated</th></tr>
           </thead>
           <tbody>
             @for (p of portfolios(); track p.id) {
@@ -104,7 +104,7 @@ export class PortfolioList {
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(errorMessage(err, 'Could not create the portfolio.'));
+        this.error.set(errorMessage(err, $localize`:@@portfolioList.error.createPortfolio:Could not create the portfolio.`));
       },
     });
   }
@@ -117,7 +117,7 @@ export class PortfolioList {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(errorMessage(err, 'Could not load portfolios.'));
+        this.error.set(errorMessage(err, $localize`:@@portfolioList.error.loadPortfolios:Could not load portfolios.`));
       },
     });
   }

@@ -14,12 +14,12 @@ import {
 import { Alert } from '../../shared/components/alert';
 
 export const CATEGORIES: Record<ImpactCategory, { label: string; tone: string }> = {
-  DIRECT_HOLDING: { label: 'Direct research', tone: 'info' },
-  MARKET_CONTEXT: { label: 'Market context only', tone: 'neutral' },
-  POTENTIAL_RISK: { label: 'Potential risk', tone: 'danger' },
-  POTENTIAL_OPPORTUNITY: { label: 'Potential opportunity', tone: 'success' },
-  MONITORING_ONLY: { label: 'Monitoring only', tone: 'muted' },
-  INSUFFICIENT_EVIDENCE: { label: 'Insufficient evidence', tone: 'warning' },
+  DIRECT_HOLDING: { label: $localize`:@@researchInsights.categories.DIRECT_HOLDING:Direct research`, tone: 'info' },
+  MARKET_CONTEXT: { label: $localize`:@@researchInsights.categories.MARKET_CONTEXT:Market context only`, tone: 'neutral' },
+  POTENTIAL_RISK: { label: $localize`:@@researchInsights.categories.POTENTIAL_RISK:Potential risk`, tone: 'danger' },
+  POTENTIAL_OPPORTUNITY: { label: $localize`:@@researchInsights.categories.POTENTIAL_OPPORTUNITY:Potential opportunity`, tone: 'success' },
+  MONITORING_ONLY: { label: $localize`:@@researchInsights.categories.MONITORING_ONLY:Monitoring only`, tone: 'muted' },
+  INSUFFICIENT_EVIDENCE: { label: $localize`:@@researchInsights.categories.INSUFFICIENT_EVIDENCE:Insufficient evidence`, tone: 'warning' },
 };
 
 /**
@@ -61,7 +61,7 @@ export class ResearchInsights {
       },
       error: (err) => {
         this.busy.set(null);
-        this.error.set(errorMessage(err, 'Could not match research to this portfolio.'));
+        this.error.set(errorMessage(err, $localize`:@@researchInsights.error.matchResearchThisPortfolio:Could not match research to this portfolio.`));
       },
     });
   }
@@ -77,7 +77,7 @@ export class ResearchInsights {
       },
       error: (err) => {
         this.busy.set(null);
-        this.error.set(errorMessage(err, 'Could not create the impact assessment.'));
+        this.error.set(errorMessage(err, $localize`:@@researchInsights.error.createImpactAssessment:Could not create the impact assessment.`));
       },
     });
   }
@@ -85,7 +85,7 @@ export class ResearchInsights {
   protected open(id: string): void {
     this.api.assessment(id).subscribe({
       next: (assessment) => this.selected.set(assessment),
-      error: (err) => this.error.set(errorMessage(err, 'Could not load the assessment.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@researchInsights.error.loadAssessment:Could not load the assessment.`)),
     });
   }
 
@@ -106,7 +106,7 @@ export class ResearchInsights {
   private loadAssessments(portfolioId: string): void {
     this.api.assessments(portfolioId).subscribe({
       next: (list) => this.assessments.set(list),
-      error: (err) => this.error.set(errorMessage(err, 'Could not load saved assessments.')),
+      error: (err) => this.error.set(errorMessage(err, $localize`:@@researchInsights.error.loadSavedAssessments:Could not load saved assessments.`)),
     });
   }
 }

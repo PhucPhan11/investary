@@ -3,17 +3,17 @@
 }
 @if (notice(); as message) {
   <app-alert kind="success" [dismissible]="true" (dismissed)="notice.set(null)">
-    {{ message }} <a class="link" routerLink="/briefs">Open Daily brief</a>
+    {{ message }} <a class="link" routerLink="/briefs" i18n="@@automationSettings.openDailyBrief">Open Daily brief</a>
   </app-alert>
 }
 
-<p class="small muted">
+<p class="small muted" i18n="@@automationSettings.intro">
   Values come from <code>application.yml</code> / environment variables unless you change them here. A saved value overrides
   the default until you reset it. Every value is validated by the backend. No credentials are shown or stored here.
 </p>
 
 @if (loading()) {
-  <p class="muted" role="status">Loading settings…</p>
+  <p class="muted" role="status" i18n="@@automationSettings.loadingSettings">Loading settings…</p>
 }
 
 @for (s of sections(); track s.section.section) {
@@ -31,22 +31,26 @@
       @for (f of s.section.fields; track f.name) {
         <div class="field" [attr.data-field]="f.name">
           <span class="field__label">
-            {{ f.label }}
+            {{ label(s.section.section, f) }}
             @if (f.overridden) {
-              <span class="badge badge--info">Changed</span>
+              <span class="badge badge--info" i18n="@@automationSettings.changed">Changed</span>
             }
             @if (f.appliesAfterRestart) {
-              <span class="badge badge--warning">Applies after restart</span>
+              <span class="badge badge--warning" i18n="@@automationSettings.appliesAfterRestart">Applies after restart</span>
             }
           </span>
           @if (f.readOnly) {
-            <span class="setting-readonly">{{ display(f, f.value) }} <span class="small muted">(set in the configuration)</span></span>
+            <span class="setting-readonly">{{ display(f, f.value) }} <span class="small muted" i18n="@@automationSettings.setConfiguration">(set in the configuration)</span></span>
           } @else {
             @switch (f.type) {
               @case ('BOOLEAN') {
                 <label class="small checkbox-row">
                   <input type="checkbox" [name]="f.name" [(ngModel)]="s.draft[f.name]" />
-                  {{ s.draft[f.name] ? 'On' : 'Off' }}
+                  @if (s.draft[f.name]) {
+                    <ng-container i18n="@@common.on">On</ng-container>
+                  } @else {
+                    <ng-container i18n="@@common.off">Off</ng-container>
+                  }
                 </label>
               }
               @case ('INTEGER') {
@@ -58,7 +62,7 @@
                   [max]="f.max"
                   step="1"
                   [(ngModel)]="s.draft[f.name]"
-                  [placeholder]="f.nullable ? 'No limit' : ''"
+                  [placeholder]="f.nullable ? noLimit : ''"
                 />
               }
               @case ('TIME') {
@@ -80,7 +84,7 @@
               }
               @case ('UUID') {
                 <select class="input" [name]="f.name" [(ngModel)]="s.draft[f.name]">
-                  <option [ngValue]="null">Every portfolio</option>
+                  <option [ngValue]="null" i18n="@@automationSettings.everyPortfolio">Every portfolio</option>
                   @for (p of portfolios(); track p.id) {
                     <option [ngValue]="p.id">{{ p.name }}</option>
                   }
@@ -95,25 +99,29 @@
             <span class="field__error">{{ e }}</span>
           }
           <span class="small muted">
-            @if (f.help) {
-              {{ f.help }}.
+            @if (help(s.section.section, f); as helpText) {
+              {{ helpText }}.
             }
-            Default: {{ display(f, f.defaultValue) }}
+            <ng-container i18n="@@automationSettings.default">Default: {{ display(f, f.defaultValue) }}</ng-container>
             @if (f.min !== null && f.max !== null) {
               · {{ f.min }}–{{ f.max }}
             }
             @if (f.overridden && !f.readOnly) {
-              · <button type="button" class="link-button" (click)="reset(s, f)">Reset to default</button>
+              · <button type="button" class="link-button" (click)="reset(s, f)" i18n="@@automationSettings.resetDefault">Reset to default</button>
             }
           </span>
         </div>
       }
       <div class="actions field--wide">
         @if (s.section.section === 'brief') {
-          <button type="button" class="btn btn--ghost" (click)="generateBrief(s)">Generate a brief now</button>
+          <button type="button" class="btn btn--ghost" (click)="generateBrief(s)" i18n="@@automationSettings.generateBriefNow">Generate a brief now</button>
         }
         <button type="submit" class="btn btn--primary" [disabled]="s.saving || changed(s).length === 0">
-          {{ s.saving ? 'Saving…' : 'Save ' + (titles[s.section.section].title ?? s.section.section) }}
+          @if (s.saving) {
+            <ng-container i18n="@@common.saving">Saving…</ng-container>
+          } @else {
+            <ng-container i18n="@@automationSettings.saveSection">Save {{ titles[s.section.section].title ?? s.section.section }}</ng-container>
+          }
         </button>
       </div>
     </form>
