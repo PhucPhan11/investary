@@ -11,6 +11,16 @@ spring:
 investary:
   cors:
     allowed-origins: ${INVESTARY_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4201}
+  # Keep local data inside the project, in the git-ignored data/ folder. user.dir is backend/, the working directory
+  # of spring-boot:run (the .env import above relies on it too). A bare "../" is rejected by Spring's Path binding.
+  # Never commit data/ (ADR 0015).
+  storage:
+    root: ${INVESTARY_STORAGE_ROOT:${user.dir}/../data/documents}
+  email:
+    storage:
+      root: ${INVESTARY_EMAIL_STORAGE_ROOT:${user.dir}/../data/emails}
+  download:
+    temp-dir: ${INVESTARY_DOWNLOAD_TEMP_DIR:${user.dir}/../data/tmp}
 
 logging:
   structured:

@@ -266,7 +266,9 @@ Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`
 migrations against real PostgreSQL (Testcontainers). There is no test-only schema. `FlywayUpgradeTest`
 checks that a Phase 1 database upgrades without data loss.
 
-User data moves between devices only as a backup archive outside git: `scripts/backup-data.mjs` writes a `pg_dump`
+In development the file stores, partial downloads and backups live in the git-ignored `data/` folder of the project
+(dev-profile defaults in `application-dev.yml`); the database stays in the Docker volume. User data moves between
+devices only as a backup archive outside git: `scripts/backup-data.mjs` writes a `pg_dump`
 of the database plus both file stores and a manifest; `scripts/restore-data.mjs` replaces them (ADR 0015). This works
 because file references in the database are relative storage keys resolved under the configured roots.
 

@@ -74,7 +74,7 @@ investary/
   and `intelligence` sits on top of `knowledge`, `portfolio` and `investor`; `automation` imports Gmail mail
   through `email`'s import service; `journal` reads the other modules and is imported by none. See [docs/architecture.md](docs/architecture.md).
 - **Sources of truth.** Original files are authoritative: PDFs in the document store, `.eml` files in
-  the email store, both outside the repo. PostgreSQL holds metadata and *derived* data (parsed text,
+  the email store, both in the git-ignored `data/` folder in development (never committed). PostgreSQL holds metadata and *derived* data (parsed text,
   links, research items), which can be regenerated from the originals.
 - **Schema.** Flyway owns it (`backend/src/main/resources/db/migration`); Hibernate only validates.
 
@@ -209,13 +209,13 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_DB_URL` | `jdbc:postgresql://localhost:5432/investary` | JDBC URL |
 | `INVESTARY_DB_USERNAME` | `investary` | DB user |
 | `INVESTARY_DB_PASSWORD` | — (dev profile falls back to `POSTGRES_PASSWORD` from `.env`) | DB password |
-| `INVESTARY_STORAGE_ROOT` | `~/.investary/documents` | Original PDFs |
-| `INVESTARY_EMAIL_STORAGE_ROOT` | `~/.investary/emails` | Original EML files |
+| `INVESTARY_STORAGE_ROOT` | dev: `data/documents` in the project; otherwise `~/.investary/documents` | Original PDFs |
+| `INVESTARY_EMAIL_STORAGE_ROOT` | dev: `data/emails`; otherwise `~/.investary/emails` | Original EML files |
 | `INVESTARY_MAX_UPLOAD_SIZE` / `INVESTARY_MAX_REQUEST_SIZE` | `50MB` / `52MB` | Multipart limits (larger → 413) |
 | `INVESTARY_EMAIL_MAX_SIZE` | `25MB` | Largest accepted `.eml` |
 | `INVESTARY_DOWNLOAD_EXTRA_DOMAINS` | — | Extra domains allowed for report downloads (comma-separated) |
 | `INVESTARY_DOWNLOAD_MAX_SIZE` | `50MB` | Largest downloaded report |
-| `INVESTARY_DOWNLOAD_TEMP_DIR` | `~/.investary/tmp` | Partial downloads before validation |
+| `INVESTARY_DOWNLOAD_TEMP_DIR` | dev: `data/tmp`; otherwise `~/.investary/tmp` | Partial downloads before validation |
 | `INVESTARY_DOWNLOAD_WORKER_ENABLED` | `true` | Run the background download worker |
 | `INVESTARY_CORS_ALLOWED_ORIGINS` | none (dev: `http://localhost:4200,http://localhost:4201`) | Comma-separated browser origins |
 | `INVESTARY_LOG_FORMAT` | `ecs` (dev: plain text) | Structured console logging format |
@@ -538,16 +538,25 @@ Flyway applies `V3` on the next backend start.
 
 ## Back up and move your data
 
-Your data is the PostgreSQL database plus two folders: library PDFs (`INVESTARY_STORAGE_ROOT`, default
-`~/.investary/documents`) and original emails (`INVESTARY_EMAIL_STORAGE_ROOT`, default `~/.investary/emails`). It is
-**not** in git and must never be: this repository is public, emails contain personal data and brokerage reports are
-third-party content (ADR 0015). Move it as a backup archive instead.
+Your data is the PostgreSQL database (Docker volume `investary_postgres-data`) plus the project's `data/` folder:
+
+```
+data/            git-ignored; never commit it
+  documents/     library PDFs        (INVESTARY_STORAGE_ROOT, dev default ../data/documents from backend/)
+  emails/        original emails     (INVESTARY_EMAIL_STORAGE_ROOT)
+  tmp/           partial downloads   (INVESTARY_DOWNLOAD_TEMP_DIR)
+  backups/       backup archives     (scripts/backup-data.mjs)
+```
+
+It is **not** in git and must never be: this repository is public, emails contain personal data and brokerage reports
+are third-party content (ADR 0015). `.gitignore`, `.graphifyignore` and the harness check keep `data/` out. Move it
+to another device as a backup archive instead.
 
 On the device that has the data (PostgreSQL running; stop the backend for a fully consistent copy):
 
 ```bash
-node scripts/backup-data.mjs                 # → ~/investary-backups/investary-backup-<date>-<time>.tar.gz
-node scripts/backup-data.mjs --out D:/Backup # any folder outside the repository
+node scripts/backup-data.mjs                 # → data/backups/investary-backup-<date>-<time>.tar.gz
+node scripts/backup-data.mjs --out D:/Backup # or a folder outside the repository
 ```
 
 Copy the archive privately (OneDrive, Google Drive, USB). On the other device, after `git pull` and creating
@@ -560,7 +569,7 @@ node scripts/restore-data.mjs <archive> --yes  # restores
 ```
 
 - The restore **replaces** the database and both folders. The backend must be stopped. The current data is saved
-  first as `investary-pre-restore-*.tar.gz` (in `~/investary-backups`, or `--safety-out <folder>`).
+  first as `investary-pre-restore-*.tar.gz` (in `data/backups`, or `--safety-out <folder>`).
 - The archive holds `database.dump` (`pg_dump` custom format), `documents/`, `emails/` and `manifest.json`
   (counts, schema version, dump SHA-256). The checksum is verified and the restored counts are compared with it.
 - Restore into code that is the same or newer: Flyway migrates the restored database forward on the next start.

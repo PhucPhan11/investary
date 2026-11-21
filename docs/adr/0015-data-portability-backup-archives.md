@@ -44,3 +44,12 @@ The data lives in PostgreSQL (Docker volume) and two file stores (`investary.sto
 - Restoring into older code than the backup is not supported (Flyway would find unknown migrations); newer code
   migrates forward.
 - Gmail's encrypted refresh token only decrypts with the same `INVESTARY_GMAIL_TOKEN_KEY`; otherwise reconnect.
+
+## Amendment (2026-11-21): data folder inside the project
+
+The user wants all project data in the project folder. In the dev profile the file stores and the download temp folder
+default to `data/documents`, `data/emails` and `data/tmp` (relative to `backend/`, the working directory of
+`spring-boot:run`), and backups default to `data/backups`. `data/` is git-ignored and in `.graphifyignore`; the
+harness fails on any tracked file under it. The backup script may write inside the repository only into a git-ignored
+folder. PostgreSQL data stays in the Docker volume: bind-mounting it into a Windows folder is slow and prone to
+permission errors, and the backup archive is the portable copy. Non-dev runs keep the `~/.investary` defaults.

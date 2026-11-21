@@ -1,0 +1,2 @@
+# Never index local user data (library PDFs, original emails, backups); see AGENTS.md "Code map (graphify)".
+data/

@@ -4,7 +4,7 @@
 //   node scripts/restore-data.mjs <archive.tar.gz>          shows what would be replaced, changes nothing
 //   node scripts/restore-data.mjs <archive.tar.gz> --yes    restores
 //
-// Before restoring, the current data is backed up to ~/investary-backups (or --safety-out <folder>) as
+// Before restoring, the current data is backed up to data/backups (or --safety-out <folder>) as
 // investary-pre-restore-*.tar.gz. The backend must be stopped; PostgreSQL must be running. When the code is newer
 // than the backup, Flyway migrates the restored database forward on the next backend start.
 // Options for unusual setups: --container <name> --db-user <user> --db-name <db>.

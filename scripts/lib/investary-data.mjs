@@ -6,7 +6,11 @@
 //   emails/         original EMLs (investary.email.storage.root)
 //   manifest.json   counts and the dump checksum
 // The archive contains personal data (emails) and third-party research. It must never be committed:
-// the scripts refuse to write it inside the repository, and the harness fails on tracked backups.
+// the scripts write it only outside the repository or into a git-ignored folder (default data/backups), and the
+// harness fails on tracked backups or anything tracked under data/.
+//
+// Local data lives in <repo>/data/ (documents, emails, tmp, backups), matching the dev profile defaults in
+// backend/src/main/resources/application-dev.yml. The database stays in the Docker volume.
 
 import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
@@ -15,12 +19,15 @@ import {
   statSync, writeFileSync,
 } from 'node:fs';
 import { createConnection } from 'node:net';
-import { homedir, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-export const DEFAULT_BACKUP_DIR = join(homedir(), 'investary-backups');
+export const DATA_DIR = join(ROOT, 'data');
+export const DEFAULT_BACKUP_DIR = join(DATA_DIR, 'backups');
+// The dev backend runs in backend/, so relative storage paths in the environment are relative to that folder.
+const BACKEND_DIR = join(ROOT, 'backend');
 const FORMAT_VERSION = 1;
 
 /** Parses `--name value` / `--flag` arguments; positional arguments go to `_`. */
@@ -58,13 +65,12 @@ function readDotEnv() {
 /** Connection and storage settings: command-line options, then the environment, then infrastructure/.env, then defaults. */
 export function settings(args = {}) {
   const env = { ...readDotEnv(), ...process.env };
-  const home = join(homedir(), '.investary');
   return {
     container: args.container ?? 'investary-postgres',
     dbUser: args['db-user'] ?? env.POSTGRES_USER ?? 'investary',
     dbName: args['db-name'] ?? env.POSTGRES_DB ?? 'investary',
-    documentsRoot: resolve(env.INVESTARY_STORAGE_ROOT || join(home, 'documents')),
-    emailsRoot: resolve(env.INVESTARY_EMAIL_STORAGE_ROOT || join(home, 'emails')),
+    documentsRoot: env.INVESTARY_STORAGE_ROOT ? resolve(BACKEND_DIR, env.INVESTARY_STORAGE_ROOT) : join(DATA_DIR, 'documents'),
+    emailsRoot: env.INVESTARY_EMAIL_STORAGE_ROOT ? resolve(BACKEND_DIR, env.INVESTARY_EMAIL_STORAGE_ROOT) : join(DATA_DIR, 'emails'),
     backendPort: Number(args['backend-port'] ?? 8080),
   };
 }
@@ -74,10 +80,24 @@ export function fail(message) {
   process.exit(1);
 }
 
-/** True when `path` is the repository or inside it. */
-export function insideRepository(path) {
-  const rel = relative(ROOT, resolve(path));
-  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+/** True when `path` is inside the repository and git would track files written there (not ignored). */
+export function trackableInRepository(path) {
+  const target = resolve(path);
+  const rel = relative(ROOT, target);
+  if (rel.startsWith('..') || isAbsolute(rel)) {
+    return false;
+  }
+  if (rel === '') {
+    return true;
+  }
+  try {
+    // Exit 0 = ignored. Probe a neutral file name inside the folder, so folder rules ("/data/") apply but the
+    // file-name rules for backups (investary-backup-*, *.dump) do not make every folder look ignored.
+    execFileSync('git', ['check-ignore', '-q', join(rel, 'folder-ignore-probe.txt').replace(/\\/g, '/')], { cwd: ROOT, stdio: 'ignore' });
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 /** Resolves to true when something accepts TCP connections on localhost:port. */
@@ -190,8 +210,9 @@ export function formatSize(bytes) {
  */
 export async function backup(cfg, outDir, prefix = 'investary-backup') {
   const target = resolve(outDir);
-  if (insideRepository(target)) {
-    fail(`refusing to write a backup inside the repository (${target}); it contains personal data. Use --out with a folder outside the repo.`);
+  if (trackableInRepository(target)) {
+    fail(`refusing to write a backup to ${target}: git would track it and it contains personal data. `
+      + 'Use the default data/backups, another git-ignored folder, or a folder outside the repository.');
   }
   mkdirSync(target, { recursive: true });
   const staging = mkdtempSync(join(tmpdir(), 'investary-backup-'));

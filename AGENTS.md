@@ -75,6 +75,8 @@ journal ──▶ portfolio, investor (*QueryService only), document, email, res
 - Original files are authoritative: PDFs in `investary.storage.root`, EMLs in
   `investary.email.storage.root` (`yyyy/MM/<uuid>.eml`). Database content columns, links and research
   items are **derived**.
+- In development all local data lives in the git-ignored `data/` folder (`documents`, `emails`, `tmp`, `backups`);
+  the database stays in the Docker volume. Never commit, quote or graphify anything under `data/` (ADR 0015).
 - Never put storage keys or file paths in API responses or error messages.
 - Research data copies values from the source and never invents them. A source rating such as
   "Chờ mua" is the brokerage's statement, not Investary advice.
@@ -128,7 +130,7 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 | Frontend tests | `cd frontend && npm test -- --watch=false` |
 | Frontend build | `cd frontend && npm run build` |
 | Harness checks | `node scripts/check-harness.mjs` |
-| Back up data (DB + PDFs + EMLs) | `node scripts/backup-data.mjs` (archive in `~/investary-backups`, never in the repo) |
+| Back up data (DB + PDFs + EMLs) | `node scripts/backup-data.mjs` (archive in the git-ignored `data/backups`, never committed) |
 | Restore data on another device | `node scripts/restore-data.mjs <archive> --yes` (backend stopped; replaces DB and files) |
 
 - Always use `./mvnw`, never `mvn`. The installed Maven mirrors to an unreachable corporate Nexus.

@@ -3,10 +3,10 @@
 // device or keep a copy. The archive holds personal data and third-party research: keep it private and never
 // commit it (the public repository is for code only).
 //
-//   node scripts/backup-data.mjs [--out <folder>]      default folder: ~/investary-backups
+//   node scripts/backup-data.mjs [--out <folder>]      default folder: data/backups (git-ignored)
 //
 // Options for unusual setups: --container <name> --db-user <user> --db-name <db>. Storage roots come from
-// INVESTARY_STORAGE_ROOT / INVESTARY_EMAIL_STORAGE_ROOT (default ~/.investary/documents and ~/.investary/emails).
+// INVESTARY_STORAGE_ROOT / INVESTARY_EMAIL_STORAGE_ROOT (default data/documents and data/emails).
 // Restore with scripts/restore-data.mjs.
 
 import { DEFAULT_BACKUP_DIR, backup, formatSize, parseArgs, portInUse, requireContainer, settings } from './lib/investary-data.mjs';

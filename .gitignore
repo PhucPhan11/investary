@@ -12,7 +12,9 @@ storage/
 *.eml
 # Synthetic, sanitized test fixtures only
 !backend/src/test/resources/eml/*.eml
-# Data backups (scripts/backup-data.mjs): personal data, keep them outside the repo
+# Local data folder: library PDFs, original emails, partial downloads and backups (ADR 0015)
+/data/
+# Data backups (scripts/backup-data.mjs) elsewhere: personal data, never commit
 *.dump
 investary-backup-*
 investary-pre-restore-*

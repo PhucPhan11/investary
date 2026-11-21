@@ -5,7 +5,7 @@
 //   node scripts/check-harness.mjs --update-migrations record checksums of NEW Flyway migrations
 //
 // Checks:
-//   1. sensitive files   git must not track real emails/PDFs, .env files or data backups
+//   1. sensitive files   git must not track real emails/PDFs, .env files, data backups or anything under data/
 //   2. migrations        applied Flyway migrations are immutable (checksums in docs/harness/migration-checksums.json)
 //   3. docs drift        paths and npm scripts named in agent docs exist; IntelliJ run configs point at real paths
 //   4. failure memory    every docs/failures/*.md has "## Prevention" and "## Detection" sections
@@ -41,6 +41,9 @@ function checkSensitiveFiles() {
     }
     if (/(^|\/)\.env$/.test(lower)) {
       fail('sensitive-files', `${file}: .env files hold secrets; commit .env.example instead`);
+    }
+    if (file.startsWith('data/')) {
+      fail('sensitive-files', `${file}: data/ holds local user data (PDFs, emails, backups) and must never be committed`);
     }
     if (lower.endsWith('.dump') || /(^|\/)investary-(backup|pre-restore)-[^/]*$/.test(lower)) {
       fail('sensitive-files', `${file}: data backups hold personal data; keep them outside the repo (scripts/backup-data.mjs)`);
@@ -144,7 +147,7 @@ function checkDocsDrift() {
   }
 }
 
-/** A repo-relative file or folder path; commands, URLs, globs, placeholders and git-ignored env files are skipped. */
+/** A repo-relative file or folder path; commands, URLs, globs, placeholders, git-ignored env files and data/ are skipped. */
 function isCheckablePath(token) {
   return (
     token.includes('/') &&
@@ -153,7 +156,8 @@ function isCheckablePath(token) {
     !token.startsWith('/') &&
     !token.startsWith('./') &&
     !token.startsWith('-') &&
-    !token.endsWith('.env')
+    !token.endsWith('.env') &&
+    !token.startsWith('data/')
   );
 }
 
