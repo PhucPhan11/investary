@@ -5,7 +5,7 @@
 //   node scripts/check-harness.mjs --update-migrations record checksums of NEW Flyway migrations
 //
 // Checks:
-//   1. sensitive files   git must not track real emails/PDFs or .env files
+//   1. sensitive files   git must not track real emails/PDFs, .env files or data backups
 //   2. migrations        applied Flyway migrations are immutable (checksums in docs/harness/migration-checksums.json)
 //   3. docs drift        paths and npm scripts named in agent docs exist; IntelliJ run configs point at real paths
 //   4. failure memory    every docs/failures/*.md has "## Prevention" and "## Detection" sections
@@ -41,6 +41,9 @@ function checkSensitiveFiles() {
     }
     if (/(^|\/)\.env$/.test(lower)) {
       fail('sensitive-files', `${file}: .env files hold secrets; commit .env.example instead`);
+    }
+    if (lower.endsWith('.dump') || /(^|\/)investary-(backup|pre-restore)-[^/]*$/.test(lower)) {
+      fail('sensitive-files', `${file}: data backups hold personal data; keep them outside the repo (scripts/backup-data.mjs)`);
     }
   }
 }

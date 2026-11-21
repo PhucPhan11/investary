@@ -172,6 +172,8 @@ Debug and Compound configurations.
 | Frontend tests | `npm test -- --watch=false` |
 | Harness check | `node scripts/check-harness.mjs` (see "Working with AI coding agents") |
 
+To move your data to another device, see "Back up and move your data" below.
+
 One-time setup:
 1. *File → Project Structure → Project → SDK*: select a JDK 21 (any vendor/name). The Maven
    configurations use the project SDK, so they do not depend on what the JDK is called.
@@ -533,6 +535,39 @@ docker exec investary-postgres psql -U investary -d investary -c "REINDEX DATABA
 ```
 
 Flyway applies `V3` on the next backend start.
+
+## Back up and move your data
+
+Your data is the PostgreSQL database plus two folders: library PDFs (`INVESTARY_STORAGE_ROOT`, default
+`~/.investary/documents`) and original emails (`INVESTARY_EMAIL_STORAGE_ROOT`, default `~/.investary/emails`). It is
+**not** in git and must never be: this repository is public, emails contain personal data and brokerage reports are
+third-party content (ADR 0015). Move it as a backup archive instead.
+
+On the device that has the data (PostgreSQL running; stop the backend for a fully consistent copy):
+
+```bash
+node scripts/backup-data.mjs                 # → ~/investary-backups/investary-backup-<date>-<time>.tar.gz
+node scripts/backup-data.mjs --out D:/Backup # any folder outside the repository
+```
+
+Copy the archive privately (OneDrive, Google Drive, USB). On the other device, after `git pull` and creating
+`infrastructure/.env`:
+
+```bash
+docker compose -f infrastructure/docker-compose.yml up -d --wait
+node scripts/restore-data.mjs <archive>        # shows what would be replaced; changes nothing
+node scripts/restore-data.mjs <archive> --yes  # restores
+```
+
+- The restore **replaces** the database and both folders. The backend must be stopped. The current data is saved
+  first as `investary-pre-restore-*.tar.gz` (in `~/investary-backups`, or `--safety-out <folder>`).
+- The archive holds `database.dump` (`pg_dump` custom format), `documents/`, `emails/` and `manifest.json`
+  (counts, schema version, dump SHA-256). The checksum is verified and the restored counts are compared with it.
+- Restore into code that is the same or newer: Flyway migrates the restored database forward on the next start.
+- A connected Gmail account only works on a device with the same `INVESTARY_GMAIL_TOKEN_KEY`; otherwise reconnect it.
+- Two devices do not merge: the last restore wins. Back up on the device you worked on, restore on the other.
+- Options for unusual setups: `--container`, `--db-user`, `--db-name`; the scripts need Docker and `tar`
+  (built into Windows 10+, macOS and Linux).
 
 ## Database migrations
 

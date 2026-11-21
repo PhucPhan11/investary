@@ -128,6 +128,8 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 | Frontend tests | `cd frontend && npm test -- --watch=false` |
 | Frontend build | `cd frontend && npm run build` |
 | Harness checks | `node scripts/check-harness.mjs` |
+| Back up data (DB + PDFs + EMLs) | `node scripts/backup-data.mjs` (archive in `~/investary-backups`, never in the repo) |
+| Restore data on another device | `node scripts/restore-data.mjs <archive> --yes` (backend stopped; replaces DB and files) |
 
 - Always use `./mvnw`, never `mvn`. The installed Maven mirrors to an unreachable corporate Nexus.
 - Do not use `npx`; NVM blocks it here. Use `npm run …` or `node node_modules/.bin/…`.
@@ -215,7 +217,8 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**
-  - Never commit real emails, PDFs or `infrastructure/.env`.
+  - Never commit real emails, PDFs, data backups or `infrastructure/.env`. The repository is public; user data moves
+    between devices only as a backup archive outside git (ADR 0015).
   - Fixtures are synthetic and live in `backend/src/test/resources/eml/`; research PDFs are generated in
     tests (`TestResearchPdfs`), never committed. The evaluation set is `backend/src/test/resources/knowledge/eval/questions.json`.
   - Tests must not contact real websites; use WireMock.

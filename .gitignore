@@ -12,6 +12,10 @@ storage/
 *.eml
 # Synthetic, sanitized test fixtures only
 !backend/src/test/resources/eml/*.eml
+# Data backups (scripts/backup-data.mjs): personal data, keep them outside the repo
+*.dump
+investary-backup-*
+investary-pre-restore-*
 
 # --- Backend ---
 backend/target/
