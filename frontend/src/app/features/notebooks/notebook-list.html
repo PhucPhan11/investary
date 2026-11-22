@@ -1,0 +1,75 @@
+<section class="page-header">
+  <div>
+    <h1 class="page-title" i18n="@@notebookList.title">Research notebooks</h1>
+    <p class="page-subtitle" i18n="@@notebookList.subtitle">
+      Pick a set of reports and emails, then ask questions and generate summaries that use only those sources. Every
+      statement cites the source it came from.
+    </p>
+  </div>
+</section>
+
+@if (error(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+}
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title" i18n="@@notebookList.newNotebook">New notebook</h2>
+  </div>
+  <form class="notebook-create" (ngSubmit)="create()">
+    <label class="field">
+      <span class="field__label" i18n="@@notebookList.name">Name</span>
+      <input class="input" name="title" maxlength="200" required placeholder="e.g. SCS — Q4 2026" i18n-placeholder="@@notebookList.namePlaceholder" [(ngModel)]="title" />
+    </label>
+    <label class="field">
+      <span class="field__label" i18n="@@notebookList.description">Description (optional)</span>
+      <input class="input" name="description" maxlength="2000" [(ngModel)]="description" />
+    </label>
+    <div class="actions">
+      <button type="submit" class="btn btn--primary" [disabled]="!title.trim() || creating()" i18n="@@notebookList.create">Create notebook</button>
+    </div>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title" i18n="@@notebookList.notebooks">Notebooks</h2>
+  </div>
+  @if (notebooks() === null && !error()) {
+    <p class="muted" i18n="@@notebookList.loading">Loading notebooks…</p>
+  } @else if (notebooks()?.length === 0) {
+    <app-empty-state title="No notebooks yet" i18n-title="@@notebookList.emptyTitle">
+      <ng-container i18n="@@notebookList.empty">Create a notebook, add the reports you are studying, and ask questions across them.</ng-container>
+    </app-empty-state>
+  } @else if (notebooks(); as list) {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col" i18n="@@notebookList.colName">Name</th>
+            <th scope="col" i18n="@@notebookList.colSources">Sources</th>
+            <th scope="col" i18n="@@notebookList.colQuestions">Questions</th>
+            <th scope="col" i18n="@@notebookList.colNotes">Notes</th>
+            <th scope="col" i18n="@@notebookList.colUpdated">Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (n of list; track n.id) {
+            <tr [attr.data-notebook]="n.id">
+              <td>
+                <a class="link" [routerLink]="['/notebooks', n.id]">{{ n.title }}</a>
+                @if (n.description) {
+                  <div class="muted small">{{ n.description }}</div>
+                }
+              </td>
+              <td>{{ n.sourceCount }}</td>
+              <td>{{ n.questionCount }}</td>
+              <td>{{ n.noteCount }}</td>
+              <td>{{ n.updatedAt | date: 'short' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

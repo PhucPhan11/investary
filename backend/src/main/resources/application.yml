@@ -225,6 +225,23 @@ investary:
       poll-interval: 30s
       lease: 15m
 
+  # Research notebooks (Phase 6 / Milestone 2): chat and generated notes over a picked set of sources.
+  notebook:
+    max-notebook-sources: ${INVESTARY_NOTEBOOK_MAX_SOURCES:200}
+    chat-sources: 8
+    chat-history-turns: ${INVESTARY_NOTEBOOK_CHAT_HISTORY_TURNS:6}
+    note-sources: ${INVESTARY_NOTEBOOK_NOTE_SOURCES:20}
+    chunks-per-source: 3
+    max-context-chars: 16000
+    daily-note-limit: ${INVESTARY_NOTEBOOK_DAILY_NOTE_LIMIT:30}
+    max-attempts: 3
+    retry-backoff: 1m
+    ai-timeout: ${INVESTARY_AI_TIMEOUT:120s}
+    worker:
+      enabled: ${INVESTARY_NOTEBOOK_WORKER_ENABLED:true}
+      poll-interval: 5s
+      lease: 15m
+
   # Process-wide limits on concurrent AI provider calls (assistant, intelligence, indexing, workflows).
   ai:
     max-concurrent-chat: ${INVESTARY_AI_MAX_CONCURRENT_CHAT:2}

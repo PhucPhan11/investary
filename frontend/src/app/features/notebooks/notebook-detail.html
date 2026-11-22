@@ -1,0 +1,460 @@
+<ng-template #cited let-text="text" let-owner="owner">
+  @for (segment of segments(text); track $index) {
+    @if (segment.text !== null) {<span>{{ segment.text }}</span>} @else {
+      @for (label of segment.labels; track label) {
+        <button
+          type="button"
+          class="cite"
+          [class.cite--active]="highlighted() === anchor(owner, label)"
+          [attr.aria-label]="showSourceLabel(label)"
+          (click)="showSource(owner, label)"
+        >{{ label }}</button>
+      }
+    }
+  }
+</ng-template>
+
+<ng-template #citationList let-citations="citations" let-owner="owner">
+  @if (citations.length) {
+    <details class="nb-citations" open>
+      <summary class="small" i18n="@@notebook.citations">Sources ({{ citations.length }})</summary>
+      <ol class="sources">
+        @for (c of citations; track c.label) {
+          <li class="source" [id]="anchor(owner, c.label)" [class.source--active]="highlighted() === anchor(owner, c.label)">
+            <div class="source__head">
+              <span class="cite cite--static">{{ c.label }}</span>
+              <span class="tag tag--plain">@if (c.sourceType === 'DOCUMENT') {PDF} @else {<ng-container i18n="@@common.email">Email</ng-container>}</span>
+              @if (c.publisher) {
+                <span class="tag">{{ c.publisher }}</span>
+              }
+            </div>
+            @if (citationLink(c); as link) {
+              <a class="source__title link" [routerLink]="link">{{ c.title }}</a>
+            } @else {
+              <span class="source__title">{{ c.title }}</span>
+              <span class="badge badge--warning" i18n="@@notebook.sourceDeleted">Source deleted</span>
+            }
+            <p class="source__meta muted small">
+              @if (c.publishedOn) {
+                @if (c.dateBasis === 'EMAIL_SENT') {
+                  <ng-container i18n="@@researchAssistant.emailDate">Email date {{ c.publishedOn | date: 'mediumDate' }}</ng-container>
+                } @else {
+                  <ng-container i18n="@@researchAssistant.publishedDate">Published {{ c.publishedOn | date: 'mediumDate' }}</ng-container>
+                }
+              }
+              @if (c.location) { · {{ c.location }} }
+            </p>
+            <blockquote class="source__excerpt">{{ c.excerpt }}</blockquote>
+          </li>
+        }
+      </ol>
+    </details>
+  }
+</ng-template>
+
+@if (loadError(); as message) {
+  <app-alert kind="error">{{ message }}</app-alert>
+  <a class="link" routerLink="/notebooks" i18n="@@notebook.back">← All notebooks</a>
+} @else if (notebook(); as n) {
+  <section class="page-header">
+    <div>
+      <a class="link small" routerLink="/notebooks" i18n="@@notebook.back">← All notebooks</a>
+      @if (editing()) {
+        <form class="notebook-edit" (ngSubmit)="saveEdit(n)">
+          <input class="input" name="title" maxlength="200" required [(ngModel)]="editTitle" aria-label="Name" i18n-aria-label="@@notebookList.name" />
+          <input class="input" name="description" maxlength="2000" [(ngModel)]="editDescription" aria-label="Description" i18n-aria-label="@@notebook.descriptionLabel" />
+          <div class="actions">
+            <button type="submit" class="btn btn--primary" i18n="@@notebook.save">Save</button>
+            <button type="button" class="btn btn--ghost" (click)="editing.set(false)" i18n="@@notebook.cancel">Cancel</button>
+          </div>
+        </form>
+      } @else {
+        <h1 class="page-title">{{ n.title }}</h1>
+        @if (n.description) {
+          <p class="page-subtitle">{{ n.description }}</p>
+        }
+      }
+    </div>
+    @if (!editing()) {
+      <div class="actions">
+        <button type="button" class="btn btn--ghost" (click)="startEdit(n)" i18n="@@notebook.rename">Rename</button>
+        <button type="button" class="btn btn--danger" (click)="remove(n)" i18n="@@notebook.delete">Delete</button>
+      </div>
+    }
+  </section>
+
+  @if (actionError(); as message) {
+    <app-alert kind="error">{{ message }}</app-alert>
+  }
+
+  <div class="notebook">
+    <!-- Sources -->
+    <aside class="card notebook__sources" aria-label="Notebook sources" i18n-aria-label="@@notebook.sourcesLabel">
+      <div class="card__header">
+        <h2 class="card__title" i18n="@@notebook.sources">Sources</h2>
+        <span class="muted small" i18n="@@notebook.searchableCount">{{ n.searchableSources }} of {{ n.sources.length }} searchable</span>
+      </div>
+
+      @if (!pickerOpen()) {
+        <button type="button" class="btn btn--primary btn--block" (click)="openPicker()" i18n="@@notebook.addSources">Add sources</button>
+      } @else {
+        <div class="picker">
+          <div class="tabs" role="tablist">
+            <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="pickerTab() === 'documents'" [attr.aria-selected]="pickerTab() === 'documents'" (click)="pickerTab.set('documents')" i18n="@@notebook.picker.documents">Reports</button>
+            <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="pickerTab() === 'emails'" [attr.aria-selected]="pickerTab() === 'emails'" (click)="pickerTab.set('emails')" i18n="@@notebook.picker.emails">Emails</button>
+            <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="pickerTab() === 'filter'" [attr.aria-selected]="pickerTab() === 'filter'" (click)="pickerTab.set('filter')" i18n="@@notebook.picker.filter">By filter</button>
+          </div>
+          @if (pickerError(); as message) {
+            <app-alert kind="error">{{ message }}</app-alert>
+          }
+          @switch (pickerTab()) {
+            @case ('documents') {
+              @if (pickerDocuments() === null) {
+                <p class="muted small" i18n="@@notebook.picker.loading">Loading…</p>
+              } @else {
+                <ul class="picker__list">
+                  @for (d of pickerDocuments(); track d.id) {
+                    <li>
+                      <label class="picker__item">
+                        <input type="checkbox" [checked]="selected().has(d.id) || present().has(d.id)" [disabled]="present().has(d.id)" (change)="toggle(d.id)" />
+                        <span>
+                          {{ d.originalFilename }}
+                          <span class="muted small">{{ d.brokerageCompany ?? '' }} {{ d.ticker ?? '' }} {{ d.publishedOn ?? '' }}</span>
+                        </span>
+                      </label>
+                    </li>
+                  } @empty {
+                    <li class="muted small" i18n="@@notebook.picker.noDocuments">No documents in the library.</li>
+                  }
+                </ul>
+              }
+            }
+            @case ('emails') {
+              <form class="picker__search" (ngSubmit)="searchEmails()">
+                <input class="input" name="q" placeholder="Search emails" i18n-placeholder="@@notebook.picker.searchEmails" [(ngModel)]="emailSearch" />
+                <button type="submit" class="btn btn--ghost" i18n="@@notebook.picker.search">Search</button>
+              </form>
+              @if (pickerEmails() === null) {
+                <p class="muted small" i18n="@@notebook.picker.loading">Loading…</p>
+              } @else {
+                <ul class="picker__list">
+                  @for (e of pickerEmails(); track e.id) {
+                    <li>
+                      <label class="picker__item">
+                        <input type="checkbox" [checked]="selected().has(e.id) || present().has(e.id)" [disabled]="present().has(e.id)" (change)="toggle(e.id)" />
+                        <span>
+                          {{ e.subject ?? '—' }}
+                          <span class="muted small">{{ e.brokerage ?? e.senderName ?? '' }} {{ e.sentAt | date: 'shortDate' }}</span>
+                        </span>
+                      </label>
+                    </li>
+                  } @empty {
+                    <li class="muted small" i18n="@@notebook.picker.noEmails">No emails found.</li>
+                  }
+                </ul>
+              }
+            }
+            @case ('filter') {
+              <form class="picker__filter" (ngSubmit)="addByFilter(n)">
+                <p class="muted small" i18n="@@notebook.picker.filterHelp">Adds the indexed sources that match now, newest first. Later research is not added automatically.</p>
+                <label class="field">
+                  <span class="field__label" i18n="@@notebook.picker.ticker">Ticker</span>
+                  <input class="input" name="ticker" maxlength="10" [(ngModel)]="filter.ticker" />
+                </label>
+                <label class="field">
+                  <span class="field__label" i18n="@@notebook.picker.brokerage">Brokerage</span>
+                  <input class="input" name="brokerage" maxlength="100" [(ngModel)]="filter.brokerage" />
+                </label>
+                <label class="field">
+                  <span class="field__label" i18n="@@notebook.picker.type">Type</span>
+                  <select class="input" name="sourceType" [(ngModel)]="filter.sourceType">
+                    <option value="" i18n="@@notebook.picker.anyType">Reports and emails</option>
+                    <option value="DOCUMENT" i18n="@@notebook.picker.reportsOnly">PDF reports</option>
+                    <option value="EMAIL" i18n="@@notebook.picker.emailsOnly">Emails</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field__label" i18n="@@notebook.picker.from">From</span>
+                  <input class="input" type="date" name="from" [(ngModel)]="filter.from" />
+                </label>
+                <label class="field">
+                  <span class="field__label" i18n="@@notebook.picker.to">To</span>
+                  <input class="input" type="date" name="to" [(ngModel)]="filter.to" />
+                </label>
+                <button type="submit" class="btn btn--primary" [disabled]="adding()" i18n="@@notebook.picker.addMatching">Add matching sources</button>
+              </form>
+            }
+          }
+          <div class="actions">
+            @if (pickerTab() !== 'filter') {
+              <button type="button" class="btn btn--primary" [disabled]="!selected().size || adding()" (click)="addSelected(n)" i18n="@@notebook.picker.addSelected">Add {{ selected().size }} selected</button>
+            }
+            <button type="button" class="btn btn--ghost" (click)="pickerOpen.set(false)" i18n="@@notebook.cancel">Cancel</button>
+          </div>
+        </div>
+      }
+
+      @if (unsearchable()) {
+        <p class="turn__note" i18n="@@notebook.unsearchableNote">{{ unsearchable() }} source(s) are not indexed yet and are not used until they are.</p>
+      }
+
+      <ul class="nb-sources">
+        @for (s of n.sources; track s.sourceId) {
+          <li class="nb-source">
+            <div class="nb-source__head">
+              <span class="tag tag--plain">@if (s.sourceType === 'DOCUMENT') {PDF} @else {<ng-container i18n="@@common.email">Email</ng-container>}</span>
+              @if (s.brokerage) {
+                <span class="tag">{{ s.brokerage }}</span>
+              }
+              @if (s.indexState !== 'INDEXED') {
+                <span class="badge badge--warning">{{ indexState(s.indexState) }}</span>
+              }
+            </div>
+            <a class="link" [routerLink]="sourceLink(s.sourceType, s.sourceId)">{{ s.title ?? '—' }}</a>
+            <div class="muted small">
+              @if (s.publishedOn) {{{ s.publishedOn | date: 'mediumDate' }}}
+              @if (s.tickers.length) { · {{ s.tickers.slice(0, 5).join(', ') }} }
+            </div>
+            <div class="nb-source__actions">
+              @if (s.indexState !== 'INDEXED' && s.indexState !== 'PENDING' && s.indexState !== 'PROCESSING') {
+                <button type="button" class="link-button small" (click)="index(n, s)" i18n="@@notebook.index">Index</button>
+              }
+              <button type="button" class="link-button small" (click)="removeSource(n, s)" i18n="@@notebook.removeSource">Remove</button>
+            </div>
+          </li>
+        } @empty {
+          <li class="muted small" i18n="@@notebook.noSources">No sources yet. Add the reports and emails you want to work with.</li>
+        }
+      </ul>
+    </aside>
+
+    <!-- Chat and studio -->
+    <section class="notebook__main">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="tab() === 'chat'" [attr.aria-selected]="tab() === 'chat'" (click)="tab.set('chat')" i18n="@@notebook.tab.chat">Chat</button>
+        <button type="button" role="tab" class="tabs__tab" [class.tabs__tab--active]="tab() === 'studio'" [attr.aria-selected]="tab() === 'studio'" (click)="tab.set('studio')" i18n="@@notebook.tab.studio">Notes</button>
+      </div>
+
+      @if (tab() === 'chat') {
+        <div class="card">
+          @if (messages().length) {
+            <div class="card__header">
+              <span class="muted small" i18n="@@notebook.historyNote">Follow-up questions use the earlier conversation as context; answers cite only the notebook's sources.</span>
+              <button type="button" class="link-button small" (click)="clearChat(n)" i18n="@@notebook.clearChat">Clear conversation</button>
+            </div>
+          }
+          @if (chatError(); as message) {
+            <app-alert kind="error">{{ message }}</app-alert>
+          }
+          <ol class="assistant__turns">
+            @for (m of messages(); track m.id) {
+              @if (m.role === 'USER') {
+                <li class="nb-question">{{ m.content }}</li>
+              } @else {
+                <li class="turn">
+                  @if (m.evidenceStatus) {
+                    <span [class]="'badge badge--' + evidence(m.evidenceStatus).tone">{{ evidence(m.evidenceStatus).label }}</span>
+                  }
+                  <p class="turn__text"><ng-container *ngTemplateOutlet="cited; context: { text: m.content, owner: m.id }" /></p>
+                  @if (m.warnings.length) {
+                    <ul class="turn__warnings">
+                      @for (warning of m.warnings; track $index) {
+                        <li>{{ warning }}</li>
+                      }
+                    </ul>
+                  }
+                  <ng-container *ngTemplateOutlet="citationList; context: { citations: m.citations, owner: m.id }" />
+                </li>
+              }
+            } @empty {
+              @if (!pendingQuestion()) {
+                <li class="muted" i18n="@@notebook.chatEmpty">Ask anything about the sources in this notebook.</li>
+              }
+            }
+            @if (pendingQuestion(); as q) {
+              <li class="nb-question">{{ q }}</li>
+              <li class="muted" role="status" i18n="@@researchAssistant.searchingSourcesWritingAnswer">Searching sources and writing an answer…</li>
+            }
+          </ol>
+          <form class="nb-ask" (ngSubmit)="ask()">
+            <textarea
+              class="input assistant__question"
+              name="question"
+              rows="2"
+              maxlength="1000"
+              placeholder="Ask about these sources…"
+              i18n-placeholder="@@notebook.askPlaceholder"
+              [(ngModel)]="question"
+              (keydown.control.enter)="ask()"
+            ></textarea>
+            <button type="submit" class="btn btn--primary" [disabled]="asking() || question.trim().length < 3 || !n.searchableSources" i18n="@@notebook.ask">Ask</button>
+          </form>
+          @if (!n.searchableSources) {
+            <p class="muted small" i18n="@@notebook.needSources">Add at least one indexed source to start.</p>
+          }
+          <p class="turn__disclaimer" i18n="@@notebook.disclaimer">Answers come only from the notebook's sources. Brokerage ratings are the brokerages' statements, not Investary advice.</p>
+        </div>
+      } @else {
+        <div class="nb-cards">
+          @for (card of cards; track card.kind) {
+            <div class="card nb-card">
+              <h3 class="card__title">{{ card.title }}</h3>
+              <p class="muted small">{{ card.description }}</p>
+              @if (card.kind === 'CONSENSUS' || card.kind === 'TIMELINE') {
+                <select class="input" [attr.data-ticker-for]="card.kind" [(ngModel)]="tickerFor[card.kind]" aria-label="Ticker" i18n-aria-label="@@notebook.picker.ticker">
+                  <option value="" i18n="@@notebook.chooseTicker">Choose a ticker</option>
+                  @for (t of n.tickers; track t) {
+                    <option [value]="t">{{ t }}</option>
+                  }
+                </select>
+              }
+              <button
+                type="button"
+                class="btn btn--ghost"
+                [disabled]="!n.searchableSources || requesting() !== null || ((card.kind === 'CONSENSUS' || card.kind === 'TIMELINE') && !tickerFor[card.kind])"
+                (click)="generate(n, card.kind)"
+                i18n="@@notebook.generate"
+              >Generate</button>
+            </div>
+          }
+        </div>
+        @if (notesError(); as message) {
+          <app-alert kind="error">{{ message }}</app-alert>
+        }
+
+        @for (note of notes(); track note.id) {
+          <article class="card nb-note" [attr.data-note]="note.id">
+            <div class="card__header">
+              <h3 class="card__title">{{ cardTitle(note.kind) }}@if (note.ticker) { · {{ note.ticker }}}</h3>
+              <span class="muted small">{{ note.createdAt | date: 'short' }}</span>
+            </div>
+            @switch (note.status) {
+              @case ('PENDING') {
+                <p class="muted" role="status" i18n="@@notebook.notePending">Waiting to be generated…</p>
+              }
+              @case ('RUNNING') {
+                <p class="muted" role="status" i18n="@@notebook.noteRunning">Reading the sources and writing the note…</p>
+              }
+              @case ('FAILED') {
+                <app-alert kind="error">
+                  <ng-container i18n="@@notebook.noteFailed">The note could not be generated.</ng-container>
+                  @if (note.errorSummary) { {{ note.errorSummary }} }
+                </app-alert>
+                <button type="button" class="btn btn--ghost" (click)="retry(n, note)" i18n="@@notebook.retry">Retry</button>
+              }
+              @case ('DONE') {
+                @if (note.evidenceStatus) {
+                  <span [class]="'badge badge--' + evidence(note.evidenceStatus).tone">{{ evidence(note.evidenceStatus).label }}</span>
+                }
+                @switch (note.kind) {
+                  @case ('SUMMARY') {
+                    <ul class="nb-points">
+                      @for (p of summary(note).points; track $index) {
+                        <li><ng-container *ngTemplateOutlet="cited; context: { text: p.text, owner: note.id }" /></li>
+                      } @empty {
+                        <li class="muted" i18n="@@notebook.noteEmpty">Nothing in the sources supported this note.</li>
+                      }
+                    </ul>
+                  }
+                  @case ('FAQ') {
+                    <dl class="nb-faq">
+                      @for (item of faq(note).items; track $index) {
+                        <dt>
+                          {{ item.question }}
+                          <button type="button" class="link-button small" (click)="ask(item.question)" i18n="@@notebook.askThis">Ask this</button>
+                        </dt>
+                        <dd><ng-container *ngTemplateOutlet="cited; context: { text: item.answer, owner: note.id }" /></dd>
+                      } @empty {
+                        <dd class="muted" i18n="@@notebook.noteEmpty">Nothing in the sources supported this note.</dd>
+                      }
+                    </dl>
+                  }
+                  @default {
+                    @if (views(note); as v) {
+                      @if (v.sources.length) {
+                        <div class="table-wrap">
+                          <table class="table">
+                            <thead>
+                              <tr>
+                                <th scope="col" i18n="@@notebook.colDate">Date</th>
+                                <th scope="col" i18n="@@notebook.colBrokerage">Brokerage</th>
+                                <th scope="col" i18n="@@notebook.colRating">Rating (as stated)</th>
+                                <th scope="col" i18n="@@notebook.colView">View</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (e of v.sources; track e.group) {
+                                <tr>
+                                  <td>
+                                    {{ e.date ?? '—' }}
+                                    <div class="muted small">
+                                      @switch (e.dateBasis) {
+                                        @case ('PUBLISHED') {<ng-container i18n="@@notebook.basis.PUBLISHED">published</ng-container>}
+                                        @case ('EMAIL_SENT') {<ng-container i18n="@@notebook.basis.EMAIL_SENT">email date</ng-container>}
+                                        @default {<ng-container i18n="@@notebook.basis.IMPORTED">imported</ng-container>}
+                                      }
+                                    </div>
+                                  </td>
+                                  <td>
+                                    {{ e.brokerage ?? '—' }}
+                                    <div><a class="link small" [routerLink]="sourceLink(e.sourceType, e.sourceId)">{{ e.title ?? '—' }}</a></div>
+                                  </td>
+                                  <td>{{ e.rating ?? '—' }}</td>
+                                  <td>
+                                    @if (e.view; as view) {
+                                      <ng-container *ngTemplateOutlet="cited; context: { text: view.text, owner: note.id }" />
+                                    } @else {
+                                      <span class="muted">—</span>
+                                    }
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                        <p class="muted small" i18n="@@notebook.ratingNote">Ratings are the brokerages' own statements, copied from their emails; they are not Investary recommendations.</p>
+                      } @else {
+                        <p class="muted" i18n="@@notebook.noteEmpty">Nothing in the sources supported this note.</p>
+                      }
+                      @if (v.agreements.length) {
+                        <h4 class="nb-subtitle" i18n="@@notebook.agreements">Where sources agree</h4>
+                        <ul class="nb-points">
+                          @for (p of v.agreements; track $index) {
+                            <li><ng-container *ngTemplateOutlet="cited; context: { text: p.text, owner: note.id }" /></li>
+                          }
+                        </ul>
+                      }
+                      @if (v.disagreements.length) {
+                        <h4 class="nb-subtitle" i18n="@@notebook.disagreements">Where sources differ</h4>
+                        <ul class="nb-points">
+                          @for (p of v.disagreements; track $index) {
+                            <li><ng-container *ngTemplateOutlet="cited; context: { text: p.text, owner: note.id }" /></li>
+                          }
+                        </ul>
+                      }
+                    }
+                  }
+                }
+                @if (note.limitations.length) {
+                  <details class="nb-limitations">
+                    <summary class="small" i18n="@@notebook.limitations">Limitations ({{ note.limitations.length }})</summary>
+                    <ul class="turn__warnings">
+                      @for (l of note.limitations; track $index) {
+                        <li>{{ l }}</li>
+                      }
+                    </ul>
+                  </details>
+                }
+                <ng-container *ngTemplateOutlet="citationList; context: { citations: note.citations, owner: note.id }" />
+              }
+            }
+          </article>
+        } @empty {
+          <p class="muted" i18n="@@notebook.notesEmpty">No notes yet. Generate one from the cards above.</p>
+        }
+      }
+    </section>
+  </div>
+} @else {
+  <p class="muted" i18n="@@notebook.loading">Loading notebook…</p>
+}

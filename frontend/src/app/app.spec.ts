@@ -20,7 +20,7 @@ describe('App', () => {
     expect(el.querySelector('.brand__name')?.textContent).toContain('Investary');
     const links = Array.from(el.querySelectorAll('.nav__link')).map((a) => a.textContent?.trim());
     expect(el.querySelector('app-notification-bell')).not.toBeNull();
-    expect(links).toEqual(['Dashboard', 'Document library', 'Email research', 'Portfolios', 'Journal', 'Profile', 'Daily brief', 'Research assistant', 'Automation']);
+    expect(links).toEqual(['Dashboard', 'Document library', 'Email research', 'Portfolios', 'Journal', 'Profile', 'Daily brief', 'Research assistant', 'Notebooks', 'Automation']);
   });
 
   it('shows the current language and links to the other build', async () => {

@@ -6,6 +6,7 @@ public enum AiPurpose {
     BRIEF(true),
     RESEARCH_ASSISTANT(false),
     PORTFOLIO_ASSISTANT(false),
+    NOTEBOOK_NOTE(false),
     INDEXING(false),
     SEARCH(false),
     OTHER(false);

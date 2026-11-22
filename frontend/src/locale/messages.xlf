@@ -49,9 +49,25 @@
         <source>Research assistant · Investary</source>
       </segment>
     </unit>
-    <unit id="title.portfolios">
+    <unit id="title.notebooks">
       <notes>
         <note category="location">src/app/app.routes.ts:37</note>
+      </notes>
+      <segment>
+        <source>Research notebooks · Investary</source>
+      </segment>
+    </unit>
+    <unit id="title.notebook">
+      <notes>
+        <note category="location">src/app/app.routes.ts:42</note>
+      </notes>
+      <segment>
+        <source>Notebook · Investary</source>
+      </segment>
+    </unit>
+    <unit id="title.portfolios">
+      <notes>
+        <note category="location">src/app/app.routes.ts:47</note>
       </notes>
       <segment>
         <source>Portfolios · Investary</source>
@@ -59,7 +75,7 @@
     </unit>
     <unit id="title.portfolio">
       <notes>
-        <note category="location">src/app/app.routes.ts:42</note>
+        <note category="location">src/app/app.routes.ts:52</note>
       </notes>
       <segment>
         <source>Portfolio · Investary</source>
@@ -67,7 +83,7 @@
     </unit>
     <unit id="title.investorProfile">
       <notes>
-        <note category="location">src/app/app.routes.ts:47</note>
+        <note category="location">src/app/app.routes.ts:57</note>
       </notes>
       <segment>
         <source>Investor profile · Investary</source>
@@ -75,7 +91,7 @@
     </unit>
     <unit id="title.dailyBrief">
       <notes>
-        <note category="location">src/app/app.routes.ts:52</note>
+        <note category="location">src/app/app.routes.ts:62</note>
       </notes>
       <segment>
         <source>Daily brief · Investary</source>
@@ -83,7 +99,7 @@
     </unit>
     <unit id="title.brief">
       <notes>
-        <note category="location">src/app/app.routes.ts:57</note>
+        <note category="location">src/app/app.routes.ts:67</note>
       </notes>
       <segment>
         <source>Brief · Investary</source>
@@ -91,7 +107,7 @@
     </unit>
     <unit id="title.automationCenter">
       <notes>
-        <note category="location">src/app/app.routes.ts:66</note>
+        <note category="location">src/app/app.routes.ts:76</note>
       </notes>
       <segment>
         <source>Automation Center · Investary</source>
@@ -99,7 +115,7 @@
     </unit>
     <unit id="title.sourcesAutomationCenter">
       <notes>
-        <note category="location">src/app/app.routes.ts:71</note>
+        <note category="location">src/app/app.routes.ts:81</note>
       </notes>
       <segment>
         <source>Sources · Automation Center · Investary</source>
@@ -107,7 +123,7 @@
     </unit>
     <unit id="title.jobsAutomationCenter">
       <notes>
-        <note category="location">src/app/app.routes.ts:76</note>
+        <note category="location">src/app/app.routes.ts:86</note>
       </notes>
       <segment>
         <source>Jobs · Automation Center · Investary</source>
@@ -115,7 +131,7 @@
     </unit>
     <unit id="title.jobAutomationCenter">
       <notes>
-        <note category="location">src/app/app.routes.ts:81</note>
+        <note category="location">src/app/app.routes.ts:91</note>
       </notes>
       <segment>
         <source>Job · Automation Center · Investary</source>
@@ -123,7 +139,7 @@
     </unit>
     <unit id="title.settingsAutomationCenter">
       <notes>
-        <note category="location">src/app/app.routes.ts:86</note>
+        <note category="location">src/app/app.routes.ts:96</note>
       </notes>
       <segment>
         <source>Settings · Automation Center · Investary</source>
@@ -131,7 +147,7 @@
     </unit>
     <unit id="title.aiUsageAutomationCenter">
       <notes>
-        <note category="location">src/app/app.routes.ts:91</note>
+        <note category="location">src/app/app.routes.ts:101</note>
       </notes>
       <segment>
         <source>AI usage · Automation Center · Investary</source>
@@ -139,7 +155,7 @@
     </unit>
     <unit id="title.decisionJournal">
       <notes>
-        <note category="location">src/app/app.routes.ts:98</note>
+        <note category="location">src/app/app.routes.ts:108</note>
       </notes>
       <segment>
         <source>Decision journal · Investary</source>
@@ -147,7 +163,7 @@
     </unit>
     <unit id="title.newDecision">
       <notes>
-        <note category="location">src/app/app.routes.ts:103</note>
+        <note category="location">src/app/app.routes.ts:113</note>
       </notes>
       <segment>
         <source>New decision · Investary</source>
@@ -155,7 +171,7 @@
     </unit>
     <unit id="title.decision">
       <notes>
-        <note category="location">src/app/app.routes.ts:108</note>
+        <note category="location">src/app/app.routes.ts:118</note>
       </notes>
       <segment>
         <source>Decision · Investary</source>
@@ -163,7 +179,7 @@
     </unit>
     <unit id="title.editDecision">
       <notes>
-        <note category="location">src/app/app.routes.ts:113</note>
+        <note category="location">src/app/app.routes.ts:123</note>
       </notes>
       <segment>
         <source>Edit decision · Investary</source>
@@ -171,7 +187,7 @@
     </unit>
     <unit id="title.notifications">
       <notes>
-        <note category="location">src/app/app.routes.ts:118</note>
+        <note category="location">src/app/app.routes.ts:128</note>
       </notes>
       <segment>
         <source>Notifications · Investary</source>
@@ -247,6 +263,30 @@
       </notes>
       <segment>
         <source>This decision was changed elsewhere. Reload it and try again.</source>
+      </segment>
+    </unit>
+    <unit id="error.NOTEBOOK_CONFLICT">
+      <notes>
+        <note category="location">src/app/core/api/error-message.ts:42</note>
+      </notes>
+      <segment>
+        <source>This notebook was changed elsewhere. Reload it and try again.</source>
+      </segment>
+    </unit>
+    <unit id="error.NOTEBOOK_EMPTY">
+      <notes>
+        <note category="location">src/app/core/api/error-message.ts:45</note>
+      </notes>
+      <segment>
+        <source>This notebook has no indexed sources yet. Add reports or emails that have been indexed.</source>
+      </segment>
+    </unit>
+    <unit id="error.NOTE_LIMIT_REACHED">
+      <notes>
+        <note category="location">src/app/core/api/error-message.ts:48</note>
+      </notes>
+      <segment>
+        <source>The daily limit for generated notes has been reached. Try again tomorrow.</source>
       </segment>
     </unit>
     <unit id="journal.decisionTypeLabels.BUY">
@@ -740,6 +780,7 @@
     <unit id="researchAssistant.searchingSourcesWritingAnswer">
       <notes>
         <note category="location">src/app/features/assistant/research-assistant.html:159,162</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:276,279</note>
       </notes>
       <segment>
         <source>Searching sources and writing an answer…</source>
@@ -792,6 +833,8 @@
         <note category="location">src/app/features/briefs/brief-detail.html:141,142</note>
         <note category="location">src/app/features/briefs/brief-detail.html:150,151</note>
         <note category="location">src/app/features/briefs/brief-detail.html:200,201</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:26,27</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:205,206</note>
       </notes>
       <segment>
         <source>Email</source>
@@ -801,6 +844,7 @@
       <notes>
         <note category="location">src/app/features/assistant/research-assistant.html:235,236</note>
         <note category="location">src/app/features/briefs/brief-detail.html:219,220</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:40,41</note>
       </notes>
       <segment>
         <source>Email date <ph id="0" equiv="INTERPOLATION" disp="{{ c.publishedAt | date: &apos;mediumDate&apos; }}"/></source>
@@ -810,6 +854,7 @@
       <notes>
         <note category="location">src/app/features/assistant/research-assistant.html:237,238</note>
         <note category="location">src/app/features/briefs/brief-detail.html:221,222</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:42,43</note>
       </notes>
       <segment>
         <source>Published <ph id="0" equiv="INTERPOLATION" disp="{{ c.publishedAt | date: &apos;mediumDate&apos; }}"/></source>
@@ -834,6 +879,7 @@
     <unit id="evidence.SUPPORTED">
       <notes>
         <note category="location">src/app/features/assistant/research-assistant.ts:44</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:35</note>
       </notes>
       <segment>
         <source>Supported by sources</source>
@@ -842,6 +888,7 @@
     <unit id="evidence.PARTIAL">
       <notes>
         <note category="location">src/app/features/assistant/research-assistant.ts:45</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:36</note>
       </notes>
       <segment>
         <source>Partially supported</source>
@@ -850,6 +897,7 @@
     <unit id="evidence.INSUFFICIENT">
       <notes>
         <note category="location">src/app/features/assistant/research-assistant.ts:46</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:37</note>
       </notes>
       <segment>
         <source>Insufficient evidence</source>
@@ -908,6 +956,7 @@
       <notes>
         <note category="location">src/app/features/assistant/research-assistant.ts:186</note>
         <note category="location">src/app/features/briefs/brief-detail.ts:108</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:416</note>
       </notes>
       <segment>
         <source>Show source <ph id="0" equiv="label" disp="label"/></source>
@@ -7644,6 +7693,925 @@
         <source>Could not load the decision journal.</source>
       </segment>
     </unit>
+    <unit id="notebook.citations">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:20,21</note>
+      </notes>
+      <segment>
+        <source>Sources (<ph id="0" equiv="INTERPOLATION" disp="{{ citations.length }}"/>)</source>
+      </segment>
+    </unit>
+    <unit id="notebook.sourceDeleted">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:35,37</note>
+      </notes>
+      <segment>
+        <source>Source deleted</source>
+      </segment>
+    </unit>
+    <unit id="notebook.back">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:57,58</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:61,62</note>
+      </notes>
+      <segment>
+        <source>← All notebooks</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.name">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:64</note>
+        <note category="location">src/app/features/notebooks/notebook-list.html:21,22</note>
+      </notes>
+      <segment>
+        <source>Name</source>
+      </segment>
+    </unit>
+    <unit id="notebook.descriptionLabel">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:65</note>
+      </notes>
+      <segment>
+        <source>Description</source>
+      </segment>
+    </unit>
+    <unit id="notebook.save">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:67,68</note>
+      </notes>
+      <segment>
+        <source>Save</source>
+      </segment>
+    </unit>
+    <unit id="notebook.cancel">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:68,70</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:192,194</note>
+      </notes>
+      <segment>
+        <source>Cancel</source>
+      </segment>
+    </unit>
+    <unit id="notebook.rename">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:80,81</note>
+      </notes>
+      <segment>
+        <source>Rename</source>
+      </segment>
+    </unit>
+    <unit id="notebook.delete">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:81,84</note>
+      </notes>
+      <segment>
+        <source>Delete</source>
+      </segment>
+    </unit>
+    <unit id="notebook.sourcesLabel">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:92</note>
+      </notes>
+      <segment>
+        <source>Notebook sources</source>
+      </segment>
+    </unit>
+    <unit id="notebook.sources">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:94,95</note>
+      </notes>
+      <segment>
+        <source>Sources</source>
+      </segment>
+    </unit>
+    <unit id="notebook.searchableCount">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:95,96</note>
+      </notes>
+      <segment>
+        <source><ph id="0" equiv="INTERPOLATION" disp="{{ n.searchableSources }}"/> of <ph id="1" equiv="INTERPOLATION_1" disp="{{ n.sources.length }}"/> searchable</source>
+      </segment>
+    </unit>
+    <unit id="notebook.addSources">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:99,101</note>
+      </notes>
+      <segment>
+        <source>Add sources</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.documents">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:103,104</note>
+      </notes>
+      <segment>
+        <source>Reports</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.emails">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:104,105</note>
+      </notes>
+      <segment>
+        <source>Emails</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.filter">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:105,107</note>
+      </notes>
+      <segment>
+        <source>By filter</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.loading">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:113,115</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:138,140</note>
+      </notes>
+      <segment>
+        <source>Loading…</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.noDocuments">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:127,129</note>
+      </notes>
+      <segment>
+        <source>No documents in the library.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.searchEmails">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:134</note>
+      </notes>
+      <segment>
+        <source>Search emails</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.search">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:135,137</note>
+      </notes>
+      <segment>
+        <source>Search</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.noEmails">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:152,154</note>
+      </notes>
+      <segment>
+        <source>No emails found.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.filterHelp">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:159,160</note>
+      </notes>
+      <segment>
+        <source>Adds the indexed sources that match now, newest first. Later research is not added automatically.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.ticker">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:161,162</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:304</note>
+      </notes>
+      <segment>
+        <source>Ticker</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.brokerage">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:165,166</note>
+      </notes>
+      <segment>
+        <source>Brokerage</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.type">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:169,170</note>
+      </notes>
+      <segment>
+        <source>Type</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.anyType">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:171,172</note>
+      </notes>
+      <segment>
+        <source>Reports and emails</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.reportsOnly">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:172,173</note>
+      </notes>
+      <segment>
+        <source>PDF reports</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.emailsOnly">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:173,175</note>
+      </notes>
+      <segment>
+        <source>Emails</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.from">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:177,178</note>
+      </notes>
+      <segment>
+        <source>From</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.to">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:181,182</note>
+      </notes>
+      <segment>
+        <source>To</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.addMatching">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:184,186</note>
+      </notes>
+      <segment>
+        <source>Add matching sources</source>
+      </segment>
+    </unit>
+    <unit id="notebook.picker.addSelected">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:190,191</note>
+      </notes>
+      <segment>
+        <source>Add <ph id="0" equiv="INTERPOLATION" disp="{{ selected().size }}"/> selected</source>
+      </segment>
+    </unit>
+    <unit id="notebook.unsearchableNote">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:198,201</note>
+      </notes>
+      <segment>
+        <source><ph id="0" equiv="INTERPOLATION" disp="{{ unsearchable() }}"/> source(s) are not indexed yet and are not used until they are.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.index">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:220,222</note>
+      </notes>
+      <segment>
+        <source>Index</source>
+      </segment>
+    </unit>
+    <unit id="notebook.removeSource">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:222,224</note>
+      </notes>
+      <segment>
+        <source>Remove</source>
+      </segment>
+    </unit>
+    <unit id="notebook.noSources">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:226,229</note>
+      </notes>
+      <segment>
+        <source>No sources yet. Add the reports and emails you want to work with.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.tab.chat">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:234,235</note>
+      </notes>
+      <segment>
+        <source>Chat</source>
+      </segment>
+    </unit>
+    <unit id="notebook.tab.studio">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:235,238</note>
+      </notes>
+      <segment>
+        <source>Notes</source>
+      </segment>
+    </unit>
+    <unit id="notebook.historyNote">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:242,243</note>
+      </notes>
+      <segment>
+        <source>Follow-up questions use the earlier conversation as context; answers cite only the notebook&apos;s sources.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.clearChat">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:243,245</note>
+      </notes>
+      <segment>
+        <source>Clear conversation</source>
+      </segment>
+    </unit>
+    <unit id="notebook.chatEmpty">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:271,273</note>
+      </notes>
+      <segment>
+        <source>Ask anything about the sources in this notebook.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.askPlaceholder">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:285,286</note>
+      </notes>
+      <segment>
+        <source>Ask about these sources…</source>
+      </segment>
+    </unit>
+    <unit id="notebook.ask">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:290,291</note>
+      </notes>
+      <segment>
+        <source>Ask</source>
+      </segment>
+    </unit>
+    <unit id="notebook.needSources">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:293,295</note>
+      </notes>
+      <segment>
+        <source>Add at least one indexed source to start.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.disclaimer">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:295,297</note>
+      </notes>
+      <segment>
+        <source>Answers come only from the notebook&apos;s sources. Brokerage ratings are the brokerages&apos; statements, not Investary advice.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.chooseTicker">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:305,306</note>
+      </notes>
+      <segment>
+        <source>Choose a ticker</source>
+      </segment>
+    </unit>
+    <unit id="notebook.generate">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:317,319</note>
+      </notes>
+      <segment>
+        <source>Generate</source>
+      </segment>
+    </unit>
+    <unit id="notebook.notePending">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:333,335</note>
+      </notes>
+      <segment>
+        <source>Waiting to be generated…</source>
+      </segment>
+    </unit>
+    <unit id="notebook.noteRunning">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:336,338</note>
+      </notes>
+      <segment>
+        <source>Reading the sources and writing the note…</source>
+      </segment>
+    </unit>
+    <unit id="notebook.noteFailed">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:340,341</note>
+      </notes>
+      <segment>
+        <source>The note could not be generated.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.retry">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:343,345</note>
+      </notes>
+      <segment>
+        <source>Retry</source>
+      </segment>
+    </unit>
+    <unit id="notebook.noteEmpty">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:355,357</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:368,370</note>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:417,419</note>
+      </notes>
+      <segment>
+        <source>Nothing in the sources supported this note.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.askThis">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:364,365</note>
+      </notes>
+      <segment>
+        <source>Ask this</source>
+      </segment>
+    </unit>
+    <unit id="notebook.colDate">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:379,380</note>
+      </notes>
+      <segment>
+        <source>Date</source>
+      </segment>
+    </unit>
+    <unit id="notebook.colBrokerage">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:380,381</note>
+      </notes>
+      <segment>
+        <source>Brokerage</source>
+      </segment>
+    </unit>
+    <unit id="notebook.colRating">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:381,382</note>
+      </notes>
+      <segment>
+        <source>Rating (as stated)</source>
+      </segment>
+    </unit>
+    <unit id="notebook.colView">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:382,383</note>
+      </notes>
+      <segment>
+        <source>View</source>
+      </segment>
+    </unit>
+    <unit id="notebook.basis.PUBLISHED">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:392,393</note>
+      </notes>
+      <segment>
+        <source>published</source>
+      </segment>
+    </unit>
+    <unit id="notebook.basis.EMAIL_SENT">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:393,394</note>
+      </notes>
+      <segment>
+        <source>email date</source>
+      </segment>
+    </unit>
+    <unit id="notebook.basis.IMPORTED">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:394,395</note>
+      </notes>
+      <segment>
+        <source>imported</source>
+      </segment>
+    </unit>
+    <unit id="notebook.ratingNote">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:415,416</note>
+      </notes>
+      <segment>
+        <source>Ratings are the brokerages&apos; own statements, copied from their emails; they are not Investary recommendations.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.agreements">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:420,421</note>
+      </notes>
+      <segment>
+        <source>Where sources agree</source>
+      </segment>
+    </unit>
+    <unit id="notebook.disagreements">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:428,429</note>
+      </notes>
+      <segment>
+        <source>Where sources differ</source>
+      </segment>
+    </unit>
+    <unit id="notebook.limitations">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:440,441</note>
+      </notes>
+      <segment>
+        <source>Limitations (<ph id="0" equiv="INTERPOLATION" disp="{{ note.limitations.length }}"/>)</source>
+      </segment>
+    </unit>
+    <unit id="notebook.notesEmpty">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:453,456</note>
+      </notes>
+      <segment>
+        <source>No notes yet. Generate one from the cards above.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.loading">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.html:459,461</note>
+      </notes>
+      <segment>
+        <source>Loading notebook…</source>
+      </segment>
+    </unit>
+    <unit id="notebook.index.INDEXED">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:41</note>
+      </notes>
+      <segment>
+        <source>Searchable</source>
+      </segment>
+    </unit>
+    <unit id="notebook.index.NOT_TRACKED">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:42</note>
+      </notes>
+      <segment>
+        <source>Not indexed</source>
+      </segment>
+    </unit>
+    <unit id="notebook.index.PENDING">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:43</note>
+      </notes>
+      <segment>
+        <source>Waiting to be indexed</source>
+      </segment>
+    </unit>
+    <unit id="notebook.index.PROCESSING">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:44</note>
+      </notes>
+      <segment>
+        <source>Indexing</source>
+      </segment>
+    </unit>
+    <unit id="notebook.index.FAILED">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:45</note>
+      </notes>
+      <segment>
+        <source>Indexing failed</source>
+      </segment>
+    </unit>
+    <unit id="notebook.index.SKIPPED">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:46</note>
+      </notes>
+      <segment>
+        <source>No text found</source>
+      </segment>
+    </unit>
+    <unit id="notebook.index.OUTDATED">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:47</note>
+      </notes>
+      <segment>
+        <source>Needs reindexing</source>
+      </segment>
+    </unit>
+    <unit id="notebook.card.SUMMARY">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:77</note>
+      </notes>
+      <segment>
+        <source>Briefing summary</source>
+      </segment>
+    </unit>
+    <unit id="notebook.card.SUMMARY.text">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:78</note>
+      </notes>
+      <segment>
+        <source>The key points across all sources, each one cited.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.card.CONSENSUS">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:82</note>
+      </notes>
+      <segment>
+        <source>Consensus and disagreement</source>
+      </segment>
+    </unit>
+    <unit id="notebook.card.CONSENSUS.text">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:83</note>
+      </notes>
+      <segment>
+        <source>What each brokerage says about one ticker, and where they agree or differ.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.card.TIMELINE">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:87</note>
+      </notes>
+      <segment>
+        <source>Timeline of views</source>
+      </segment>
+    </unit>
+    <unit id="notebook.card.TIMELINE.text">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:88</note>
+      </notes>
+      <segment>
+        <source>How the sources&apos; views on one ticker changed over time.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.card.FAQ">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:92</note>
+      </notes>
+      <segment>
+        <source>Suggested questions</source>
+      </segment>
+    </unit>
+    <unit id="notebook.card.FAQ.text">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:93</note>
+      </notes>
+      <segment>
+        <source>Questions these sources can answer, with cited answers.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.load">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:156</note>
+      </notes>
+      <segment>
+        <source>Could not load the notebook.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.messages">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:160</note>
+      </notes>
+      <segment>
+        <source>Could not load the conversation.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.save">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:183</note>
+      </notes>
+      <segment>
+        <source>Could not save the notebook.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.confirmDelete">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:188</note>
+      </notes>
+      <segment>
+        <source>Delete this notebook with its conversation and notes? Documents and emails are not deleted.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.delete">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:193</note>
+      </notes>
+      <segment>
+        <source>Could not delete the notebook.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.documents">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:206</note>
+      </notes>
+      <segment>
+        <source>Could not load documents.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.emails">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:217</note>
+      </notes>
+      <segment>
+        <source>Could not load emails.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.addSources">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:262</note>
+      </notes>
+      <segment>
+        <source>Could not add the sources.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.removeSource">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:270</note>
+      </notes>
+      <segment>
+        <source>Could not remove the source.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.index">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:277</note>
+      </notes>
+      <segment>
+        <source>Could not queue indexing.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.ask">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:308</note>
+      </notes>
+      <segment>
+        <source>The assistant could not answer.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.confirmClear">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:314</note>
+      </notes>
+      <segment>
+        <source>Clear the whole conversation? Notes are kept.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.clear">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:319</note>
+      </notes>
+      <segment>
+        <source>Could not clear the conversation.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.generate">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:340</note>
+      </notes>
+      <segment>
+        <source>Could not start the note.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.retry">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:351</note>
+      </notes>
+      <segment>
+        <source>Could not retry the note.</source>
+      </segment>
+    </unit>
+    <unit id="notebook.error.notes">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-detail.ts:361</note>
+      </notes>
+      <segment>
+        <source>Could not load notes.</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.title">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:3,4</note>
+      </notes>
+      <segment>
+        <source>Research notebooks</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.subtitle">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:5,9</note>
+      </notes>
+      <segment>
+        <source> Pick a set of reports and emails, then ask questions and generate summaries that use only those sources. Every statement cites the source it came from. </source>
+      </segment>
+    </unit>
+    <unit id="notebookList.newNotebook">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:17,19</note>
+      </notes>
+      <segment>
+        <source>New notebook</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.namePlaceholder">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:22</note>
+      </notes>
+      <segment>
+        <source>e.g. SCS — Q4 2026</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.description">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:25,26</note>
+      </notes>
+      <segment>
+        <source>Description (optional)</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.create">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:29,32</note>
+      </notes>
+      <segment>
+        <source>Create notebook</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.notebooks">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:36,38</note>
+      </notes>
+      <segment>
+        <source>Notebooks</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.loading">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:39,40</note>
+      </notes>
+      <segment>
+        <source>Loading notebooks…</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.emptyTitle">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:41</note>
+      </notes>
+      <segment>
+        <source>No notebooks yet</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.empty">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:42,43</note>
+      </notes>
+      <segment>
+        <source>Create a notebook, add the reports you are studying, and ask questions across them.</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.colName">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:49,50</note>
+      </notes>
+      <segment>
+        <source>Name</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.colSources">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:50,51</note>
+      </notes>
+      <segment>
+        <source>Sources</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.colQuestions">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:51,52</note>
+      </notes>
+      <segment>
+        <source>Questions</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.colNotes">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:52,53</note>
+      </notes>
+      <segment>
+        <source>Notes</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.colUpdated">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.html:53,55</note>
+      </notes>
+      <segment>
+        <source>Updated</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.error.load">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.ts:31</note>
+      </notes>
+      <segment>
+        <source>Could not load notebooks.</source>
+      </segment>
+    </unit>
+    <unit id="notebookList.error.create">
+      <notes>
+        <note category="location">src/app/features/notebooks/notebook-list.ts:46</note>
+      </notes>
+      <segment>
+        <source>Could not create the notebook.</source>
+      </segment>
+    </unit>
     <unit id="notificationList.notificationTypeLabels.NEW_RESEARCH">
       <notes>
         <note category="location">src/app/features/notifications/notification-list.ts:15</note>
@@ -9195,9 +10163,17 @@
         <source>Research assistant</source>
       </segment>
     </unit>
+    <unit id="nav.notebooks">
+      <notes>
+        <note category="location">src/app/layout/shell.ts:41,42</note>
+      </notes>
+      <segment>
+        <source>Notebooks</source>
+      </segment>
+    </unit>
     <unit id="nav.automation">
       <notes>
-        <note category="location">src/app/layout/shell.ts:41,43</note>
+        <note category="location">src/app/layout/shell.ts:42,44</note>
       </notes>
       <segment>
         <source>Automation</source>
@@ -9205,7 +10181,7 @@
     </unit>
     <unit id="shell.language">
       <notes>
-        <note category="location">src/app/layout/shell.ts:43</note>
+        <note category="location">src/app/layout/shell.ts:44</note>
       </notes>
       <segment>
         <source>Language</source>
@@ -9213,7 +10189,7 @@
     </unit>
     <unit id="shell.footer">
       <notes>
-        <note category="location">src/app/layout/shell.ts:65,68</note>
+        <note category="location">src/app/layout/shell.ts:66,69</note>
       </notes>
       <segment>
         <source> Investary · Phase 5 · local single-user mode, no authentication · not investment advice </source>
@@ -9221,7 +10197,7 @@
     </unit>
     <unit id="shell.switchToEnglish">
       <notes>
-        <note category="location">src/app/layout/shell.ts:77</note>
+        <note category="location">src/app/layout/shell.ts:78</note>
       </notes>
       <segment>
         <source>Switch to English</source>
@@ -9229,7 +10205,7 @@
     </unit>
     <unit id="shell.switchToVietnamese">
       <notes>
-        <note category="location">src/app/layout/shell.ts:78</note>
+        <note category="location">src/app/layout/shell.ts:79</note>
       </notes>
       <segment>
         <source>Switch to Vietnamese</source>

@@ -28,6 +28,7 @@ Browser (Angular SPA) ──/api/v1──▶ Spring Boot backend ──JDBC─�
 | `portfolio` | Phase 4 | Instruments, manual prices, portfolios, transactions; holdings, valuation and allocation computed on read |
 | `intelligence` | Phase 4, 5 / M3 | Research matching, deterministic analysis, impact assessments, portfolio-aware assistant (read-only); daily briefs, their job queue and scheduler (M3) |
 | `journal` | Phase 6 / M1 | Investment decision journal: decisions and lifecycle, immutable portfolio/investor snapshots, evidence copies, links to portfolio transactions, append-only revisions |
+| `notebook` | Phase 6 / M2 | Research notebooks: a fixed set of documents and emails, chat over only those sources with history, generated notes (summary, consensus, timeline, FAQ) on a token-guarded queue, citation copies |
 | `automation` | Phase 5 / M1, M2, M4 | Gmail OAuth connection (encrypted refresh token), brokerage source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows and the automation job queue (M2); Automation Center overview, settings API, AI usage report and in-app notifications (M4) |
 
 ### Dependency direction
@@ -52,6 +53,10 @@ intelligence ──▶ knowledge ──▶ email ──▶ research ──▶ do
   `DocumentService`, `EmailQueryService`, `ResearchQueryService`, `ChunkLookupService` and
   `ImpactAssessmentService.view`. Nothing imports `journal`; deleted sources reach it only through
   `ON DELETE SET NULL` foreign keys.
+- `notebook` (Phase 6 / M2) uses `knowledge` (scoped `HybridSearchService` via `SearchFilters.scopedTo`,
+  `ResearchAssistantService` with prior turns, `ResearchAvailabilityService.describe` / `matching` / `chunks`,
+  `ChunkLookupService`, `ChatGateway`, `CitationValidator`, `TradingLanguage`) and `ResearchQueryService.recommendations`.
+  It never imports `portfolio`, `investor` or `intelligence`, and nothing imports `notebook`.
 - `investor` and `portfolio` depend only on `common`. `intelligence` uses `knowledge` search/assistant
   building blocks, `research.link.Keywords` for text folding, and only the **read** services
   `PortfolioQueryService` / `InvestorQueryService` (enforced by `ArchitectureTest`), so AI output can
@@ -260,6 +265,22 @@ or inferred. A database trigger rejects updates and deletes of revisions and sna
 their decision, which no API deletes). Details: [phase-6-milestone-1.md](phase-6-milestone-1.md),
 [ADR 0013](adr/0013-decision-journal.md).
 
+## Research notebooks (Phase 6 / Milestone 2)
+
+```
+Angular /notebooks (list), /notebooks/:id (sources, chat, notes)
+  /api/v1/notebooks         NotebookController -> NotebookService (notebooks, sources; filter resolved once)
+    ask                      NotebookChatService -> ResearchAssistantService.ask(question, scoped filters, prior turns)
+                             -> notebook_messages + notebook_citations (one transaction, after the model call)
+    notes                    NoteService (fingerprint, reuse, daily cap) -> notebook_notes (PENDING)
+                             NoteWorker -> NoteJobProcessor: NoteEvidenceCollector (Java) -> NotePrompts -> ChatGateway
+                             -> NoteComposer (CitationValidator per item, TradingLanguage, stored ratings)
+                             -> token-guarded complete + notebook_citations
+```
+
+Retrieval and evidence never leave the notebook's sources; history is context in `<previous_turn>`, never
+evidence. Details: [phase-6-milestone-2.md](phase-6-milestone-2.md), [ADR 0016](adr/0016-research-notebooks.md).
+
 ## Database
 
 Flyway owns the schema (`db/migration`); Hibernate runs with `ddl-auto=validate`. Tests use the same
@@ -308,6 +329,11 @@ because file references in the database are relative storage keys resolved under
 | `decision_evidence` | Attached sources: kind, role, one SET NULL reference per kind, original id, copied title/publisher/date/location/excerpt, soft removal (V10) |
 | `decision_transaction_links` | Links to portfolio transactions (SET NULL) with the trade facts copied at link time, soft removal (V10) |
 | `decision_revisions` | Append-only audit trail: sequence, kind, reason, status after, JSON diff (V10) |
+| `notebooks` | Research notebooks: title, description, optimistic-lock version (V11) |
+| `notebook_sources` | One document or email per row, removed with the source (V11) |
+| `notebook_messages` | Chat turns: role, text, evidence status, warnings, model (V11) |
+| `notebook_notes` | Generated notes and their jobs in one row: kind, ticker, status, fingerprint, claim token, attempts, content JSON, limitations (V11) |
+| `notebook_citations` | Citation copies of a message or note; source reference SET NULL on delete (V11) |
 
 ## Frontend
 
@@ -319,7 +345,7 @@ src/app/
   features/   dashboard · documents (library, detail) · emails (inbox, import panel, detail) · assistant
               · portfolio (list, dashboard, transaction form, research insights) · investor (profile, goals)
               · automation (Automation Center: overview, sources, jobs, settings, AI usage) · briefs (list, detail)
-              · notifications · journal (decision list, form, detail)
+              · notifications · journal (decision list, form, detail) · notebooks (list, detail)
 ```
 
 - Standalone components with signals; no state library and no UI component library.

@@ -72,10 +72,20 @@ public class ResearchAssistantService implements DisposableBean {
     }
 
     public AssistantAnswer ask(String question, SearchFilters filters, Integer maxSources) {
+        return ask(question, filters, maxSources, List.of());
+    }
+
+    /**
+     * Answers a follow-up question in a conversation. Retrieval uses the question together with the previous question,
+     * so short follow-ups ("and their target price?") still find the subject; no model call rewrites the question.
+     * Earlier turns reach the model only as context, never as citable evidence.
+     */
+    public AssistantAnswer ask(String question, SearchFilters filters, Integer maxSources, List<PromptBuilder.PriorTurn> history) {
         if (!chat.isAvailable()) {
             throw new AiNotConfiguredException("chat");
         }
-        SearchResult result = search.search(question, filters, maxSources);
+        String retrievalQuery = history.isEmpty() ? question : history.getLast().question() + "\n" + question;
+        SearchResult result = search.search(retrievalQuery, filters, maxSources);
         List<SearchHit> hits = result.hits();
         if (hits.isEmpty()) {
             return insufficient(result);
@@ -85,7 +95,7 @@ public class ResearchAssistantService implements DisposableBean {
         Map<String, LabeledHit> byLabel = new LinkedHashMap<>();
         labeled.forEach(hit -> byLabel.put(hit.label(), hit));
         LocalDate today = LocalDate.now(clock.withZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
-        Prompt prompt = PromptBuilder.build(question, labeled, today);
+        Prompt prompt = PromptBuilder.build(question, labeled, today, history);
 
         String raw = chat.call(prompt);
         ModelAnswer parsed = parse(raw);

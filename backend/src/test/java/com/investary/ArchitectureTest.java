@@ -27,17 +27,18 @@ class ArchitectureTest {
     private static final Pattern IMPORT = Pattern.compile("^import\\s+(?:static\\s+)?com\\.investary\\.([a-z]+)\\.([a-z]+)", Pattern.MULTILINE);
 
     /** Feature modules each module may depend on (common is always allowed). */
-    private static final Map<String, Set<String>> ALLOWED = Map.of(
-            "common", Set.of(),
-            "document", Set.of(),
-            "research", Set.of("document"),
-            "email", Set.of("research", "document"),
-            "knowledge", Set.of("email", "research", "document"),
-            "investor", Set.of(),
-            "portfolio", Set.of(),
-            "intelligence", Set.of("knowledge", "portfolio", "investor", "research"),
-            "automation", Set.of("email", "research", "knowledge", "intelligence", "document"),
-            "journal", Set.of("portfolio", "investor", "document", "email", "research", "knowledge", "intelligence"));
+    private static final Map<String, Set<String>> ALLOWED = Map.ofEntries(
+            Map.entry("common", Set.of()),
+            Map.entry("document", Set.of()),
+            Map.entry("research", Set.of("document")),
+            Map.entry("email", Set.of("research", "document")),
+            Map.entry("knowledge", Set.of("email", "research", "document")),
+            Map.entry("investor", Set.of()),
+            Map.entry("portfolio", Set.of()),
+            Map.entry("intelligence", Set.of("knowledge", "portfolio", "investor", "research")),
+            Map.entry("automation", Set.of("email", "research", "knowledge", "intelligence", "document")),
+            Map.entry("journal", Set.of("portfolio", "investor", "document", "email", "research", "knowledge", "intelligence")),
+            Map.entry("notebook", Set.of("knowledge", "research", "document", "email")));
 
     /** Modules that may read portfolio and investor data but never change it. */
     private static final Set<String> READ_ONLY_CONSUMERS = Set.of("intelligence", "journal");
@@ -125,6 +126,12 @@ class ArchitectureTest {
     void nothingImportsJournal() {
         // journal reads many modules; a reverse import would create a cycle.
         assertThat(dependencies).filteredOn(d -> d.target().equals("journal")).isEmpty();
+    }
+
+    @Test
+    void nothingImportsNotebook() {
+        // notebook reads knowledge and research; nothing may depend on it, and it never touches portfolio data.
+        assertThat(dependencies).filteredOn(d -> d.target().equals("notebook")).isEmpty();
     }
 
     @Test

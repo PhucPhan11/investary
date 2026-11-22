@@ -54,3 +54,6 @@
 - Decision journal: `features/journal/` (`decision-list`, `decision-form` for `/journal/new` and `/journal/:id/edit`,
   `decision-detail`); fixtures in `testing/journal-fixtures.ts`. Every write sends the shown `version` as
   `expectedVersion`; a 409 `DECISION_CONFLICT` maps to a "reload" message.
+- Research notebooks: `features/notebooks/` (`notebook-list`, `notebook-detail` with sources, chat and notes); fixtures in
+  `testing/notebook-fixtures.ts`. Notes poll every 3 s while PENDING or RUNNING. Note and answer text goes through
+  `answerSegments()`; citations whose source was deleted have `available: false` and show no link.

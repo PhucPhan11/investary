@@ -38,6 +38,7 @@ import { NotificationBell } from '../shared/components/notification-bell';
         <a routerLink="/profile" routerLinkActive="nav__link--active" class="nav__link" i18n="@@nav.profile">Profile</a>
         <a routerLink="/briefs" routerLinkActive="nav__link--active" class="nav__link" i18n="@@nav.briefs">Daily brief</a>
         <a routerLink="/assistant" routerLinkActive="nav__link--active" class="nav__link" i18n="@@nav.assistant">Research assistant</a>
+        <a routerLink="/notebooks" routerLinkActive="nav__link--active" class="nav__link" i18n="@@nav.notebooks">Notebooks</a>
         <a routerLink="/automation" routerLinkActive="nav__link--active" class="nav__link" i18n="@@nav.automation">Automation</a>
       </nav>
       <div class="lang-switch" role="group" aria-label="Language" i18n-aria-label="@@shell.language">

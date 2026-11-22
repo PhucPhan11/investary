@@ -26,6 +26,8 @@ A personal, local, single-user investment research assistant. It has three parts
 - **Phase 6 / Milestone 1:** investment decision journal: decisions with a DRAFT → DECIDED → EXECUTED / CANCELLED
   lifecycle, an immutable portfolio/investor snapshot at finalization, evidence copies, links to existing portfolio
   transactions and append-only revisions (`docs/phase-6-milestone-1.md`).
+- **Phase 6 / Milestone 2:** research notebooks: a fixed set of documents and emails, chat over only those sources with
+  history (context only), and cited notes (summary, consensus, timeline, FAQ) on a note queue (`docs/phase-6-milestone-2.md`).
 - **Planned:** see "Next phases" in `README.md`. Do not add new infrastructure unless asked.
 
 - Backend: Spring Boot 4.1, Java 21, Maven wrapper, PostgreSQL 17 + Flyway, in `backend/`.
@@ -43,6 +45,7 @@ intelligence ──▶ knowledge, portfolio, investor, research (Keywords only)
 portfolio ──▶ common          investor ──▶ common
 automation ──▶ email, research, knowledge, intelligence, document (application services only)
 journal ──▶ portfolio, investor (*QueryService only), document, email, research, knowledge, intelligence
+notebook ──▶ knowledge, research, document, email
 ```
 
 | Module | Owns |
@@ -56,13 +59,14 @@ journal ──▶ portfolio, investor (*QueryService only), document, email, res
 | `com.investary.intelligence` | Research matching, analysis, impact assessments, portfolio-aware assistant, daily briefs (queue, scheduler, generation) |
 | `com.investary.automation` | Gmail OAuth connection, encrypted tokens, source rules, Gmail sync (runs, cursor, message mapping), local-only filter; research workflows, stages, matches and the automation job queue; Automation Center APIs and in-app notifications |
 | `com.investary.journal` | Investment decisions, lifecycle, snapshots, evidence, transaction links, revisions |
+| `com.investary.notebook` | Research notebooks, their sources, chat messages, generated notes (and their jobs), citation copies |
 | `com.investary.common` | Errors (`ApiException`), `LocalFileStore`, `AfterCommit`, `UrlCodec`, `PageResponse`, CORS, runtime settings (`RuntimeSettings`) |
 
 - `common` imports no feature module. `document` imports neither `email` nor `research`. `research`
   never imports `email`.
 - Cross-module calls go to `application` services, never to another module's `persistence`, `storage` or `api`.
 - `intelligence` and `journal` may only use `*QueryService` classes from `portfolio` and `investor`: AI output and
-  journal entries must never change portfolio, transaction or profile data. Nothing imports `journal`.
+  journal entries must never change portfolio, transaction or profile data. Nothing imports `journal` or `notebook`.
 - `document` reacts to nothing; it publishes `DocumentDeletedEvent`, which `research` listens to.
 - Nothing imports `automation`; it imports Gmail mail only through `EmailImportService.importRaw` (no second parser).
   Other modules notify it only through events published after commit (`EmailImportedEvent`,
@@ -216,6 +220,14 @@ Windows note: the default `JAVA_HOME` on this machine is JDK 17. Set JDK 21 firs
     are never updated in content or deleted (soft removal with a reason). After finalization only narrative fields change.
   - Evidence copies title, date, location and excerpt; a deleted source shows unavailable (FK `ON DELETE SET NULL`) and
     is never replaced by another source.
+- **Research notebooks:**
+  - Retrieval and note evidence use only the notebook's sources (`SearchFilters.scopedTo`); an empty scope never calls
+    the model. A filter is resolved to concrete sources once, when added.
+  - Chat history is context only: `<previous_turn>` elements with citation markers removed, never cited.
+  - Note text is validated per item against the labels it may cite; uncited items and trading instructions
+    (`TradingLanguage`) are dropped into limitations. Dates, publishers and ratings come from stored records.
+  - Notes run on `notebook_notes` with the claim-token guard; identical inputs (fingerprint) reuse the DONE note.
+    A DONE note is never changed; citations are copies (`ON DELETE SET NULL`).
 - **Config:** new settings go to `application.yml` with an env override, and are documented in the
   `README.md` configuration table.
 - **Test data:**

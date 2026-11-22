@@ -19,6 +19,7 @@ import com.investary.research.download.DownloadJob;
 import com.investary.research.download.DownloadJobRepository;
 import com.investary.research.extraction.ResearchItem;
 import com.investary.research.extraction.ResearchItemRepository;
+import com.investary.research.extraction.ResearchItemType;
 import com.investary.research.link.SourceLink;
 import com.investary.research.link.SourceLinkRepository;
 import com.investary.research.provenance.ProvenanceRepository;
@@ -71,6 +72,20 @@ public class ResearchQueryService {
         return items.findById(id).map(this::view);
     }
 
+    /**
+     * Stock recommendations for {@code ticker} extracted from the given emails, oldest first. The rating is the
+     * brokerage's own wording, copied from the email; it is never an Investary recommendation.
+     */
+    public List<SourceRecommendation> recommendations(Collection<UUID> messageIds, String ticker) {
+        if (messageIds.isEmpty() || ticker == null || ticker.isBlank()) {
+            return List.of();
+        }
+        return items.findBySourceMessageIdInAndItemTypeAndTickerOrderByPublishedAtAscSourceLocationAsc(messageIds,
+                        ResearchItemType.STOCK_RECOMMENDATION, ticker.strip().toUpperCase(java.util.Locale.ROOT)).stream()
+                .map(item -> new SourceRecommendation(item.getSourceMessageId(), view(item)))
+                .toList();
+    }
+
     public List<LinkedDocumentView> documents(UUID messageId) {
         List<ProvenanceRepository.Association> associations = provenance.findByMessage(messageId);
         Map<UUID, Document> byId = documents.findAll(associations.stream().map(ProvenanceRepository.Association::documentId).toList())
@@ -117,5 +132,9 @@ public class ResearchQueryService {
         JsonNode data = item.getStructuredData() == null ? null : json.readTree(item.getStructuredData());
         return new ResearchItemView(item.getId(), item.getItemType(), item.getTicker(), item.getBrokerage(), item.getPublishedAt(),
                 item.getTitle(), item.getContent(), data, item.getExtractionMethod(), item.getSourceLocation(), item.getLanguage());
+    }
+
+    /** A research item with the email it was extracted from. */
+    public record SourceRecommendation(UUID messageId, ResearchItemView item) {
     }
 }

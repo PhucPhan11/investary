@@ -42,6 +42,10 @@ Personal, AI-ready investment research assistant.
   citations, impact assessments) as copies that stay visible when a source is deleted; link the real portfolio
   transactions that executed the decision. Every change is an append-only revision; concurrent edits conflict.
   See [docs/phase-6-milestone-1.md](docs/phase-6-milestone-1.md).
+- **Phase 6 / Milestone 2:** **research notebooks** (NotebookLM-style). Pick a set of reports and emails, chat
+  with only those sources (follow-up questions keep the conversation as context), and generate cited notes: a
+  briefing summary, consensus and disagreement per ticker, a timeline of views and suggested questions.
+  See [docs/phase-6-milestone-2.md](docs/phase-6-milestone-2.md).
 
 > ⚠️ **Local, single-user only.** There is **no authentication or authorization**. Never expose the
 > backend (port 8080) or the database to a network you do not fully control.
@@ -250,6 +254,11 @@ Backend settings live in `backend/src/main/resources/application.yml` (productio
 | `INVESTARY_BRIEF_NO_RESEARCH_MODE` | `MINIMAL` | `MINIMAL`: a short "no material new research" brief; `SKIP`: only a SKIPPED record |
 | `INVESTARY_BRIEF_WORKER_ENABLED` | `true` | Brief scheduler and generation worker in this process |
 | `INVESTARY_BRIEF_MAX_AI_PER_DAY` | `10` | Briefs per day whose AI part is generated; later ones are deterministic only |
+| `INVESTARY_NOTEBOOK_MAX_SOURCES` | `200` | Documents and emails one notebook may hold |
+| `INVESTARY_NOTEBOOK_CHAT_HISTORY_TURNS` | `6` | Earlier question/answer pairs sent with a notebook question (context only) |
+| `INVESTARY_NOTEBOOK_NOTE_SOURCES` | `20` | Sources read for one generated note; the rest are listed as omitted |
+| `INVESTARY_NOTEBOOK_DAILY_NOTE_LIMIT` | `30` | Notebook notes per day that may call the model (reused notes do not count) |
+| `INVESTARY_NOTEBOOK_WORKER_ENABLED` | `true` | Notebook note worker in this process |
 | `INVESTARY_GMAIL_SYNC_TICK` | `1m` | How often the scheduler checks whether the polling interval has passed |
 | `INVESTARY_WORKFLOW_MAX_MANUAL_RETRIES` | `5` | Manual retries per automation job |
 | `INVESTARY_WORKFLOW_STUCK_JOB_AFTER` | `1h` | A queued job not updated for this long marks the component health as degraded |
@@ -270,7 +279,8 @@ SSI `ssi.com.vn`, VNDIRECT `vndirect.com.vn`, VCBS `vcbs.com.vn`). Their domains
 Download timeouts, redirects, retries and worker settings are under `investary.download.*`. Gmail endpoint
 URLs, timeouts, retries, the sync lock lease and the OAuth state TTL are under `investary.gmail.*`. Workflow
 wait intervals and timeouts, the lease and the reconcile interval are under `investary.workflow.*`. Brief source
-and context limits, attempts, the model timeout and the worker are under `investary.brief.*`.
+and context limits, attempts, the model timeout and the worker are under `investary.brief.*`. Notebook chat and
+note limits, attempts, backoff and the note worker are under `investary.notebook.*`.
 
 Secrets live only in `infrastructure/.env` or environment variables. `.env`, `storage/`, `*.pdf` and
 `*.eml` are git-ignored; only the synthetic test fixtures under `backend/src/test/resources/eml/` are
@@ -474,6 +484,18 @@ Nothing is downloaded automatically. A user picks a link, and
 - The journal never creates, edits or infers trades and never changes holdings or valuations.
 - Details: [docs/phase-6-milestone-1.md](docs/phase-6-milestone-1.md), [ADR 0013](docs/adr/0013-decision-journal.md).
 
+## Research notebooks (Phase 6 / Milestone 2)
+
+1. **Notebooks → Create notebook**, then **Add sources**: tick library reports or emails, or add every indexed
+   source matching a ticker, brokerage, type or date range (resolved once; later research is not added).
+2. **Chat** answers only from those sources and cites them; follow-up questions see the earlier turns as context.
+3. **Notes** generates a briefing summary, consensus and disagreement for a ticker, a timeline of views for a
+   ticker, or suggested questions. Ratings shown are the brokerages' statements copied from their emails.
+   Unchanged inputs return the earlier note without calling the model.
+
+- Sources that are not indexed are listed but not used; use **Index** on the source.
+- Details: [docs/phase-6-milestone-2.md](docs/phase-6-milestone-2.md), [ADR 0016](docs/adr/0016-research-notebooks.md).
+
 ## Research assistant (Phase 3)
 
 1. Install [Ollama](https://ollama.com) and pull the models: `ollama pull bge-m3` and `ollama pull qwen3:8b`.
@@ -594,6 +616,7 @@ them on startup. Never edit an applied migration; add a new one.
 | `V7` | `workflow_settings`, `research_workflows`, `workflow_stages`, `automation_jobs`, `workflow_portfolio_matches`; trigger and version columns on `impact_assessments` |
 | `V8` | `brief_jobs`, `briefs`, `brief_sources`; `knowledge_sources.first_indexed_at` |
 | `V9` | `app_settings`, `notifications`, `automation_job_attempts`, `ai_usage_daily`; `briefs.ai_status` allows `SKIPPED_LIMIT` |
+| `V11` | `notebooks`, `notebook_sources`, `notebook_messages`, `notebook_notes`, `notebook_citations`; `NOTEBOOK_NOTE` AI usage purpose |
 | `V10` | `investment_decisions`, `decision_portfolio_snapshots`, `decision_evidence`, `decision_transaction_links`, `decision_revisions`; trigger keeping revisions and snapshots append-only |
 
 V2 is additive: it leaves `document` untouched and only adds foreign keys to it
@@ -620,7 +643,8 @@ cd frontend && npm run build
 | Research workflows (Phase 5 / M2) | `WorkflowPoliciesTest` (status policy, failure classification, safe summaries, backoff), `AutomationJobQueueTest` (concurrent claims, idempotent enqueue, waits, lease recovery, stale tokens), `ResearchWorkflowIntegrationTest` (end to end with WireMock + fake models: auto download, manual download re-open, no links, duplicate import, failed/partial downloads, rule off, shared PDF, failed indexing + retry, failed LLM + retry, daily cap, restart recovery, deletion mid-workflow, pre-M2 sources, reconcile, library upload) |
 | Automation Center (Phase 5 / M4) | `NotificationRulesTest` (eligibility, promotional text ignored, keys), `SystemHealthTest`, `RetryPolicyTest`, `SourceRuleWarningsTest`, `AiConcurrencyLimitsTest` (resize), `BriefSettingsTest`, `GmailScheduleTest`, `BriefGeneratorTest` (daily AI limit), `AutomationCenterIntegrationTest` (settings persistence/validation/conflict/reset, resized limits, daily analysis cap and token budget enforced, usage recorded and reported, overview metrics vs records and health without workers, concurrent retries, retry cap and attempt history, job filters, brief job retry, notification creation, deduplication, read/unread) |
 | Decision journal (Phase 6 / M1) | `DecisionSnapshotFactoryTest` (copied figures, missing prices, watchlist, diffs), `DecisionControllerTest`, `DecisionJournalIntegrationTest` (create, draft edit, finalize, snapshot unchanged after new trades and prices, amendments and locked fields, append-only trigger, cancel, invalid transitions, HOLD/OBSERVE without transactions, evidence of every kind, missing and deleted sources, transaction link rules, changed/deleted transactions, stale and concurrent writes, list filters) |
-| Frontend | API services, error mapping, file-size pipe, app shell and notification bell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant, briefs (generation status and retry, freshness, citation navigation), Automation Center (overview states, source rule validation and broad-rule acknowledgement, settings forms, job filters and retry, job detail polling, AI usage), notifications, decision journal (list filters, create/amend form, finalize, cancel reason, snapshot, unavailable evidence, link states, history) |
+| Research notebooks (Phase 6 / M2) | `NoteComposerTest` (per-source labels, uncited and trading items, figure checks, stored ratings, ordering), `PromptBuilderTest` (history as context, markers stripped), `NotebookControllerTest`, `NotebookIntegrationTest` (scoped chat without a model call outside the scope, history, filter resolution, version conflict, all note kinds, reuse, retries and manual retry, citation outliving a deleted source) |
+| Frontend | API services, error mapping, file-size pipe, app shell and notification bell, email inbox (search debounce, sender filter), email detail (retry action, download polling), index status, research assistant, briefs (generation status and retry, freshness, citation navigation), Automation Center (overview states, source rule validation and broad-rule acknowledgement, settings forms, job filters and retry, job detail polling, AI usage), notifications, decision journal (list filters, create/amend form, finalize, cancel reason, snapshot, unavailable evidence, link states, history), notebooks (create, citations as buttons, ask, consensus rendering, ticker note polling, source picker) |
 
 - Tests that need Docker are **skipped** (not failed) without a Docker daemon; check the surefire summary.
 - No test contacts a real website or a real AI provider (fake embedding and scripted chat models).
@@ -760,6 +784,18 @@ Upload fields: `file` (required), `brokerageCompany` (≤200), `reportType` (`MA
 | `PATCH` | `/api/v1/notifications/{id}/read`, `/api/v1/notifications/{id}/unread` | read state · `404 NOTIFICATION_NOT_FOUND` |
 | `POST` | `/api/v1/notifications/read-all` | `{updated}` |
 
+### Research notebooks (Phase 6 / M2)
+
+| Method | Path | Result |
+|--------|------|--------|
+| `GET` / `POST` | `/api/v1/notebooks` | list · create `{title, description?}` → `201` |
+| `GET` / `PATCH` / `DELETE` | `/api/v1/notebooks/{id}` | detail with sources, index state and tickers · rename `{title, description?, expectedVersion}` (`409 NOTEBOOK_CONFLICT`) · delete |
+| `POST` / `DELETE` | `/api/v1/notebooks/{id}/sources`, `/sources/{sourceId}` | add `{documentIds?, messageIds?, filter?}` (`422 NOTEBOOK_SOURCE_LIMIT`) · remove |
+| `GET` / `DELETE` | `/api/v1/notebooks/{id}/messages` | conversation · clear |
+| `POST` | `/api/v1/notebooks/{id}/ask` | `{question}` → question and answer messages with citations · `422 NOTEBOOK_EMPTY` |
+| `GET` / `POST` | `/api/v1/notebooks/{id}/notes` | list · `{kind, ticker?}`: `202` new, `200` reused · `429 NOTE_LIMIT_REACHED` |
+| `GET` / `POST` | `/api/v1/notebooks/{id}/notes/{noteId}`, `/retry` | note · `202` retry (`409 NOTE_NOT_RETRYABLE`) |
+
 ### Daily briefs (Phase 5 / M3)
 
 | Method | Path | Result |
@@ -852,6 +888,7 @@ curl -X POST http://localhost:8080/api/v1/intelligence/portfolios/<id>/impact-as
 - **Phase 5 / Milestone 3 — done:** automated daily investment brief (scheduled and manual, cited, revisioned).
 - **Phase 5 / Milestone 4 — done:** Automation Center, runtime settings, AI usage and limits, in-app notifications.
 - **Phase 6 / Milestone 1 — done:** investment decision journal (snapshots, evidence, transaction links, revisions).
+- **Phase 6 / Milestone 2 — done:** research notebooks (scoped chat with history, cited notes).
 - **Phase 6 — later milestones:** thesis monitoring and scheduled reviews of decisions, decision-to-goal links.
 - **Later:** live-model evaluation and tuning, OCR, an instrument/ticker master list, corporate actions and cash,
   HNSW index.

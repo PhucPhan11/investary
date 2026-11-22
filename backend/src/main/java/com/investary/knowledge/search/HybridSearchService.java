@@ -69,8 +69,11 @@ public class HybridSearchService {
         int limit = Math.min(maxResults == null ? settings.defaultResults() : maxResults, settings.maxResults());
         QueryAnalysis analysis = QueryAnalysis.of(query, brokerages.names());
         boolean vector = embeddings.isAvailable();
-        String queryVector = vector ? embedQuery(query) : null;
         SearchResult.Mode mode = vector ? SearchResult.Mode.HYBRID : SearchResult.Mode.LEXICAL_ONLY;
+        if (filters.emptyScope()) {
+            return new SearchResult(List.of(), mode, analysis, List.of());
+        }
+        String queryVector = vector ? embedQuery(query) : null;
 
         List<String> requested = filters.brokerage() != null ? List.of(filters.brokerage()) : analysis.brokerages();
         if (requested.isEmpty()) {
@@ -178,7 +181,7 @@ public class HybridSearchService {
         return result;
     }
 
-    private static String whereClause(SearchFilters filters, MapSqlParameterSource params) {
+    static String whereClause(SearchFilters filters, MapSqlParameterSource params) {
         StringBuilder where = new StringBuilder(" where s.status = 'INDEXED' and c.index_version = :version");
         if (filters.ticker() != null) {
             where.append(" and (:ticker = any(c.tickers) or c.source_ticker = :ticker)");
@@ -200,7 +203,18 @@ public class HybridSearchService {
             where.append(" and c.published_on <= :to");
             params.addValue("to", Date.valueOf(filters.to()));
         }
+        if (filters.scoped()) {
+            where.append(" and (s.document_id = any(cast(:scopeDocuments as uuid[]))"
+                    + " or s.source_message_id = any(cast(:scopeMessages as uuid[])))");
+            params.addValue("scopeDocuments", uuidArray(filters.documentIds()));
+            params.addValue("scopeMessages", uuidArray(filters.messageIds()));
+        }
         return where.toString();
+    }
+
+    /** Array literal for {@code cast(:p as uuid[])}; UUID text needs no quoting. */
+    static String uuidArray(java.util.Collection<UUID> ids) {
+        return ids.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(",", "{", "}"));
     }
 
     /** Joins the email row only for the sender shown in citations. */

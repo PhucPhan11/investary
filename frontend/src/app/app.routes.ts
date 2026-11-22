@@ -33,6 +33,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/assistant/research-assistant').then((m) => m.ResearchAssistant),
   },
   {
+    path: 'notebooks',
+    title: $localize`:@@title.notebooks:Research notebooks · Investary`,
+    loadComponent: () => import('./features/notebooks/notebook-list').then((m) => m.NotebookList),
+  },
+  {
+    path: 'notebooks/:id',
+    title: $localize`:@@title.notebook:Notebook · Investary`,
+    loadComponent: () => import('./features/notebooks/notebook-detail').then((m) => m.NotebookDetailPage),
+  },
+  {
     path: 'portfolios',
     title: $localize`:@@title.portfolios:Portfolios · Investary`,
     loadComponent: () => import('./features/portfolio/portfolio-list').then((m) => m.PortfolioList),

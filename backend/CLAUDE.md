@@ -55,7 +55,8 @@ Older examples on the web will not compile here. Use:
   run indexing synchronously with `KnowledgeTestSupport.indexAll(queue, processor)`; data from
   `SyntheticResearchCorpus` and `TestResearchPdfs`.
 - Classes with two constructors (a test seam) need `@Autowired` on the injection constructor.
-- Java text blocks strip trailing spaces: never end a text block with `where ` and concatenate a condition
+- Java text blocks strip trailing spaces and leading indentation: never end a text block with `where ` and
+  concatenate a condition, and put `" " +` before a text block appended to another string
   (see `docs/failures/0007-text-block-sql-trailing-space.md`).
 
 ## Portfolios and intelligence (Phase 4)
@@ -141,3 +142,17 @@ errors are not reported in the same response. This is expected; see `DocumentCon
 - Evidence reference columns are `updatable = false`: the database nulls them on source deletion.
 - Container test: `journal/DecisionJournalIntegrationTest.java` loads `SyntheticResearchCorpus` once per class (static flag)
   for real chunks and assessments; the concurrency case calls `DecisionService.update` from two threads.
+
+## Research notebooks (Phase 6 / Milestone 2)
+
+- Module `notebook`: `NotebookService` (notebooks, sources; filters resolved once via
+  `ResearchAvailabilityService.matching`), `NotebookChatService` (scoped `ResearchAssistantService.ask` with
+  `PromptBuilder.PriorTurn` history), `NoteService` (fingerprint, reuse, daily cap), `NoteJobProcessor` (no transaction
+  around the model; token-guarded completion), `NoteEvidenceCollector`, `NotePrompts`, `NoteComposer` (pure; per-item
+  `CitationValidator`, `TradingLanguage`), `NoteWorker`. JDBC state in `NotebookStore` and `NoteQueue`.
+- Scoping lives in `knowledge`: `SearchFilters.scopedTo(documentIds, messageIds)`; an empty scope returns no hits.
+  UUID arrays are bound as text literals with `cast(:p as uuid[])` (`HybridSearchService.uuidArray`).
+- `ArchitectureTest.ALLOWED` uses `Map.ofEntries` (more than ten modules).
+- Container test: `notebook/NotebookIntegrationTest.java` loads `SyntheticResearchCorpus` once, scripts the model from the
+  prompt's `<source>` elements and `G1: S1` group lines, and drives notes with `NoteQueue.claim` + `NoteJobProcessor.process`.
+  The note worker is off in `src/test/resources/application.properties`.

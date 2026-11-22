@@ -5,13 +5,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import com.investary.intelligence.application.BriefViews.BriefItem;
 import com.investary.intelligence.domain.BriefItemKind;
 import com.investary.knowledge.assistant.CitationValidator;
+import com.investary.knowledge.assistant.TradingLanguage;
 import com.investary.knowledge.assistant.EvidenceStatus;
-import com.investary.research.link.Keywords;
 
 import tools.jackson.databind.JsonNode;
 
@@ -24,10 +23,6 @@ import tools.jackson.databind.JsonNode;
  */
 final class BriefValidator {
 
-    /** Trading instructions (accent-folded); a brokerage rating quoted from a source is not one of these. */
-    private static final Pattern TRADING = Pattern.compile(
-            "\\b(mua vao|mua them|ban ra|ban bot|ban het|chot loi|cat lo|dat lenh|giai ngan|tang ty trong|giam ty trong|"
-                    + "nen mua|nen ban|buy now|sell now|take profit|stop loss|place an order)\\b");
     private static final int MAX_ITEMS = 5;
 
     private BriefValidator() {
@@ -143,7 +138,7 @@ final class BriefValidator {
     }
 
     static boolean isTradingInstruction(String text) {
-        return TRADING.matcher(Keywords.normalize(text)).find();
+        return TradingLanguage.isInstruction(text);
     }
 
     /** Follow-ups are uncited suggestions; a marker there would point at nothing that was checked. */
